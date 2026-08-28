@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NAV KURD</string>
+    <string name="download_in_progress">Downloading with NAV KURD</string>
+    <string name="download_complete">Download complete</string>
+    <string name="download_saved">%1$s was saved to Downloads/NAV KURD</string>
+    <string name="notification_channel_name">NAV KURD updates</string>
+    <string name="notification_channel_description">Offline map and download updates</string>
+    <string name="widget_description">NAV KURD weather, location and offline map status</string>
+    <string name="widget_location_unknown">شوێن دیاری نەکراوە</string>
+    <string name="widget_map_ready">خەریتەی کوردستان</string>
+    <string name="widget_tap_locate">LOCATE دابگرە بۆ دیاریکردنی شوێن</string>
+    <string name="widget_locate">LOCATE</string>
+    <string name="widget_refresh">نوێکردنەوەی کەش و هەوا</string>
+    <string name="weather_clear_day">خۆرەتاو و ئاسمان سافە</string>
+    <string name="weather_clear_night">شەوێکی ڕوون و ئاسمان سافە</string>
+    <string name="weather_partly_cloudy_day">ڕۆژ و نیمچە هەوراوی</string>
+    <string name="weather_partly_cloudy_night">شەو و نیمچە هەوراوی</string>
+    <string name="weather_cloudy_day">ڕۆژی هەوراوی</string>
+    <string name="weather_cloudy_night">شەوی هەوراوی</string>
+    <string name="weather_fog">تەماوی</string>
+    <string name="weather_drizzle">نمەباران</string>
+    <string name="weather_rain">باراناوی</string>
+    <string name="weather_freezing_rain">بارانی بەستوو</string>
+    <string name="weather_showers">بارانی پچڕپچڕ</string>
+    <string name="weather_snow">بەفراوی</string>
+    <string name="weather_storm">زریان و هەورەبروسکە</string>
+    <string name="weather_hail">تەرزە و هەورەبروسکە</string>
+    <string name="weather_dust">خۆڵ و تۆز</string>
+    <string name="weather_dust_rain">بارانی خۆڵاوی</string>
+    <string name="weather_strong_wind">بای بەهێز</string>
+    <string name="weather_unavailable">کەش و هەوا بەردەست نییە</string>
+    <string name="season_spring">بەهار</string>
+    <string name="season_summer">هاوین</string>
+    <string name="season_autumn">پاییز</string>
+    <string name="season_winter">زستان</string>
+</resources>

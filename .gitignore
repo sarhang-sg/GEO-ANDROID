@@ -1,0 +1,33 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+coverage/
+
+# Android local and generated files
+android/.gradle/
+android/local.properties
+android/app/.cxx/
+android/app/build/
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+
+# Signing material: never commit private update keys.
+signing/*.jks
+signing/*.keystore
+signing/signing.properties
+signing/*.base64
+
+# Editors / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Release output
+release/
+*.apk
+*.aab

@@ -1,0 +1,25 @@
+Alias name: navkurd
+Creation date: Aug 22, 2026
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Sarhang Salah, OU=NAV KURD, O=SARHANG IO, L=Sulaymaniyah, ST=Kurdistan Region, C=IQ
+Issuer: CN=Sarhang Salah, OU=NAV KURD, O=SARHANG IO, L=Sulaymaniyah, ST=Kurdistan Region, C=IQ
+Serial number: 1fa4987c47d193f6
+Valid from: Sat Aug 22 13:46:38 EEST 2026 until: Wed Jan 07 12:46:38 EET 2054
+Certificate fingerprints:
+	 SHA1: 5C:4A:0C:8F:55:93:03:3C:7C:54:32:78:BC:DD:FC:4A:AE:14:53:44
+	 SHA256: A2:45:75:43:8C:D4:E1:AF:D6:11:FE:2E:C8:F7:2E:EF:70:D5:C1:1F:3F:E9:BA:EF:0E:75:D5:76:EC:CE:12:46
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 4096-bit RSA key
+Version: 3
+
+Extensions:
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 60 A6 C0 B1 04 78 26 45   17 A3 D4 AB FA 20 9E F3  `....x&E..... ..
+0010: 6E 37 6A 02                                        n7j.
+]
+]

@@ -1,0 +1,29 @@
+name: geo_android
+description: NAV KURD standalone Flutter shell for Android.
+publish_to: "none"
+version: 8.0.4+80004
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  connectivity_plus: 7.3.1
+  flutter_inappwebview: 6.2.0-beta.3
+  permission_handler: 12.0.3
+  permission_handler_android: 13.0.1
+  share_plus: 13.3.0
+  url_launcher: 6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/nav-kurd-logo.png
