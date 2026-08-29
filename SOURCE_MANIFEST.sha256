@@ -86,7 +86,7 @@ fc196649f1f4cec9b73df33e27c96e672c6d263a7623ca8cc1ba3979dbdc4e2f  ./docs/RELEASE
 5f7a7086d42d65de4905bf0b251c03aa86f46ff5b0199e8545fb2dcaca8f6d0f  ./lib/src/app_config.dart
 b7c153cdc33e62aea317e55d5f63b48bd37f67aa9d46f92cf9dd35b71303c458  ./lib/src/download_name.dart
 b3985ad594dce1ada205639aa167aef36c0840d05644f8ad83c0ddf21278aafa  ./lib/src/native_bridge.dart
-a3b8f0a30de405edbb5e637537f2a7b8ddf5a8d2b365e0a84da438466bfebd50  ./lib/src/nav_kurd_page.dart
+89c4e0e1be4f50f6d9cfd557ff9b0a35eb4723ff7acec042e76642e0684b5288  ./lib/src/nav_kurd_page.dart
 9dd4bb9d66cd12b1a2be45538e81cd5891a398f2e956d6458470d716cf825e4b  ./lib/src/permission_coordinator.dart
 2aa3df37244f3e5cab14b645b7adda03e6b32ac206586817abfbc6d964660b3f  ./lib/src/url_policy.dart
 213ee39e3a73a446f6f615674614abe6b9f4c17c4fcd307838db5437759851c5  ./pubspec.yaml
