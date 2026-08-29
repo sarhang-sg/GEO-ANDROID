@@ -330,7 +330,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
       handlerName: 'nativeClearTransientCache',
       callback: (_) async {
         if (!await _isCurrentOriginTrusted()) return <String, bool>{'cleared': false};
-        await InAppWebViewController.clearAllCache();
+        await controller.clearCache();
         final cleared = await _bridge.clearTransientCache();
         return <String, bool>{'cleared': cleared};
       },
@@ -345,7 +345,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
     );
     controller.addJavaScriptHandler(
       handlerName: 'nativeSetLanguage',
-      callback: (List<dynamic> arguments) async {
+      callback: (arguments) async {
         if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
         final value = arguments.first;
         if (value is! Map) return false;
