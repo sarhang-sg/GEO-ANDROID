@@ -84,7 +84,9 @@ bash NAV-KURD-v8.0.4-ANDROID-TERMUX.sh
 The publisher verifies both manifests, refuses a public destination repository,
 preserves existing local edits, fingerprint-gates the established JKS,
 dispatches Actions, verifies release hashes and independently compares the APK
-certificate with the established NAV KURD identity. The lower-level
+certificate with the established NAV KURD identity. It then opens a separate
+Web review branch, publishes that same verified APK as the direct download,
+waits for the full quality/Chromium workflow, and merges only on success. The lower-level
 `TERMUX.sh` remains for diagnostics; it must never generate a replacement key
 for the already-installed app.
 

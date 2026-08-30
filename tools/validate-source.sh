@@ -29,6 +29,27 @@ fi
 grep -F 'WindowInsetsCompat.Type.systemBars()' \
   android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt >/dev/null \
   || fail "native immersive mode is missing"
+grep -F '"pickImage" -> launchImagePicker(result)' \
+  android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt >/dev/null \
+  || fail "native image picker bridge is missing"
+grep -F '"shareText" -> result.success(shareText(call))' \
+  android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt >/dev/null \
+  || fail "native Android share bridge is missing"
+grep -F 'onShowFileChooser: _handleFileChooser' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "WebView image chooser integration is missing"
+grep -F "handlerName: 'nativeShare'" lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "WebView native share integration is missing"
+grep -F 'controller.platform.clearAllCache()' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "WebView cache cleanup does not use the current platform API"
+if grep -E '(InAppWebViewController\.clearAllCache|\.clearCache\()' \
+    lib/src/nav_kurd_page.dart >/dev/null; then
+  fail "deprecated WebView cache API is still present"
+fi
+grep -F 'Map<Object?, Object?>' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "native language payload is not statically typed"
+if grep -R -F 'share_plus' pubspec.yaml lib test >/dev/null 2>&1; then
+  fail "obsolete share_plus dependency or source reference is still present"
+fi
 grep -F '[META] Native Android diagnostics' \
   android/app/src/main/kotlin/com/navkurd/app/NavKurdDiagnostics.kt >/dev/null \
   || fail "native diagnostics are missing"
@@ -114,6 +135,15 @@ grep -F 'FAILURE ANNOTATIONS' GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
 grep -F 'Verified APK certificate record was not found.' \
   GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
   || fail "Termux updater does not verify the workflow certificate record"
+grep -F 'readonly web_repo_name="sarhang-sg/GEO-MAP"' \
+  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  || fail "Termux updater does not target the canonical private Web repository"
+grep -F 'WEB_UPDATE_MANIFEST.sha256' \
+  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  || fail "Termux updater does not verify the shared Web payload"
+grep -F 'Waiting for Web quality and Chromium checks' \
+  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  || fail "Termux updater does not gate the Web deployment on quality checks"
 if grep -F 'APK v1 certificate block was not found.' \
   GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null; then
   fail "Termux updater still assumes obsolete APK v1 signing"

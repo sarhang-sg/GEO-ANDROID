@@ -15,6 +15,7 @@ import android.os.storage.StorageManager
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.ViewCompat
 import java.io.File
+import kotlin.math.roundToInt
 
 /** Reads real Android capabilities. Values that Android cannot expose remain null. */
 object NavKurdRuntimeInfo {
@@ -91,11 +92,16 @@ object NavKurdRuntimeInfo {
         val insets = ViewCompat.getRootWindowInsets(activity.window.decorView)
             ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             ?: androidx.core.graphics.Insets.NONE
+        // The Web UI consumes these values as CSS pixels. Android insets are
+        // physical pixels, so passing them through unchanged applies the
+        // device density twice and pushes controls far below the status area.
+        val density = activity.resources.displayMetrics.density.coerceAtLeast(1f)
+        fun cssPixels(value: Int): Int = (value / density).roundToInt().coerceAtLeast(0)
         return mapOf(
-            "top" to insets.top,
-            "right" to insets.right,
-            "bottom" to insets.bottom,
-            "left" to insets.left,
+            "top" to cssPixels(insets.top),
+            "right" to cssPixels(insets.right),
+            "bottom" to cssPixels(insets.bottom),
+            "left" to cssPixels(insets.left),
         )
     }
 

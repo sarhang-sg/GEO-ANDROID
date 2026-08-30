@@ -5,6 +5,7 @@ readonly download_dir="/storage/emulated/0/Download"
 readonly project_dir="$HOME/GEO-ANDROID-SARHANG-SG"
 readonly legacy_project_dir="$HOME/GEO-ANDROID"
 readonly repo_name="sarhang-sg/GEO-ANDROID"
+readonly web_repo_name="sarhang-sg/GEO-MAP"
 readonly workflow_name="android-release.yml"
 readonly artifact_name="NAV-KURD-8.0.4-signed-release"
 temp_dir=""
@@ -35,7 +36,7 @@ retry() {
   done
 }
 
-echo "1/9 — Preparing Termux..."
+echo "1/12 — Preparing Termux..."
 [[ -d "$download_dir" ]] || {
   termux-setup-storage
   die "Android storage permission was requested. Allow it, then run this script again."
@@ -47,6 +48,7 @@ command -v gh >/dev/null 2>&1 || missing_packages+=(gh)
 command -v curl >/dev/null 2>&1 || missing_packages+=(curl)
 command -v unzip >/dev/null 2>&1 || missing_packages+=(unzip)
 command -v zip >/dev/null 2>&1 || missing_packages+=(zip)
+command -v node >/dev/null 2>&1 || missing_packages+=(nodejs-lts)
 command -v sha256sum >/dev/null 2>&1 || missing_packages+=(coreutils)
 if (( ${#missing_packages[@]} )); then
   pkg update -y
@@ -54,7 +56,7 @@ if (( ${#missing_packages[@]} )); then
 fi
 termux-wake-lock 2>/dev/null || true
 
-for required in git gh curl unzip sha256sum; do
+for required in git gh curl unzip node sha256sum; do
   command -v "$required" >/dev/null 2>&1 || die "Missing command after setup: $required"
 done
 retry gh auth status -h github.com >/dev/null 2>&1 ||
@@ -78,7 +80,7 @@ if gh api "repos/$repo_name/branches/main" >/dev/null 2>&1; then
   repo_has_main=true
 fi
 
-echo "2/9 — Verifying the final source ZIP..."
+echo "2/12 — Verifying the final Android and Web source payload..."
 source_zip="$(find "$download_dir" -maxdepth 2 -type f \
   -name 'NAV-KURD-v8.0.4-ANDROID.zip' \
   -printf '%T@ %p\n' 2>/dev/null |
@@ -115,9 +117,21 @@ source_root="$(find "$temp_dir/source" -maxdepth 2 -type f -name pubspec.yaml \
   die "The source archive has no valid UPDATE_PATHS.txt."
 [[ -s "$source_root/SOURCE_MANIFEST.sha256" ]] ||
   die "The source archive has no source manifest."
+[[ -s "$source_root/WEB_UPDATE_PATHS.txt" ]] ||
+  die "The source archive has no Web update path list."
+[[ -s "$source_root/WEB_UPDATE_MANIFEST.sha256" ]] ||
+  die "The source archive has no Web update manifest."
 (
   cd "$source_root"
   sha256sum -c SOURCE_MANIFEST.sha256
+  sha256sum -c WEB_UPDATE_MANIFEST.sha256
+  while IFS= read -r relative || [[ -n "$relative" ]]; do
+    [[ -z "$relative" || "$relative" == \#* ]] && continue
+    [[ "$relative" != /* && "$relative" != *".."* ]] ||
+      die "Unsafe Web update path: $relative"
+    [[ -f "web-update/$relative" ]] ||
+      die "Missing Web update file: $relative"
+  done < WEB_UPDATE_PATHS.txt
   bash tools/validate-source.sh
   git init -q
   git add -A
@@ -125,7 +139,7 @@ source_root="$(find "$temp_dir/source" -maxdepth 2 -type f -name pubspec.yaml \
   rm -rf -- .git
 )
 
-echo "3/9 — Preparing a clean review branch..."
+echo "3/12 — Preparing a clean Android review branch..."
 if [[ -e "$project_dir" && ! -d "$project_dir/.git" ]]; then
   die "The Android workspace exists but is not a Git repository: $project_dir"
 fi
@@ -193,7 +207,7 @@ else
         "$(gh api user --jq .id)" "$(gh api user --jq .login)")"
   git -C "$project_dir" commit -m "Release NAV KURD Android 8.0.4"
 
-  echo "4/9 — Uploading the root fixes..."
+  echo "4/12 — Uploading the Android fixes..."
   if [[ "$repo_has_main" == true ]]; then
     retry git -C "$project_dir" -c http.version=HTTP/1.1 push -u origin "$branch_name"
     pull_request_url="$(retry gh pr create \
@@ -202,7 +216,7 @@ else
       --head "$branch_name" \
       --draft \
       --title "NAV KURD Android 8.0.4" \
-      --body "Android 8.0.4: GPS resume recovery, multilingual state-rendered weather widget, daily weather and update notifications, real hardware diagnostics, secure downloads and verified release signing.")"
+      --body "Android 8.0.4: native image picker and share bridge, stable search/GPS focus, compact premium UI, multilingual widget synchronization, diagnostics fixes and verified release signing.")"
     build_ref="$branch_name"
   else
     retry git -C "$project_dir" -c http.version=HTTP/1.1 push -u origin main
@@ -239,7 +253,7 @@ else
   echo "Using the four existing encrypted GitHub signing secrets."
 fi
 
-echo "5/9 — Starting the signed Android workflow..."
+echo "5/12 — Starting the signed Android workflow..."
 head_sha="$(git -C "$project_dir" rev-parse "$build_ref")"
 retry gh workflow run "$workflow_name" --repo "$repo_name" --ref "$build_ref"
 
@@ -259,7 +273,7 @@ done
 [[ -n "$run_id" ]] || die "Could not find the newly dispatched workflow."
 echo "Run: https://github.com/$repo_name/actions/runs/$run_id"
 
-echo "6/9 — Waiting for tests and signed build..."
+echo "6/12 — Waiting for Android tests and signed build..."
 while true; do
   run_state="$(retry gh api "repos/$repo_name/actions/runs/$run_id" \
     --jq '.status + "|" + (.conclusion // "")')"
@@ -324,7 +338,7 @@ if [[ "$conclusion" != "success" ]]; then
   die "Build failed. Non-empty log saved to: $error_log"
 fi
 
-echo "7/9 — Downloading the signed artifact with resume support..."
+echo "7/12 — Downloading the signed artifact with resume support..."
 artifact_id="$(retry gh api "repos/$repo_name/actions/runs/$run_id/artifacts?per_page=100" \
   --jq ".artifacts[] | select(.name == \"$artifact_name\" and .expired == false) | .id" |
   head -n 1)"
@@ -371,7 +385,7 @@ unzip -oq "$artifact_zip" -d "$release_dir"
   sha256sum -c SHA256SUMS.txt
 )
 
-echo "8/9 — Verifying the real APK certificate..."
+echo "8/12 — Verifying the real APK certificate..."
 universal_apk="$release_dir/NAV-KURD-8.0.4.apk"
 [[ -s "$universal_apk" ]] || die "Universal NAV-KURD-8.0.4.apk was not found."
 certificate_digest_file="$release_dir/CERTIFICATE_SHA256.txt"
@@ -404,13 +418,161 @@ if [[ -n "$pull_request_url" ]]; then
   fi
 fi
 
-echo "9/9 — COMPLETED"
+echo "9/12 — Preparing the verified Web and direct-download update..."
+web_visibility="$(retry gh repo view "$web_repo_name" --json visibility --jq .visibility)"
+[[ "$web_visibility" == "PRIVATE" ]] || die "$web_repo_name must remain PRIVATE."
+
+web_repo_dir="$temp_dir/web-repo"
+clone_web_main() {
+  case "$web_repo_dir" in
+    "$temp_dir"/web-repo) rm -rf -- "$web_repo_dir" ;;
+    *) return 1 ;;
+  esac
+  gh repo clone "$web_repo_name" "$web_repo_dir"
+}
+retry clone_web_main || die "The current Web repository could not be cloned."
+git -C "$web_repo_dir" switch main
+retry git -C "$web_repo_dir" -c http.version=HTTP/1.1 pull --ff-only origin main
+node -e 'const p=require(process.argv[1]); if(p.version!=="8.0.4") process.exit(1)' \
+  "$web_repo_dir/package.json" || die "Remote Web source is not NAV KURD 8.0.4."
+grep -q 'Mobile OAuth now keeps ordinary Chrome sign-in' \
+  "$web_repo_dir/HANDOFF_WEB_8.0.4.md" ||
+  die "Remote Web main is older than the completed runtime-fix checkpoint."
+
+web_branch_name="codex/nav-kurd-premium-v8-$(date -u +%Y%m%d-%H%M%S)-$$"
+git -C "$web_repo_dir" switch -c "$web_branch_name"
+while IFS= read -r relative || [[ -n "$relative" ]]; do
+  [[ -z "$relative" || "$relative" == \#* ]] && continue
+  [[ "$relative" != /* && "$relative" != *".."* ]] ||
+    die "Unsafe Web update path: $relative"
+  [[ -f "$source_root/web-update/$relative" ]] ||
+    die "Missing verified Web update file: $relative"
+  mkdir -p "$(dirname "$web_repo_dir/$relative")"
+  cp -p "$source_root/web-update/$relative" "$web_repo_dir/$relative"
+done < "$source_root/WEB_UPDATE_PATHS.txt"
+mkdir -p "$web_repo_dir/public/downloads"
+cp -f "$universal_apk" "$web_repo_dir/public/downloads/NAV-KURD-8.0.4.apk"
+
+echo "10/12 — Validating and uploading the Web review branch..."
+(
+  cd "$web_repo_dir"
+  git diff --check
+  grep -F 'premium-refresh.css' src/styles.css >/dev/null
+  grep -F 'beginManualMapFocus' src/main.ts >/dev/null
+  grep -F 'CANONICAL_APP_URL' src/lib/native-share.ts >/dev/null
+  grep -F 'application/vnd.android.package-archive' vite.config.ts >/dev/null
+  node tools/build/generate-pwa-manifest.mjs
+  node tools/release/prepare-android-download.mjs
+  node tools/release/generate-release-manifest.mjs
+  node --check public/pwa-init.js
+  node --check public/sw.js
+  node tools/verify/source.mjs
+  node tools/verify/runtime.mjs
+  node tools/verify/security.mjs
+  node tools/verify/release.mjs
+)
+web_metadata_sha256="$(node -e \
+  'const m=require(process.argv[1]); process.stdout.write(m.apkSha256||"")' \
+  "$web_repo_dir/public/releases/latest.json")"
+universal_sha256="$(sha256sum "$universal_apk" | awk '{ print $1 }')"
+[[ "$web_metadata_sha256" == "$universal_sha256" ]] ||
+  die "Published direct APK metadata does not match the verified Android artifact."
+
+git -C "$web_repo_dir" add -A
+web_pr_url=""
+web_head_sha=""
+web_quality_url=""
+if git -C "$web_repo_dir" diff --cached --quiet; then
+  echo "The Web repository already contains this exact UI and signed APK."
+  git -C "$web_repo_dir" switch main
+  git -C "$web_repo_dir" branch -D "$web_branch_name"
+  web_head_sha="$(git -C "$web_repo_dir" rev-parse HEAD)"
+else
+  git -C "$web_repo_dir" config user.name \
+    "$(git -C "$web_repo_dir" config user.name || gh api user --jq .login)"
+  git -C "$web_repo_dir" config user.email \
+    "$(git -C "$web_repo_dir" config user.email ||
+      printf '%s+%s@users.noreply.github.com' \
+        "$(gh api user --jq .id)" "$(gh api user --jq .login)")"
+  git -C "$web_repo_dir" commit -m \
+    "Fix NAV KURD Android UX and premium shared interface"
+  web_head_sha="$(git -C "$web_repo_dir" rev-parse HEAD)"
+  retry git -C "$web_repo_dir" -c http.version=HTTP/1.1 push -u origin "$web_branch_name"
+  web_pr_url="$(retry gh pr create \
+    --repo "$web_repo_name" \
+    --base main \
+    --head "$web_branch_name" \
+    --draft \
+    --title "NAV KURD 8.0.4 Android UX and premium UI" \
+    --body "Native image selection and sharing, stable GPS/search focus, compact Android settings, synchronized multilingual widget, consistent tutorial icons, modern loader, premium shared UI, and a certificate-verified direct APK.")"
+
+  echo "11/12 — Waiting for Web quality and Chromium checks..."
+  web_run_id=""
+  for _ in $(seq 1 90); do
+    web_run_id="$(gh run list \
+      --repo "$web_repo_name" \
+      --workflow quality.yml \
+      --branch "$web_branch_name" \
+      --event pull_request \
+      --limit 20 \
+      --json databaseId \
+      --jq '.[0].databaseId // empty' 2>/dev/null || true)"
+    [[ -n "$web_run_id" ]] && break
+    sleep 5
+  done
+  [[ -n "$web_run_id" ]] ||
+    die "The Web pull-request quality run was not found. Review: $web_pr_url"
+  web_quality_url="https://github.com/$web_repo_name/actions/runs/$web_run_id"
+  echo "Web quality: $web_quality_url"
+
+  while true; do
+    web_run_state="$(retry gh api \
+      "repos/$web_repo_name/actions/runs/$web_run_id" \
+      --jq '.status + "|" + (.conclusion // "")')"
+    web_status="${web_run_state%%|*}"
+    web_conclusion="${web_run_state#*|}"
+    printf 'Web status: %s%s\n' "$web_status" "${web_conclusion:+ / $web_conclusion}"
+    [[ "$web_status" == "completed" ]] && break
+    sleep 15
+  done
+
+  if [[ "$web_conclusion" != "success" ]]; then
+    web_error_log="$download_dir/GEO-WEB-V8-ERROR-$web_run_id.txt"
+    {
+      echo "NAV KURD Web quality failed"
+      echo "Run: $web_quality_url"
+      echo "Pull request: $web_pr_url"
+      echo "Conclusion: $web_conclusion"
+      echo
+      gh run view "$web_run_id" --repo "$web_repo_name" --log-failed 2>&1 || true
+    } > "$web_error_log"
+    die "Web checks failed. Non-empty log saved to: $web_error_log"
+  fi
+
+  retry gh pr ready "$web_pr_url" --repo "$web_repo_name" >/dev/null
+  if retry gh pr merge "$web_pr_url" \
+      --repo "$web_repo_name" --squash --delete-branch; then
+    retry git -C "$web_repo_dir" fetch origin main
+    git -C "$web_repo_dir" switch main
+    git -C "$web_repo_dir" merge --ff-only origin/main
+    web_head_sha="$(git -C "$web_repo_dir" rev-parse HEAD)"
+    web_pr_url=""
+  else
+    echo "GitHub rules kept the verified Web PR open: $web_pr_url" >&2
+  fi
+fi
+
+echo "12/12 — COMPLETED"
 echo "APK: $install_apk"
 echo "All APK/AAB files: $release_dir"
 echo "Certificate: $actual_fingerprint"
-[[ -n "$pull_request_url" ]] && echo "Draft PR: $pull_request_url"
+echo "Web commit: https://github.com/$web_repo_name/commit/$web_head_sha"
+[[ -n "$web_quality_url" ]] && echo "Web quality: $web_quality_url"
+[[ -n "$pull_request_url" ]] && echo "Android PR: $pull_request_url"
+[[ -n "$web_pr_url" ]] && echo "Web PR: $web_pr_url"
 [[ -n "$backup_stash" ]] && echo "Preserved local edits: $backup_stash"
 echo "Install this signed APK. Remove the old blank widget once, then add NAV KURD again."
+echo "Vercel will deploy the merged Web main automatically."
 if command -v termux-open >/dev/null 2>&1; then
   termux-open --view "$install_apk" || true
 fi

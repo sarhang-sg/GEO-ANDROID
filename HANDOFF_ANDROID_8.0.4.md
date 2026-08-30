@@ -14,10 +14,10 @@ Use this file when continuing the Android work in a new chat.
 ## Architecture
 
 Flutter owns lifecycle and the visible Android shell. A hardened
-`flutter_inappwebview` hosts the canonical web GIS. Kotlin owns downloads,
-MediaStore, notifications, deep links, diagnostics, the home widget and real
-device information. JavaScript handlers are registered only for the trusted
-origin.
+`flutter_inappwebview` hosts the canonical web GIS. Kotlin owns downloads, the
+system image picker, native sharing, MediaStore, notifications, deep links,
+diagnostics, the home widget and real device information. JavaScript handlers
+are registered only for the trusted origin.
 
 ## Important implementation files
 
@@ -57,7 +57,9 @@ bash NAV-KURD-v8.0.4-ANDROID-TERMUX.sh
 The script validates source, creates only private `sarhang-sg/GEO-ANDROID`,
 fingerprint-gates the established JKS before uploading encrypted Actions
 secrets, runs analyze/tests/build/signature checks, downloads the artifact and
-verifies its SHA-256 and certificate.
+verifies its SHA-256 and certificate. The same run then applies the verified
+shared Web UI payload and direct APK on a review branch, waits for the complete
+quality/Chromium workflow, and merges only after it is green.
 
 ## Before release
 
@@ -87,6 +89,15 @@ art runs continuously inside the app/web surface.
   implemented.
 - Multilingual widget, scheduled weather/update notifications and real
   hardware/runtime diagnostics are implemented.
+- The Android photo input now uses the system image picker, sharing uses the
+  native Android chooser, and malformed Web share URLs no longer escape as
+  unhandled promise errors.
+- Search/shared-location/region focus explicitly stops GPS camera-follow while
+  preserving the live marker; physical Android insets are normalized to CSS
+  pixels so search stays near the top.
+- The compact Android settings actions, synchronized three-language widget,
+  consistent tutorial icons, simple loader and premium shared UI are included;
+  the red support/payment section is intentionally unchanged.
 - The signed workflow builds universal and per-ABI APKs plus AAB, verifies
   package/version/certificate identity and publishes checksums.
 - The final production origin is consistent across Dart, Android App Links,
@@ -100,7 +111,8 @@ art runs continuously inside the app/web surface.
   `sarhang-sg` account so GitHub Actions can compile/sign the release.
 - Install the resulting universal APK on a physical Android 7+ device for the
   final GPS/widget/notification/offline smoke test.
-- Copy that verified APK into the Web download path and submit it to APKPure.
+- Confirm the combined publisher's Web quality/Chromium run and Vercel
+  production deployment, then submit the verified APK to APKPure.
 
 ## Changed files
 
@@ -133,7 +145,7 @@ art runs continuously inside the app/web surface.
 - Known issues: no known source-gate failures. Signed binaries remain pending
   until the owner runs the Termux publisher.
 
-## Current release checkpoint — 2026-08-28
+## Current release checkpoint — 2026-08-29
 
 - `bash tools/validate-source.sh`: PASS.
 - Version/application ID gate: PASS (`8.0.4+80004`, `com.navkurd.app`).
@@ -143,9 +155,15 @@ art runs continuously inside the app/web surface.
   prepared with SHA-256 sidecars; private signing material is excluded.
 - Existing update certificate fingerprint: verified against
   `ANDROID_APP_LINK_SHA256.txt`.
+- Web typecheck, 166-module production build, offline runtime, security,
+  platform, PMTiles, dependency and release-integrity gates: PASS.
+- Android source gate, XML parsing, embedded JavaScript syntax and shell syntax:
+  PASS after the native image/share bridge and widget synchronization patches.
 - Signed APK/AAB: pending. The abandoned old-account runner returned a pre-job
   startup failure; no compile or signing step ran.
 - Exact next step: run `NAV-KURD-v8.0.4-ANDROID-TERMUX.sh`. It creates or
   updates private `sarhang-sg/GEO-ANDROID`, uploads the four
   fingerprint-verified signing secrets, runs `android-release.yml`, then
-  verifies and retrieves the signed APK/AAB artifact.
+  verifies and retrieves the signed APK/AAB artifact. It then updates private
+  `sarhang-sg/GEO-MAP`, requires the quality/Chromium workflow to pass, and
+  publishes the same verified APK as the direct download.

@@ -1,6 +1,7 @@
 package com.navkurd.app
 
 import android.Manifest
+import android.app.Activity
 import android.app.DownloadManager
 import android.app.PendingIntent
 import android.content.ComponentCallbacks2
@@ -12,6 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.OpenableColumns
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Base64
@@ -38,10 +40,13 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         private const val METHOD_CHANNEL = "navkurd/native"
         private const val DEEP_LINK_CHANNEL = "navkurd/deep_links"
         private const val DOWNLOAD_FOLDER = "NAV KURD"
+        private const val IMAGE_PICK_REQUEST = 8005
+        private const val MAX_PICKED_IMAGE_BYTES = 10L * 1024L * 1024L
     }
 
     private var deepLinkSink: EventChannel.EventSink? = null
     private var pendingDeepLink: String? = null
+    private var pendingImagePickResult: MethodChannel.Result? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,6 +103,8 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 "getSdkInt" -> result.success(Build.VERSION.SDK_INT)
                 "getRuntimeInfo" -> result.success(NavKurdRuntimeInfo.collect(this))
                 "clearTransientCache" -> result.success(clearTransientCache())
+                "pickImage" -> launchImagePicker(result)
+                "shareText" -> result.success(shareText(call))
                 "setLanguage" -> {
                     NavKurdWidgetProvider.setLanguage(
                         this,
@@ -230,6 +237,147 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun launchImagePicker(result: MethodChannel.Result) {
+        if (pendingImagePickResult != null) {
+            result.error("IMAGE_PICK_IN_PROGRESS", "An image picker is already open", null)
+            return
+        }
+        val picker = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Intent(MediaStore.ACTION_PICK_IMAGES).apply {
+                type = "image/*"
+            }
+        } else {
+            Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+            }
+        }
+        pendingImagePickResult = result
+        try {
+            startActivityForResult(picker, IMAGE_PICK_REQUEST)
+        } catch (error: Exception) {
+            pendingImagePickResult = null
+            NavKurdDiagnostics.record(
+                this,
+                "error",
+                "native.pickImage",
+                error.message ?: "No compatible image picker is installed",
+                error.stackTraceToString(),
+            )
+            result.error(
+                "IMAGE_PICK_UNAVAILABLE",
+                error.message ?: "No compatible image picker is installed",
+                null,
+            )
+        }
+    }
+
+    @Deprecated("Deprecated in Android, retained for FlutterActivity picker interoperability")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode != IMAGE_PICK_REQUEST) {
+            super.onActivityResult(requestCode, resultCode, data)
+            return
+        }
+        val result = pendingImagePickResult ?: return
+        pendingImagePickResult = null
+        applyImmersiveMode()
+        if (resultCode != Activity.RESULT_OK) {
+            result.success(null)
+            return
+        }
+        val uri = data?.data
+        if (uri == null) {
+            result.success(null)
+            return
+        }
+        try {
+            result.success(cachePickedImage(uri))
+        } catch (error: Exception) {
+            NavKurdDiagnostics.record(
+                this,
+                "error",
+                "native.pickImage",
+                error.message ?: "The selected image could not be opened",
+                error.stackTraceToString(),
+            )
+            result.error(
+                "IMAGE_PICK_FAILED",
+                error.message ?: "The selected image could not be opened",
+                null,
+            )
+        }
+    }
+
+    private fun cachePickedImage(uri: Uri): String {
+        val mimeType = contentResolver.getType(uri)?.lowercase(Locale.US)
+        require(mimeType == null || mimeType.startsWith("image/")) {
+            "Only image files can be selected"
+        }
+        val displayName = contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (!cursor.moveToFirst() || displayNameIndex < 0) null
+            else cursor.getString(displayNameIndex)
+        }
+        val fallbackExtension = mimeType
+            ?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }
+            ?.takeIf { it.isNotBlank() }
+            ?: "jpg"
+        val fileName = sanitizeFileName(
+            displayName?.takeIf { it.isNotBlank() } ?: "nav-kurd-photo.$fallbackExtension",
+            mimeType,
+        )
+        val directory = File(cacheDir, "picked-images").apply { mkdirs() }
+        directory.listFiles()
+            ?.filter { System.currentTimeMillis() - it.lastModified() > 24L * 60L * 60L * 1000L }
+            ?.forEach { staleFile -> staleFile.delete() }
+        val destination = uniqueFile(directory, fileName)
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(destination).use { output ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var total = 0L
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        require(total <= MAX_PICKED_IMAGE_BYTES) {
+                            "The selected image is larger than 10 MB"
+                        }
+                        output.write(buffer, 0, count)
+                    }
+                    output.flush()
+                }
+            } ?: error("The selected image could not be opened")
+            require(destination.length() > 0L) { "The selected image is empty" }
+            return Uri.fromFile(destination).toString()
+        } catch (error: Exception) {
+            destination.delete()
+            throw error
+        }
+    }
+
+    private fun shareText(call: MethodCall): Boolean {
+        val title = call.argument<Any>("title")?.toString()?.trim().orEmpty()
+        val text = call.argument<Any>("text")?.toString()?.trim().orEmpty()
+        val url = call.argument<Any>("url")?.toString()?.trim().orEmpty()
+        val body = listOf(text, url).filter(String::isNotBlank).joinToString("\n")
+        require(body.isNotBlank()) { "There is no content to share" }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, body)
+            if (title.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, title)
+        }
+        startActivity(Intent.createChooser(intent, title.ifBlank { getString(R.string.app_name) }))
+        return true
     }
 
     private fun enqueueDownload(call: MethodCall): Long {

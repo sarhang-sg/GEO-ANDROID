@@ -65,6 +65,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
         private const val STRONG_GUST_KMH = 60.0
         private val executor = Executors.newSingleThreadExecutor()
         private val refreshRunning = AtomicBoolean(false)
+        private val forcedRefreshPending = AtomicBoolean(false)
 
         private data class WeatherPayload(
             val temperature: Double,
@@ -126,6 +127,12 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             val online: String,
             val offline: String,
             val offlineReady: String,
+            val downloading: String,
+            val paused: String,
+            val preparing: String,
+            val error: String,
+            val deleting: String,
+            val offlineMap: String,
         )
 
         fun setLanguage(context: Context, rawLanguage: String) {
@@ -237,6 +244,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
         ) {
             val appContext = context.applicationContext
             if (!refreshRunning.compareAndSet(false, true)) {
+                if (force) forcedRefreshPending.set(true)
                 onComplete?.invoke()
                 return
             }
@@ -260,6 +268,9 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                     updateAll(appContext)
                     refreshRunning.set(false)
                     onComplete?.invoke()
+                    if (forcedRefreshPending.getAndSet(false)) {
+                        refreshWeather(appContext, force = true)
+                    }
                 }
             }
         }
@@ -792,18 +803,21 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                 "Spring", "Summer", "Autumn", "Winter",
                 "Dawn", "Morning", "Noon", "Afternoon", "Evening", "Night",
                 "ONLINE", "OFFLINE", "OFFLINE READY",
+                "DOWNLOADING", "PAUSED", "PREPARING", "ERROR", "DELETING", "Offline map",
             )
             "ar" -> WidgetCopy(
                 "الموقع غير محدد", "خريطة كوردستان", "اضغط لتحديد الموقع",
                 "الربيع", "الصيف", "الخريف", "الشتاء",
                 "الفجر", "الصباح", "الظهر", "بعد الظهر", "المساء", "الليل",
                 "متصل", "غير متصل", "الخريطة دون اتصال جاهزة",
+                "جارٍ التنزيل", "متوقف مؤقتاً", "جارٍ التحضير", "خطأ", "جارٍ الحذف", "خريطة دون اتصال",
             )
             else -> WidgetCopy(
                 "شوێن دیاری نەکراوە", "خەریتەی کوردستان", "بۆ دیاریکردنی شوێن دابگرە",
                 "بەهار", "هاوین", "پاییز", "زستان",
                 "بەیانی زوو", "بەیانی", "نیوەڕۆ", "دوا نیوەڕۆ", "ئێوارە", "شەو",
                 "پەیوەستە", "ئۆفلاین", "خەریتەی ئۆفلاین ئامادەیە",
+                "دادەبەزێت", "ڕاوەستاوە", "ئامادە دەکرێت", "هەڵە", "دەسڕێتەوە", "ماپی ئۆفلاین",
             )
         }
 
@@ -816,12 +830,20 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                 "ONLINE" -> copy.online
                 "OFFLINE" -> copy.offline
                 "OFFLINE READY", "READY" -> copy.offlineReady
+                "DOWNLOADING" -> copy.downloading
+                "PAUSED" -> copy.paused
+                "IDLE", "PREPARING" -> copy.preparing
+                "ERROR", "FAILED" -> copy.error
+                "DELETING" -> copy.deleting
                 else -> rawStatus.take(32)
             }
+            val progress = Regex("(\\d{1,3})%").find(rawDetail)?.groupValues?.getOrNull(1)
             val detail = when {
                 rawDetail.contains("connected", ignoreCase = true) -> copy.mapReady
                 rawDetail.contains("remain available", ignoreCase = true) -> copy.offlineReady
                 rawDetail.contains("available offline", ignoreCase = true) -> copy.offlineReady
+                rawDetail.contains("offline map", ignoreCase = true) && progress != null ->
+                    "${copy.offlineMap} $progress%"
                 else -> rawDetail.take(96)
             }
             return status to detail

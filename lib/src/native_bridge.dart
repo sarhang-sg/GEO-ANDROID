@@ -52,6 +52,31 @@ final class NativeBridge {
     }
   }
 
+  Future<String?> pickImageFile() async {
+    try {
+      return await _methods.invokeMethod<String>('pickImage');
+    } on PlatformException {
+      return null;
+    }
+  }
+
+  Future<bool> shareText({
+    required String title,
+    required String text,
+    required String url,
+  }) async {
+    try {
+      return await _methods.invokeMethod<bool>('shareText', <String, String>{
+            'title': title,
+            'text': text,
+            'url': url,
+          }) ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   Future<void> setLanguage(String language) async {
     try {
       await _methods.invokeMethod<void>('setLanguage', <String, String>{

@@ -1,6 +1,6 @@
 # Build status
 
-Prepared on 2026-08-28.
+Prepared on 2026-08-29.
 
 ## Completed locally
 
@@ -34,6 +34,16 @@ Prepared on 2026-08-28.
   `sarhang-sg/GEO-ANDROID` repository, preserves any existing local work,
   reuses the established fingerprint-verified update key and retrieves the
   signed release artifact.
+- Added the Android system image picker and native share chooser without a
+  third-party picker/share plugin, plus WebView integration restricted to the
+  trusted production origin.
+- Fixed manual search focus versus GPS camera-follow and normalized Android
+  safe-area insets from physical pixels to CSS pixels.
+- Reworked the shared Web/Android UI into a compact premium glass system,
+  synchronized the widget language immediately, and retained the existing red
+  support/payment styling unchanged.
+- Completed the Web typecheck, production/offline build, security, platform,
+  PMTiles and release-integrity suites successfully.
 
 ## Build gate
 
@@ -44,4 +54,6 @@ Use `NAV-KURD-v8.0.4-ANDROID-TERMUX.sh` after GitHub authentication. It creates
 the fresh private repository (or a review branch when `main` already exists),
 dispatches the signed workflow, waits for all checks, verifies the checksum and
 certificate, and downloads the APK/AAB artifact without requiring desktop
-Flutter in Termux.
+Flutter in Termux. It then sends the exact Web fixes and verified APK through a
+separate review branch and waits for the Web quality/Chromium workflow before
+merging to production.
