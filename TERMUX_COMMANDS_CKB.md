@@ -13,7 +13,7 @@
 ```bash
 termux-setup-storage
 pkg update -y
-pkg install -y git gh curl unzip zip coreutils openjdk-21
+pkg install -y git gh curl unzip zip coreutils openjdk-21 nodejs-lts
 gh auth login
 cd /storage/emulated/0/Download
 sha256sum -c NAV-KURD-v8.0.4-ANDROID.zip.sha256
@@ -27,7 +27,7 @@ bash NAV-KURD-v8.0.4-ANDROID-TERMUX.sh
 
 ## سکریپتەکە چی دەکات؟
 
-1. ZIP و SHA-256 و source manifest دەپشکنێت.
+1. ZIP و SHA-256 و manifest ـی Android و Web دەپشکنێت.
 2. `sarhang-sg/GEO-MAP` و `sarhang-sg/GEO-ANDROID` تەنها بە شێوەی Private
    دروست دەکات.
 3. هیچ repo ـێکی پڕ overwrite یان force-push ناکات.
@@ -35,9 +35,11 @@ bash NAV-KURD-v8.0.4-ANDROID-TERMUX.sh
    بە شێوەی encrypted دادەنێت.
 5. GitHub Actions ـی واژۆکراو دەستپێدەکات و چاوەڕێی analyze/test/build دەکات.
 6. SHA-256ی APK/AAB ـەکان و certificate ـی ڕاستەقینە دەپشکنێت.
+7. هەمان APK ـی پشتڕاستکراو و چاکسازییەکانی UI دەخاتە branch ـێکی Web.
+8. چاوەڕێی quality و Chromium smoke دەکات و تەنها لە سەرکەوتندا merge دەکات.
 
 دەرئەنجامەکان لە فۆڵدەری
-`NAV-KURD-v8.0.4-RELEASE-RUN_ID` ـی `Download` دەبن.
+`GEO-ANDROID-V8-RELEASE-RUN_ID` ـی `Download` دەبن.
 
 ## پاراستنی واژۆ
 

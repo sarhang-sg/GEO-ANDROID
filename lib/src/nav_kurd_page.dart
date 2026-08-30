@@ -11,7 +11,6 @@ import 'package:geo_android/src/download_name.dart';
 import 'package:geo_android/src/native_bridge.dart';
 import 'package:geo_android/src/permission_coordinator.dart';
 import 'package:geo_android/src/url_policy.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final class NavKurdPage extends StatefulWidget {
@@ -260,6 +259,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
               },
               onPermissionRequest: (controller, request) =>
                   _permissions.handleWebPermission(request),
+              onShowFileChooser: _handleFileChooser,
               onDownloadStarting: (controller, request) async {
                 await _handleDownload(controller, request);
                 return DownloadStartResponse(handled: true);
@@ -330,7 +330,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
       handlerName: 'nativeClearTransientCache',
       callback: (_) async {
         if (!await _isCurrentOriginTrusted()) return <String, bool>{'cleared': false};
-        await InAppWebViewController.clearAllCache();
+        await controller.platform.clearAllCache();
         final cleared = await _bridge.clearTransientCache();
         return <String, bool>{'cleared': cleared};
       },
@@ -348,8 +348,9 @@ final class _NavKurdPageState extends State<NavKurdPage>
       callback: (List<dynamic> arguments) async {
         if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
         final value = arguments.first;
-        if (value is! Map) return false;
-        final language = value['language']?.toString() ?? 'ku';
+        if (value is! Map<Object?, Object?>) return false;
+        final rawLanguage = value['language'];
+        final language = rawLanguage is String ? rawLanguage : 'ku';
         await _bridge.setLanguage(language);
         return true;
       },
@@ -437,23 +438,58 @@ final class _NavKurdPageState extends State<NavKurdPage>
     );
   }
 
+  Future<ShowFileChooserResponse> _handleFileChooser(
+    InAppWebViewController controller,
+    ShowFileChooserRequest request,
+  ) async {
+    if (!await _isCurrentOriginTrusted()) {
+      return ShowFileChooserResponse(handledByClient: true);
+    }
+    final acceptTypes = request.acceptTypes
+        .expand((value) => value.split(','))
+        .map((value) => value.trim().toLowerCase())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+    final imageOnly = acceptTypes.isEmpty ||
+        acceptTypes.every(
+          (value) => value == 'image/*' || value.startsWith('image/'),
+        );
+    if (!imageOnly) {
+      return ShowFileChooserResponse(handledByClient: false);
+    }
+    final path = await _bridge.pickImageFile();
+    return ShowFileChooserResponse(
+      handledByClient: true,
+      filePaths: path == null || path.isEmpty ? null : <String>[path],
+    );
+  }
+
   Future<Object?> _handleNativeShare(List<dynamic> arguments) async {
     if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
     final value = arguments.first;
     if (value is! Map) return false;
     final data = Map<String, dynamic>.from(value);
-    final title = data['title'] as String?;
-    final text = data['text'] as String?;
-    final url = data['url'] as String?;
+    final title = data['title']?.toString().trim() ?? '';
+    final text = data['text']?.toString().trim() ?? '';
+    final url = data['url']?.toString().trim() ?? '';
     final body = <String>[
-      if (text != null && text.trim().isNotEmpty) text.trim(),
-      if (url != null && url.trim().isNotEmpty) url.trim(),
+      if (text.isNotEmpty) text,
+      if (url.isNotEmpty) url,
     ].join('\n');
     if (body.isEmpty) return false;
-    await SharePlus.instance.share(
-      ShareParams(text: body, title: title, subject: title),
+    final shared = await _bridge.shareText(
+      title: title,
+      text: text,
+      url: url,
     );
-    return true;
+    if (!shared) {
+      await _bridge.recordDiagnostic(
+        level: 'warning',
+        source: 'native.share',
+        message: 'Android did not open a compatible share target.',
+      );
+    }
+    return shared;
   }
 
   Future<Object?> _handleOpenExternal(List<dynamic> arguments) async {
@@ -778,7 +814,10 @@ const String _documentStartBridgeScript = r'''
   try {
     Object.defineProperty(navigator, 'share', {
       configurable: true,
-      value: data => call('nativeShare', data || {})
+      value: async data => {
+        const handled = await call('nativeShare', data || {});
+        if (handled !== true) throw new DOMException('Share was not handled', 'AbortError');
+      }
     });
   } catch (_) { /* The browser implementation remains available. */ }
 

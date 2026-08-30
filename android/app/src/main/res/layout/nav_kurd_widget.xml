@@ -28,14 +28,26 @@
             android:orientation="horizontal">
             <ImageView
                 android:id="@+id/widget_weather_icon"
-                android:layout_width="72dp"
-                android:layout_height="64dp"
+                android:layout_width="64dp"
+                android:layout_height="58dp"
                 android:contentDescription="@string/widget_description"
                 android:scaleType="fitCenter" />
+            <TextView
+                android:id="@+id/widget_temperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:fontFamily="@font/nav_kurd_latin"
+                android:includeFontPadding="false"
+                android:text="—°"
+                android:textColor="#FFFFFFFF"
+                android:textDirection="ltr"
+                android:textSize="29sp"
+                android:textStyle="bold" />
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:gravity="end"
                 android:orientation="vertical">
@@ -44,18 +56,6 @@
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical|end"
                     android:orientation="horizontal">
-                    <TextClock
-                        android:id="@+id/widget_local_time"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/nav_kurd_arabic"
-                        android:format12Hour="h:mm a"
-                        android:format24Hour="HH:mm"
-                        android:includeFontPadding="false"
-                        android:maxLines="1"
-                        android:textColor="#FFF1D999"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
                     <TextView
                         android:id="@+id/widget_city"
                         android:layout_width="0dp"
@@ -69,7 +69,22 @@
                         android:maxLines="1"
                         android:text="@string/widget_location_unknown"
                         android:textColor="#FFFFFFFF"
+                        android:textDirection="rtl"
                         android:textSize="15sp"
+                        android:textStyle="bold" />
+                    <TextClock
+                        android:id="@+id/widget_local_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="@font/nav_kurd_latin"
+                        android:format12Hour="h:mm a"
+                        android:format24Hour="HH:mm"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:textColor="#FFF1D999"
+                        android:textDirection="ltr"
+                        android:textSize="10sp"
                         android:textStyle="bold" />
                 </LinearLayout>
                 <TextView
@@ -84,6 +99,7 @@
                     android:maxLines="1"
                     android:text="@string/weather_unavailable"
                     android:textColor="#FFDDF8FF"
+                    android:textDirection="rtl"
                     android:textSize="11sp"
                     android:textStyle="bold" />
                 <LinearLayout
@@ -121,17 +137,6 @@
                         android:textSize="9sp" />
                 </LinearLayout>
             </LinearLayout>
-            <TextView
-                android:id="@+id/widget_temperature"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="9dp"
-                android:fontFamily="@font/nav_kurd_latin"
-                android:includeFontPadding="false"
-                android:text="—°"
-                android:textColor="#FFFFFFFF"
-                android:textSize="31sp"
-                android:textStyle="bold" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
@@ -141,11 +146,11 @@
             android:layoutDirection="rtl"
             android:orientation="horizontal">
             <ImageView android:layout_width="16dp" android:layout_height="16dp" android:contentDescription="@string/widget_description" android:src="@drawable/ic_widget_humidity" />
-            <TextView android:id="@+id/widget_humidity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:fontFamily="@font/nav_kurd_latin" android:includeFontPadding="false" android:text="—%" android:textColor="#FFFFFFFF" android:textSize="9sp" android:textStyle="bold" />
+            <TextView android:id="@+id/widget_humidity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:fontFamily="@font/nav_kurd_latin" android:includeFontPadding="false" android:text="—%" android:textColor="#FFFFFFFF" android:textDirection="ltr" android:textSize="9sp" android:textStyle="bold" />
             <ImageView android:layout_width="16dp" android:layout_height="16dp" android:layout_marginStart="12dp" android:contentDescription="@string/widget_description" android:src="@drawable/ic_widget_wind" />
-            <TextView android:id="@+id/widget_wind" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:fontFamily="@font/nav_kurd_latin" android:includeFontPadding="false" android:text="— km/h" android:textColor="#FFFFFFFF" android:textSize="9sp" android:textStyle="bold" />
+            <TextView android:id="@+id/widget_wind" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:fontFamily="@font/nav_kurd_latin" android:includeFontPadding="false" android:text="— km/h" android:textColor="#FFFFFFFF" android:textDirection="ltr" android:textSize="9sp" android:textStyle="bold" />
             <ImageView android:id="@+id/widget_dust_icon" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginStart="12dp" android:contentDescription="@string/widget_description" android:src="@drawable/ic_widget_dust" />
-            <TextView android:id="@+id/widget_dust" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:layout_weight="1" android:ellipsize="end" android:fontFamily="@font/nav_kurd_latin" android:includeFontPadding="false" android:maxLines="1" android:textColor="#FFFFFFFF" android:textSize="9sp" android:textStyle="bold" />
+            <TextView android:id="@+id/widget_dust" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:layout_weight="1" android:ellipsize="end" android:fontFamily="@font/nav_kurd_latin" android:includeFontPadding="false" android:maxLines="1" android:textColor="#FFFFFFFF" android:textDirection="ltr" android:textSize="9sp" android:textStyle="bold" />
             <ImageView android:id="@+id/widget_refresh" android:layout_width="35dp" android:layout_height="31dp" android:background="@drawable/widget_button_secondary" android:contentDescription="@string/widget_refresh" android:padding="8dp" android:src="@drawable/ic_widget_refresh" />
             <ImageView android:id="@+id/widget_locate" android:layout_width="35dp" android:layout_height="31dp" android:layout_marginStart="6dp" android:background="@drawable/widget_button" android:contentDescription="@string/widget_locate" android:padding="8dp" android:src="@drawable/ic_widget_locate" />
         </LinearLayout>
@@ -156,8 +161,8 @@
             android:gravity="center_vertical"
             android:layoutDirection="rtl"
             android:orientation="horizontal">
-            <TextView android:id="@+id/widget_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/widget_status_chip" android:fontFamily="@font/nav_kurd_latin" android:includeFontPadding="false" android:maxLines="1" android:text="NAV KURD" android:textColor="#FFCCF7FF" android:textSize="8sp" android:textStyle="bold" />
-            <TextView android:id="@+id/widget_detail" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:ellipsize="end" android:fontFamily="@font/nav_kurd_arabic" android:gravity="end" android:includeFontPadding="false" android:maxLines="1" android:text="@string/widget_map_ready" android:textColor="#FFC8CFDE" android:textSize="8sp" />
+            <TextView android:id="@+id/widget_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/widget_status_chip" android:fontFamily="@font/nav_kurd_arabic" android:includeFontPadding="false" android:maxLines="1" android:text="NAV KURD" android:textColor="#FFCCF7FF" android:textDirection="rtl" android:textSize="8sp" android:textStyle="bold" />
+            <TextView android:id="@+id/widget_detail" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:ellipsize="end" android:fontFamily="@font/nav_kurd_arabic" android:gravity="end" android:includeFontPadding="false" android:maxLines="1" android:text="@string/widget_map_ready" android:textColor="#FFC8CFDE" android:textDirection="rtl" android:textSize="8sp" />
             <TextView android:id="@+id/widget_updated" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:fontFamily="@font/nav_kurd_latin" android:includeFontPadding="false" android:maxLines="1" android:text="Open-Meteo" android:textColor="#FFA9B3C8" android:textSize="7sp" />
         </LinearLayout>
     </LinearLayout>

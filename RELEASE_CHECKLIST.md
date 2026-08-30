@@ -11,6 +11,10 @@
 - [ ] SHA-256 checksums are retained with the release.
 - [ ] GPS prompt, current-location button and route refresh work.
 - [ ] Supabase login and contribution photo picker work.
+- [ ] Selecting a contribution photo opens the Android system image picker and
+  returns the chosen image to the trusted WebView.
+- [ ] Every location Share action opens the Android system share chooser.
+- [ ] Selecting a search result does not jump back to the active GPS position.
 - [ ] Offline PMTiles pack pauses, resumes, verifies and opens offline.
 - [ ] DownloadManager saves into `Downloads/NAV KURD`.
 - [ ] Offline-ready notification appears after permission is granted.
@@ -31,3 +35,5 @@
 - [ ] `navkurd://locate?action=locate` opens the installed app.
 - [ ] Signing key and password backup is stored privately.
 - [ ] Universal APK certificate equals `ANDROID_APP_LINK_SHA256.txt`.
+- [ ] Web quality, real Chromium smoke and Vercel production deployment are
+  green with the exact certificate-verified direct APK.
