@@ -9,8 +9,8 @@ fail() {
   exit 1
 }
 
-test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "9.0.0+90000" \
-  || fail "pubspec version is not 9.0.0+90000"
+test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "9.0.0+90001" \
+  || fail "pubspec version is not 9.0.0+90001"
 grep -F "defaultValue: '9.0.0'" lib/src/app_config.dart >/dev/null \
   || fail "Dart app version is not 9.0.0"
 grep -F 'compileSdk = 36' android/app/build.gradle.kts >/dev/null \
@@ -35,8 +35,9 @@ grep -F '"pickImage" -> launchImagePicker(result)' \
 grep -F '"shareText" -> result.success(shareText(call))' \
   android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt >/dev/null \
   || fail "native Android share bridge is missing"
-grep -F 'onShowFileChooser: _handleFileChooser' lib/src/nav_kurd_page.dart >/dev/null \
-  || fail "WebView image chooser integration is missing"
+if grep -F 'onShowFileChooser: _handleFileChooser' lib/src/nav_kurd_page.dart >/dev/null; then
+  fail "custom beta WebView file chooser callback can still trigger a null-check crash"
+fi
 grep -F "handlerName: 'nativeShare'" lib/src/nav_kurd_page.dart >/dev/null \
   || fail "WebView native share integration is missing"
 grep -F 'InAppWebViewController.clearAllCache()' lib/src/nav_kurd_page.dart >/dev/null \
@@ -86,6 +87,18 @@ grep -F '@font/uniqaidar_money_heist_002' android/app/src/main/res/layout/nav_ku
   || fail "Kurdish/Arabic widget does not use UniQAIDAR Money Heist 002"
 grep -F '@font/red_hat_display_variable' android/app/src/main/res/layout/nav_kurd_widget_en.xml >/dev/null \
   || fail "English widget does not use Red Hat Display Variable"
+grep -F 'R.layout.nav_kurd_widget_v9_font' \
+  android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt >/dev/null \
+  || fail "Kurdish/Arabic widget does not force a launcher font-layout refresh"
+grep -F 'R.layout.nav_kurd_widget_en_v9_font' \
+  android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt >/dev/null \
+  || fail "English widget does not force a launcher font-layout refresh"
+grep -F '@layout/nav_kurd_widget' \
+  android/app/src/main/res/layout/nav_kurd_widget_v9_font.xml >/dev/null \
+  || fail "Kurdish/Arabic font-refresh widget layout is missing"
+grep -F '@layout/nav_kurd_widget_en' \
+  android/app/src/main/res/layout/nav_kurd_widget_en_v9_font.xml >/dev/null \
+  || fail "English font-refresh widget layout is missing"
 test -s android/app/src/main/res/font/uniqaidar_money_heist_002.ttf \
   || fail "Kurdish/Arabic widget font asset is missing"
 test -s android/app/src/main/res/font/red_hat_display_variable.ttf \
@@ -101,6 +114,12 @@ for widget_layout in \
   test "$(grep -c '@+id/widget_weather_icon' "$widget_layout")" = "1" \
     || fail "$widget_layout must contain exactly one primary weather symbol"
 done
+test "$(grep -Ec '<Text(View|Clock)' android/app/src/main/res/layout/nav_kurd_widget.xml)" = \
+  "$(grep -Fc '@font/uniqaidar_money_heist_002' android/app/src/main/res/layout/nav_kurd_widget.xml)" \
+  || fail "every Kurdish/Arabic widget text element must use UniQAIDAR Money Heist 002"
+test "$(grep -Ec '<Text(View|Clock)' android/app/src/main/res/layout/nav_kurd_widget_en.xml)" = \
+  "$(grep -Fc '@font/red_hat_display_variable' android/app/src/main/res/layout/nav_kurd_widget_en.xml)" \
+  || fail "every English widget text element must use Red Hat Display Variable"
 grep -F 'androidx.core.content.FileProvider' android/app/src/main/AndroidManifest.xml >/dev/null \
   || fail "secure native image-picker provider is missing"
 grep -F 'FileProvider.getUriForFile' android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt >/dev/null \
