@@ -18,8 +18,8 @@ object NavKurdNotifications {
     const val CHANNEL_APP_UPDATES = "nav_kurd_app_updates"
     const val CHANNEL_GENERAL = "nav_kurd_general"
 
-    private const val NOTIFICATION_DAILY = 800041
-    private const val NOTIFICATION_UPDATE = 800042
+    private const val NOTIFICATION_DAILY = 900001
+    private const val NOTIFICATION_UPDATE = 900002
 
     fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

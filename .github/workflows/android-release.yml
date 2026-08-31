@@ -30,8 +30,8 @@ jobs:
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      NAV_KURD_VERSION: 8.0.4
-      NAV_KURD_VERSION_CODE: 80004
+      NAV_KURD_VERSION: 9.0.0
+      NAV_KURD_VERSION_CODE: 90000
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -150,7 +150,7 @@ jobs:
       - name: Upload signed Android release
         uses: actions/upload-artifact@v4
         with:
-          name: NAV-KURD-8.0.4-signed-release
+          name: NAV-KURD-9.0.0-signed-release
           if-no-files-found: error
           retention-days: 30
           compression-level: 0

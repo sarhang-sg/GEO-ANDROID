@@ -23,7 +23,6 @@ object NavKurdWidgetArtwork {
     private const val SCENE_WIDTH = 480
     private const val SCENE_HEIGHT = 220
     private const val ICON_SIZE = 128
-    private const val SEASON_SIZE = 52
 
     fun scene(
         kind: String,
@@ -48,10 +47,9 @@ object NavKurdWidgetArtwork {
         canvas.drawRoundRect(RectF(0f, 0f, SCENE_WIDTH.toFloat(), SCENE_HEIGHT.toFloat()), 34f, 34f, paint)
         paint.shader = null
 
-        drawCelestialGlow(canvas, kind, isDay, phase)
         if (!isDay || phase == "evening" || phase == "dawn") drawStars(canvas, frame)
         drawHorizon(canvas, season, isDay)
-        drawAtmosphere(canvas, kind, isDay, frame)
+        drawAmbientAtmosphere(canvas, kind, frame)
 
         paint.color = Color.argb(62, 255, 255, 255)
         paint.style = Paint.Style.STROKE
@@ -119,19 +117,6 @@ object NavKurdWidgetArtwork {
         return bitmap
     }
 
-    fun seasonIcon(season: String): Bitmap {
-        val bitmap = Bitmap.createBitmap(SEASON_SIZE, SEASON_SIZE, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        when (season) {
-            "spring" -> drawLeaf(canvas, Color.rgb(88, 232, 148), true, paint)
-            "summer" -> drawSun(canvas, 26f, 26f, 11f, paint, compact = true)
-            "autumn" -> drawLeaf(canvas, Color.rgb(245, 166, 72), false, paint)
-            else -> drawSnowflake(canvas, 26f, 26f, 14f, paint)
-        }
-        return bitmap
-    }
-
     private fun palette(kind: String, isDay: Boolean, phase: String, season: String): Pair<Int, Int> {
         if (kind in setOf("THUNDERSTORM", "HAIL", "TORNADO")) {
             return Color.rgb(20, 28, 58) to Color.rgb(48, 22, 69)
@@ -154,26 +139,8 @@ object NavKurdWidgetArtwork {
         }
     }
 
-    private fun drawCelestialGlow(canvas: Canvas, kind: String, isDay: Boolean, phase: String) {
-        if (kind in setOf("THUNDERSTORM", "TORNADO")) return
-        val x = if (phase == "evening") 410f else 74f
-        val y = if (phase == "evening" || phase == "dawn") 88f else 55f
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.shader = RadialGradient(
-            x,
-            y,
-            88f,
-            if (isDay) Color.argb(115, 255, 221, 118) else Color.argb(90, 170, 201, 255),
-            Color.TRANSPARENT,
-            Shader.TileMode.CLAMP,
-        )
-        canvas.drawCircle(x, y, 88f, paint)
-        paint.shader = null
-        if (isDay) drawSun(canvas, x, y, 20f, paint) else drawMoon(canvas, x, y, 23f, paint)
-    }
-
     private fun drawStars(canvas: Canvas, frame: Long) {
-        val random = Random(804L)
+        val random = Random(900L)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         repeat(24) { index ->
             val x = random.nextFloat() * SCENE_WIDTH
@@ -204,47 +171,41 @@ object NavKurdWidgetArtwork {
         canvas.drawPath(path, paint)
     }
 
-    private fun drawAtmosphere(canvas: Canvas, kind: String, isDay: Boolean, frame: Long) {
+    /**
+     * Background-only atmosphere. The foreground weather icon owns the single
+     * sun/moon/cloud illustration so launchers never render duplicate weather.
+     */
+    private fun drawAmbientAtmosphere(canvas: Canvas, kind: String, frame: Long) {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         when (kind) {
-            "PARTLY_CLOUDY" -> drawCloud(canvas, 350f, 55f, false, paint, 0.8f)
-            "CLOUDY" -> {
-                drawCloud(canvas, 345f, 57f, true, paint, 1f)
-                drawCloud(canvas, 225f, 77f, false, paint, 0.75f)
-            }
             "FOG" -> repeat(4) { index ->
-                paint.color = Color.argb(50 + index * 11, 225, 240, 248)
+                paint.color = Color.argb(34 + index * 9, 225, 240, 248)
                 paint.strokeWidth = 2.5f
                 canvas.drawLine(100f + index * 28f, 105f + index * 18f, 470f, 105f + index * 18f, paint)
             }
             "DRIZZLE", "RAIN", "SHOWERS", "FREEZING_RAIN", "DUST_RAIN" -> drawSceneRain(canvas, frame, kind == "DRIZZLE", paint)
             "SNOW", "COLD" -> drawSceneSnow(canvas, frame, paint)
             "THUNDERSTORM", "HAIL" -> {
-                drawCloud(canvas, 350f, 52f, true, paint, 1.1f)
                 drawSceneRain(canvas, frame, false, paint)
                 paint.color = Color.argb(if (frame % 4L == 0L) 95 else 24, 219, 232, 255)
                 canvas.drawRect(0f, 0f, SCENE_WIDTH.toFloat(), SCENE_HEIGHT.toFloat(), paint)
             }
             "DUST", "DUST_RAIN", "STRONG_WIND" -> drawSceneDust(canvas, frame, paint)
-            "TORNADO" -> {
-                drawCloud(canvas, 345f, 49f, true, paint, 1.15f)
-                drawTornadoAt(canvas, 366f, 81f, 0.7f, paint)
-            }
+            "TORNADO" -> drawSceneDust(canvas, frame, paint)
             "HOT" -> drawHeatScene(canvas, frame, paint)
-            else -> if (!isDay) drawCloud(canvas, 360f, 68f, false, paint, 0.65f)
         }
     }
 
-    private fun drawSun(canvas: Canvas, cx: Float, cy: Float, radius: Float, paint: Paint, compact: Boolean = false) {
+    private fun drawSun(canvas: Canvas, cx: Float, cy: Float, radius: Float, paint: Paint) {
         paint.style = Paint.Style.STROKE
         paint.strokeCap = Paint.Cap.ROUND
-        paint.strokeWidth = if (compact) 2.7f else 4f
+        paint.strokeWidth = 4f
         paint.color = Color.rgb(255, 219, 92)
         val rays = 12
         repeat(rays) { index ->
             val angle = Math.PI * 2 * index / rays
             val inner = radius + 6f
-            val outer = radius + if (compact) 11f else 14f
+            val outer = radius + 14f
             canvas.drawLine(
                 cx + (kotlin.math.cos(angle) * inner).toFloat(),
                 cy + (kotlin.math.sin(angle) * inner).toFloat(),
@@ -293,7 +254,7 @@ object NavKurdWidgetArtwork {
     }
 
     private fun drawSceneRain(canvas: Canvas, frame: Long, light: Boolean, paint: Paint) {
-        val random = Random(804L + frame)
+        val random = Random(900L + frame)
         paint.color = Color.argb(if (light) 105 else 165, 102, 213, 255)
         paint.strokeWidth = if (light) 1.5f else 2.2f
         repeat(if (light) 30 else 58) {
@@ -440,26 +401,6 @@ object NavKurdWidgetArtwork {
             val x = index * 38f + (frame % 4L) * 3f
             canvas.drawPath(Path().apply { moveTo(x, 204f); cubicTo(x - 9f, 185f, x + 10f, 167f, x, 147f) }, paint)
         }
-        paint.style = Paint.Style.FILL
-    }
-
-    private fun drawLeaf(canvas: Canvas, color: Int, fresh: Boolean, paint: Paint) {
-        val path = Path().apply {
-            moveTo(9f, 37f)
-            cubicTo(10f, 14f, 28f, 4f, 44f, 8f)
-            cubicTo(45f, 28f, 31f, 45f, 9f, 37f)
-            close()
-        }
-        paint.color = color
-        paint.style = Paint.Style.FILL
-        canvas.drawPath(path, paint)
-        paint.color = if (fresh) Color.rgb(217, 255, 225) else Color.rgb(255, 223, 159)
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 2.4f
-        paint.strokeCap = Paint.Cap.ROUND
-        canvas.drawLine(10f, 38f, 38f, 13f, paint)
-        canvas.drawLine(24f, 26f, 22f, 16f, paint)
-        canvas.drawLine(25f, 25f, 36f, 26f, paint)
         paint.style = Paint.Style.FILL
     }
 

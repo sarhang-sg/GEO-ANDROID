@@ -10,7 +10,7 @@ final class NavKurdApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const background = Color(0xFF090D19);
+    const background = Color(0xFF061225);
     return MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
@@ -20,6 +20,7 @@ final class NavKurdApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const <Locale>[
+        Locale('ku'),
         Locale('en'),
         Locale('ar'),
       ],
@@ -29,12 +30,12 @@ final class NavKurdApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: background,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8D35AA),
+          seedColor: const Color(0xFF2F8CFF),
           brightness: Brightness.dark,
           surface: background,
         ),
         snackBarTheme: const SnackBarThemeData(
-          backgroundColor: Color(0xFF17162B),
+          backgroundColor: Color(0xFF0B2342),
           contentTextStyle: TextStyle(color: Colors.white),
           behavior: SnackBarBehavior.floating,
         ),

@@ -99,8 +99,8 @@ stage_source() {
     .metadata \
     ANDROID_APP_LINK_SHA256.txt \
     BUILD_STATUS.md \
-    HANDOFF_ANDROID_8.0.4.md \
-    GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh \
+    HANDOFF_ANDROID_9.0.0.md \
+    NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh \
     LICENSE \
     README.md \
     RELEASE_CHECKLIST.md \
@@ -220,7 +220,7 @@ build_release() {
   mkdir -p "$project_root/release"
   gh run download "$run_id" \
     --repo "$repo" \
-    --name NAV-KURD-8.0.4-signed-release \
+    --name NAV-KURD-9.0.0-signed-release \
     --dir "$project_root/release"
   echo "Signed APK/AAB files downloaded to: $project_root/release"
 }
