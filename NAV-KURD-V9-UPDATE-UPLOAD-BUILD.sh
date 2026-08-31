@@ -423,7 +423,7 @@ git -C "$web_repo_dir" switch main
 retry git -C "$web_repo_dir" -c http.version=HTTP/1.1 pull --ff-only origin main
 node -e 'const p=require(process.argv[1]); if(p.version!=="9.0.0") process.exit(1)' \
   "$web_repo_dir/package.json" || die "Remote Web source is not NAV KURD 9.0.0."
-grep -F '1 + 1 = 2' "$web_repo_dir/src/lib/app-shell.ts" >/dev/null ||
+grep -F '2 + 2 = 1' "$web_repo_dir/src/lib/app-shell.ts" >/dev/null ||
   die "Run the final Web fixes first; the loader equation is not current."
 grep -F 'ATLAS_TEXT_LIMITS.name, "kurdish"' \
   "$web_repo_dir/src/lib/user-contribution-studio.ts" >/dev/null ||

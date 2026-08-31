@@ -82,10 +82,14 @@ grep -F 'NavKurdWidgetArtwork.scene' \
 grep -F 'R.id.widget_dust_group' \
   android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt >/dev/null \
   || fail "widget metric-group visibility is not synchronized"
-grep -F '@font/nav_kurd_arabic' android/app/src/main/res/layout/nav_kurd_widget.xml >/dev/null \
-  || fail "Kurdish/Arabic widget font does not match the app"
-grep -F '@font/nav_kurd_latin' android/app/src/main/res/layout/nav_kurd_widget_en.xml >/dev/null \
-  || fail "English widget font does not match the app"
+grep -F '@font/uniqaidar_money_heist_002' android/app/src/main/res/layout/nav_kurd_widget.xml >/dev/null \
+  || fail "Kurdish/Arabic widget does not use UniQAIDAR Money Heist 002"
+grep -F '@font/red_hat_display_variable' android/app/src/main/res/layout/nav_kurd_widget_en.xml >/dev/null \
+  || fail "English widget does not use Red Hat Display Variable"
+test -s android/app/src/main/res/font/uniqaidar_money_heist_002.ttf \
+  || fail "Kurdish/Arabic widget font asset is missing"
+test -s android/app/src/main/res/font/red_hat_display_variable.ttf \
+  || fail "English widget font asset is missing"
 if grep -R -E 'widget_season_icon|seasonIcon\(' \
     android/app/src/main/res/layout \
     android/app/src/main/kotlin/com/navkurd/app >/dev/null; then

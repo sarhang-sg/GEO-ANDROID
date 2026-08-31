@@ -5,7 +5,7 @@ fb7afbc14980e0bffd09c7eb7a4c6c2e5e745beb2796ab3d7d48f3c7a634d705  ./.gitignore
 f23c7e4d9971be982c790500036faff808c4022224d70304df58a7c4d28b0fea  ./BUILD_STATUS.md
 07533c3ce9cab7f8c80465b9e5cfdae1a5ce73bee68fc0be124a0dabcc178b85  ./HANDOFF_ANDROID_9.0.0.md
 a96ea0e7adbaa74254cf7f6fb0d681477ea4ecdffaf822dc24a00b540466f577  ./LICENSE
-1001cbc0c50f55d45e455d7592ac3c162763ba436140a1879363bba0a0b234dd  ./NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh
+4612417de68db448ef2c206ba7e343a4ecf18d48c971bef88a2bac8286dfad46  ./NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh
 8415bc60042c46a8a7c6fccc1139e37afaadf93d218948c364cda0e729301c30  ./README.md
 f0659bb539a38b39a8857be7987029127b09fc85f0e86271aee17b96e7c5ec3a  ./RELEASE_CHECKLIST.md
 a827e93b00fbfcc8ad648465aaa07ecba67c700077bddee23531c380d4353fff  ./SECURITY.md
@@ -43,8 +43,10 @@ c0f3f7b6ecd89222faf44f682cf420dfd2b44408ab2f8cb424f6de5aee7c67fd  ./android/app/
 bc9381fb354ddabf35ccad2663ffbff42611b8bb8704253ba589fc731aa8833f  ./android/app/src/main/res/drawable/widget_status_chip.xml
 8eb44ac578038db018c17f06807a5049fadbe9e4ad1abde21c4840b7232c9766  ./android/app/src/main/res/font/nav_kurd_arabic.ttf
 8db80a6a80aac9c2b2a0bb388c5ac0165e20c8a45ecfc06317674e0e929e2811  ./android/app/src/main/res/font/nav_kurd_latin.ttf
-44ba175d36b981e85e9c8a4c68a5677b5e828266257f1d35c2679db007249396  ./android/app/src/main/res/layout/nav_kurd_widget.xml
-d6a54a17312f5ede0418368612de6cfd54525438ea72106b097f3d14964f50a1  ./android/app/src/main/res/layout/nav_kurd_widget_en.xml
+07b86671ae93e954df309934668bffd479efc64c07998c117a765b011eebd3b8  ./android/app/src/main/res/font/red_hat_display_variable.ttf
+8eb44ac578038db018c17f06807a5049fadbe9e4ad1abde21c4840b7232c9766  ./android/app/src/main/res/font/uniqaidar_money_heist_002.ttf
+9c863ebf1235ec5ad2d02b0b6fea092be95e843d4de34a71c52fd935cacee88e  ./android/app/src/main/res/layout/nav_kurd_widget.xml
+146214e8688cb0d5a79084406be2fbf3cabb1b21353df0844aa59d92cfa2000e  ./android/app/src/main/res/layout/nav_kurd_widget_en.xml
 d03d20b2e161527e98cc63433fceead6b4f748e3c4952c2af9bcfcf555fbf7c3  ./android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 d03d20b2e161527e98cc63433fceead6b4f748e3c4952c2af9bcfcf555fbf7c3  ./android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 c9d1fd2a6eb0e459c79acbcba324d9f351f31dc261a7922e421437c965ebcd08  ./android/app/src/main/res/mipmap-hdpi/ic_launcher.png
@@ -104,5 +106,5 @@ b3c765497cadebf9e17ba60e45efb1c860e991f4d5c2a49fa1586e91a2b822c3  ./test/downloa
 f5f2f77445af219a02e84533c01c6f8970eba997127a22372bb3b4ee60158a7d  ./test/url_policy_test.dart
 a982684c29b8749ad5703e5f82dcef15a32e065f3a85209bdcb96c6cfb7a6c81  ./tools/generate-signing.sh
 3b8e835ae36e4976eff36bfebfac2087c98985ffdebe2e388d6b87ca136ed83b  ./tools/package-source.py
-569121aa3c844b2cbba406067ab35fb3aa2fb42fcb4c778944d3ac4e3d3a308e  ./tools/validate-source.sh
+e388f774507a5af9447c935db63d03f5d7bb4acbce69049358addba87342e2f1  ./tools/validate-source.sh
 cc3efd003f73fd985a6f99d6b08b144c320ba1e15f3712864e570f2e325c44fd  ./tools/verify-release-signature.sh
