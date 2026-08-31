@@ -7,7 +7,7 @@ Prepared on 2026-08-30.
 - Audited the supplied NAV KURD web source and confirmed no embedded
   service-role, private-key or provider-secret values were present.
 - Updated the Flutter/Dart Android shell and Kotlin platform bridge to
-  `9.0.0+90000`.
+  `9.0.0+90001`.
 - Removed both duplicate Android/Flutter launch logos so the deployed animated
   map loader is the only loading screen.
 - Added native API-36 immersive mode, scoped offline storage, GPS resume events,

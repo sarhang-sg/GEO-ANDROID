@@ -292,7 +292,6 @@ final class _NavKurdPageState extends State<NavKurdPage>
               },
               onPermissionRequest: (controller, request) =>
                   _permissions.handleWebPermission(request),
-              onShowFileChooser: _handleFileChooser,
               onDownloadStarting: (controller, request) async {
                 await _handleDownload(controller, request);
                 return DownloadStartResponse(handled: true);
@@ -468,32 +467,6 @@ final class _NavKurdPageState extends State<NavKurdPage>
           : '$fileName is downloading.',
       actionLabel: id == null ? null : 'Downloads',
       onAction: id == null ? null : _bridge.openDownloads,
-    );
-  }
-
-  Future<ShowFileChooserResponse> _handleFileChooser(
-    InAppWebViewController controller,
-    ShowFileChooserRequest request,
-  ) async {
-    if (!await _isCurrentOriginTrusted()) {
-      return ShowFileChooserResponse(handledByClient: true);
-    }
-    final acceptTypes = request.acceptTypes
-        .expand((value) => value.split(','))
-        .map((value) => value.trim().toLowerCase())
-        .where((value) => value.isNotEmpty)
-        .toList(growable: false);
-    final imageOnly = acceptTypes.isEmpty ||
-        acceptTypes.every(
-          (value) => value == 'image/*' || value.startsWith('image/'),
-        );
-    if (!imageOnly) {
-      return ShowFileChooserResponse(handledByClient: false);
-    }
-    final path = await _bridge.pickImageFile();
-    return ShowFileChooserResponse(
-      handledByClient: true,
-      filePaths: path == null || path.isEmpty ? null : <String>[path],
     );
   }
 
