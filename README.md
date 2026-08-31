@@ -1,5 +1,15 @@
 # GEO ANDROID — NAV KURD
 
+<p align="center">
+  <img src="docs/images/nav-kurd-v9-cover.jpg" alt="NAV KURD 9 Android cover" width="1080" />
+</p>
+
+<p align="center">
+  <img src="docs/images/nav-kurd-v9-screen-1.jpg" alt="NAV KURD APK release preview" width="31%" />
+  <img src="docs/images/nav-kurd-v9-screen-2.jpg" alt="NAV KURD map preview" width="31%" />
+  <img src="docs/images/nav-kurd-v9-screen-3.jpg" alt="NAV KURD download preview" width="31%" />
+</p>
+
 Android 7.0+ Flutter application for the current production NAV KURD map at
 `https://geo-map-kappa.vercel.app`. This is the canonical trusted origin shared
 by the Web deployment, Android App Links and native release checks.
@@ -60,7 +70,7 @@ delivery still requires the owner's Firebase project and a real
 | --- | --- |
 | App name | NAV KURD |
 | Android application ID | `com.navkurd.app` |
-| Version | `8.0.4+80004` |
+| Version | `9.0.0+90000` |
 | Minimum Android | 7.0 / API 24 |
 | Target Android | API 36 |
 | Default origin | `https://geo-map-kappa.vercel.app` |
@@ -68,25 +78,29 @@ delivery still requires the owner's Firebase project and a real
 
 ## Termux: private upload and signed build
 
-Keep `NAV-KURD-v8.0.4-ANDROID.zip`, its `.sha256` sidecar and
-`NAV-KURD-v8.0.4-ANDROID-TERMUX.sh` with its `.sha256` sidecar in Android
+The final Web 9.0.0 release must already be reviewed, tested and deployed. The
+Android publisher verifies that production checkpoint and never replaces Web
+UI/runtime source. Keep
+`NAV-KURD-v9.0.0-ANDROID.zip`, its `.sha256` sidecar and
+`NAV-KURD-v9.0.0-ANDROID-TERMUX.sh` with its `.sha256` sidecar in Android
 `Download`. After authenticating GitHub CLI as `sarhang-sg`, run:
 
 ```bash
 termux-setup-storage
 cd /storage/emulated/0/Download
-sha256sum -c NAV-KURD-v8.0.4-ANDROID.zip.sha256
-sha256sum -c NAV-KURD-v8.0.4-ANDROID-TERMUX.sh.sha256
-chmod +x NAV-KURD-v8.0.4-ANDROID-TERMUX.sh
-bash NAV-KURD-v8.0.4-ANDROID-TERMUX.sh
+sha256sum -c NAV-KURD-v9.0.0-ANDROID.zip.sha256
+sha256sum -c NAV-KURD-v9.0.0-ANDROID-TERMUX.sh.sha256
+chmod +x NAV-KURD-v9.0.0-ANDROID-TERMUX.sh
+bash NAV-KURD-v9.0.0-ANDROID-TERMUX.sh
 ```
 
 The publisher verifies both manifests, refuses a public destination repository,
 preserves existing local edits, fingerprint-gates the established JKS,
 dispatches Actions, verifies release hashes and independently compares the APK
 certificate with the established NAV KURD identity. It then opens a separate
-Web review branch, publishes that same verified APK as the direct download,
-waits for the full quality/Chromium workflow, and merges only on success. The lower-level
+Web review branch containing only that certificate-verified APK and regenerated
+download metadata, waits for the full quality/Chromium workflow, and merges only
+on success. The lower-level
 `TERMUX.sh` remains for diagnostics; it must never generate a replacement key
 for the already-installed app.
 

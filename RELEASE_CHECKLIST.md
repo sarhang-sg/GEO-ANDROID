@@ -1,7 +1,7 @@
 # Android release checklist
 
 - [x] `bash TERMUX.sh check` passes.
-- [x] `bash tools/validate-source.sh` reports NAV KURD 8.0.4 source checks passed.
+- [x] `bash tools/validate-source.sh` reports NAV KURD 9.0.0 source checks passed.
 - [ ] The repository visibility is PRIVATE.
 - [ ] GitHub Actions signing secrets are configured.
 - [ ] `flutter analyze --fatal-infos` and `flutter test` pass in Actions.
@@ -16,11 +16,13 @@
 - [ ] Every location Share action opens the Android system share chooser.
 - [ ] Selecting a search result does not jump back to the active GPS position.
 - [ ] Offline PMTiles pack pauses, resumes, verifies and opens offline.
+- [ ] Satellite layer renders real tiles (not a black surface) on a physical
+  Android device with dark mode both enabled and disabled.
 - [ ] DownloadManager saves into `Downloads/NAV KURD`.
 - [ ] Offline-ready notification appears after permission is granted.
 - [ ] Daily weather notification uses the selected language and real cached data.
 - [ ] Update notification appears for an older build, only once per release, and
-  does not appear on 8.0.4.
+  does not appear on 9.0.0.
 - [ ] Home-screen widget opens the Locate action.
 - [ ] Widget shows cached city, location time, correct day/night icon, season,
   real weather and offline-map state.
@@ -36,4 +38,5 @@
 - [ ] Signing key and password backup is stored privately.
 - [ ] Universal APK certificate equals `ANDROID_APP_LINK_SHA256.txt`.
 - [ ] Web quality, real Chromium smoke and Vercel production deployment are
-  green with the exact certificate-verified direct APK.
+  green with the exact certificate-verified direct APK and no Web UI/runtime
+  replacement.

@@ -20,13 +20,13 @@ object NavKurdNotificationScheduler {
             AlarmManager.RTC_WAKEUP,
             nextDailyWeatherTime(),
             DAY_MILLIS,
-            pending(context, ACTION_DAILY_WEATHER, 800043),
+            pending(context, ACTION_DAILY_WEATHER, 900003),
         )
         manager.setInexactRepeating(
             AlarmManager.RTC_WAKEUP,
             System.currentTimeMillis() + 15L * 60L * 1000L,
             UPDATE_INTERVAL_MILLIS,
-            pending(context, ACTION_UPDATE_CHECK, 800044),
+            pending(context, ACTION_UPDATE_CHECK, 900004),
         )
     }
 
@@ -35,7 +35,7 @@ object NavKurdNotificationScheduler {
         manager.set(
             AlarmManager.RTC_WAKEUP,
             System.currentTimeMillis() + 20_000L,
-            pending(context, ACTION_UPDATE_CHECK, 800045),
+            pending(context, ACTION_UPDATE_CHECK, 900005),
         )
     }
 
