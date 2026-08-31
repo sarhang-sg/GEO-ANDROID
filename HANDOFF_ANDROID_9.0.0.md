@@ -6,7 +6,7 @@ Use this file when continuing the Android work in a new chat.
 
 - Flutter project: this repository root
 - Package: `com.navkurd.app`
-- Version: `9.0.0+90000`
+- Version: `9.0.0+90001`
 - Canonical trusted origin: `https://geo-map-kappa.vercel.app`
 - Canonical private repository: `sarhang-sg/GEO-ANDROID`
 - CI workflow: `.github/workflows/android-release.yml`
@@ -85,7 +85,7 @@ art runs continuously inside the app/web surface.
 ## Completed
 
 - Android identity, API levels and version are fixed at `com.navkurd.app`,
-  API 24–36 and `9.0.0+90000`.
+  API 24–36 and `9.0.0+90001`.
 - Flutter lifecycle/WebView shell, trusted native bridge, GPS resume recovery,
   scoped downloads, offline persistence, permissions and renderer recovery are
   implemented.
@@ -153,7 +153,7 @@ art runs continuously inside the app/web surface.
 ## Current release checkpoint — 2026-08-29
 
 - `bash tools/validate-source.sh`: PASS.
-- Version/application ID gate: PASS (`9.0.0+90000`, `com.navkurd.app`).
+- Version/application ID gate: PASS (`9.0.0+90001`, `com.navkurd.app`).
 - Canonical Android build origin gate: PASS
   (`https://geo-map-kappa.vercel.app`; retired origin rejected).
 - Complete sanitized Android source ZIP and standalone Termux publisher:
