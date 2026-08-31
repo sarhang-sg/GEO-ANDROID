@@ -531,7 +531,15 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             val phaseLabel = phaseLabel(phase, copy)
             val frame = System.currentTimeMillis() / (10L * 60L * 1000L)
 
-            val layout = if (language == "en") R.layout.nav_kurd_widget_en else R.layout.nav_kurd_widget
+            // These v9.0.0-r1 wrapper IDs intentionally differ from the original
+            // layouts. Several launchers retain a RemoteViews layout across an
+            // in-place APK update; a new ID forces them to re-inflate the views
+            // and apply the bundled UniQAIDAR / Red Hat font resources.
+            val layout = if (language == "en") {
+                R.layout.nav_kurd_widget_en_v9_font
+            } else {
+                R.layout.nav_kurd_widget_v9_font
+            }
             val views = RemoteViews(context.packageName, layout)
             views.setImageViewBitmap(
                 R.id.widget_scene,

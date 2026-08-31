@@ -2,11 +2,11 @@
 fb7afbc14980e0bffd09c7eb7a4c6c2e5e745beb2796ab3d7d48f3c7a634d705  ./.gitignore
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./ANDROID_APP_LINK_SHA256.txt
-f23c7e4d9971be982c790500036faff808c4022224d70304df58a7c4d28b0fea  ./BUILD_STATUS.md
-07533c3ce9cab7f8c80465b9e5cfdae1a5ce73bee68fc0be124a0dabcc178b85  ./HANDOFF_ANDROID_9.0.0.md
+f7f788c2a7c4d4c108204851694fda041c38215194947a898d1b4f84d3e4f5f1  ./BUILD_STATUS.md
+3f0fc15218d4fe1d9b3636dd841d47c823ce64dd98c041a006fa2672f183b461  ./HANDOFF_ANDROID_9.0.0.md
 a96ea0e7adbaa74254cf7f6fb0d681477ea4ecdffaf822dc24a00b540466f577  ./LICENSE
 4612417de68db448ef2c206ba7e343a4ecf18d48c971bef88a2bac8286dfad46  ./NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh
-8415bc60042c46a8a7c6fccc1139e37afaadf93d218948c364cda0e729301c30  ./README.md
+3c16a6b3edac1e7f2183dc2a6fa5ac3abe35fe5e8a752e58bb0cd6d8984168d2  ./README.md
 f0659bb539a38b39a8857be7987029127b09fc85f0e86271aee17b96e7c5ec3a  ./RELEASE_CHECKLIST.md
 a827e93b00fbfcc8ad648465aaa07ecba67c700077bddee23531c380d4353fff  ./SECURITY.md
 9bf1651f1695c723df527f755e6eef64277edfa5cc3d987e85e8ee78d2dc98ca  ./TERMUX.sh
@@ -24,7 +24,7 @@ cd9d7100409f8ced1865b1141994944370170f4a13e149924063e9ac86551581  ./android/app/
 cc7d038b7ce13e83e81050910b8dea65cbcd517c314cc369fc509dbc59215e17  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdNotifications.kt
 40371dabd49ca55097c14e56026d50b1cd3ff7a504d458588a3901c55b4dacc6  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdRuntimeInfo.kt
 8d4dc823a8a3f930330fcb7090bacb02da373215a5cdc8f43b9a163b50491511  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt
-f1dcc4b90af8910fa48362e1727c60a47875ff56cbf54f3d6192544d05fdabc5  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
+334a248231f201a748fa35b82d3d4533ee90ca4324b4b2cb9e3c5c8dc5107e70  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
 cbb89706d494c69e57408bba6c79e22525345520217cc7df1dc54907aa2b2cce  ./android/app/src/main/res/drawable-v21/launch_background.xml
 a8514094f754b099d3e55ce1d6e0b2de79db418b2eeacb0fc2a6bb0bfadef221  ./android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
 718ba51adf166bb55c3e9936bb8199a0148457f7f0191aaa2f37a94f3159d6ec  ./android/app/src/main/res/drawable/ic_launcher_background.xml
@@ -47,6 +47,8 @@ bc9381fb354ddabf35ccad2663ffbff42611b8bb8704253ba589fc731aa8833f  ./android/app/
 8eb44ac578038db018c17f06807a5049fadbe9e4ad1abde21c4840b7232c9766  ./android/app/src/main/res/font/uniqaidar_money_heist_002.ttf
 9c863ebf1235ec5ad2d02b0b6fea092be95e843d4de34a71c52fd935cacee88e  ./android/app/src/main/res/layout/nav_kurd_widget.xml
 146214e8688cb0d5a79084406be2fbf3cabb1b21353df0844aa59d92cfa2000e  ./android/app/src/main/res/layout/nav_kurd_widget_en.xml
+2fb94887b5e95d363adbd132c3e254b85fbec9bfcc04597eb8607ee367490ef3  ./android/app/src/main/res/layout/nav_kurd_widget_en_v9_font.xml
+ca5deff4e42f28483c41daad1c92cda77062b3d855e2b34d18dad4a180043973  ./android/app/src/main/res/layout/nav_kurd_widget_v9_font.xml
 d03d20b2e161527e98cc63433fceead6b4f748e3c4952c2af9bcfcf555fbf7c3  ./android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 d03d20b2e161527e98cc63433fceead6b4f748e3c4952c2af9bcfcf555fbf7c3  ./android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 c9d1fd2a6eb0e459c79acbcba324d9f351f31dc261a7922e421437c965ebcd08  ./android/app/src/main/res/mipmap-hdpi/ic_launcher.png
@@ -71,7 +73,7 @@ b479f3500a3e97f2b014f623736f844e15f59820fa19e892ee6bda63ea507340  ./android/app/
 ecae7e1fec49a38f8335d5f8519336f1c9746eb30627fee8a6cd2da2e24c053c  ./android/app/src/main/res/values/styles.xml
 8b55ff5489071bb19a4e89967b604a16c0e4d1e87a2df3c73c64417314a59f22  ./android/app/src/main/res/xml/data_extraction_rules.xml
 0931b7f5c556958761eb7d69d144f20827957c1b19bde153fcab5a73473c9005  ./android/app/src/main/res/xml/file_paths.xml
-ab41eca617e88eea71f49934aa489d9df0bd26ba5b837635e7db10c8b2747465  ./android/app/src/main/res/xml/nav_kurd_widget_info.xml
+0fdd76a42d6ff309c058a4eb46b3f62751cf315cb03fd5532bfb9ad64f3ae8b4  ./android/app/src/main/res/xml/nav_kurd_widget_info.xml
 dbc726438a7e99c69fdfc39146cd51ef8300dacb236843bbce3ecd2a1712a80f  ./android/app/src/main/res/xml/network_security_config.xml
 678647a824ef7ab16066708585790ab265135d32fdf84bcd918a4b050f8891b9  ./android/app/src/profile/AndroidManifest.xml
 aefdea096bdd551a39d5e4f8cb445c22de4e3c7cd202eb5b0470046c5c147c31  ./android/build.gradle.kts
@@ -83,8 +85,8 @@ c13c6e91b9a517783976de213d46398c661ea9e17651376d7301e839eaedcc62  ./android/grad
 a20f24f90135424da7219c45d070b95812d67e5373eef3b7df42eef5a0b5ea76  ./android/key.properties.example
 f2ebf25e6fc8bcd2a82ce0a955308a20ebdfaa61d66ba6195fa99e3c6fe3a77e  ./android/settings.gradle.kts
 85e6ea89da88e8e7c93342c721ee861394af6b6dccc25d570855fe88f091b3cd  ./assets/images/nav-kurd-logo.png
-40ed5aace80d7317553fb881dff165e2abcf9f5ebdc1dfe83f799fce929070e7  ./docs/APKPURE_9.0.0.md
-c742d047ff70657cff09176e0e14412d4db01449ae762bd4925745c3d8fec8f6  ./docs/RELEASE_9.0.0.md
+8cae8ea66493d7749ffa9f10354b07d7e5c77620d926488598f1adea5f7ed390  ./docs/APKPURE_9.0.0.md
+76449a89ad9bcf6369e94ffdf48d08f18c55adc41d1f16acaee5bfd5853a6fe5  ./docs/RELEASE_9.0.0.md
 4b812aff257abd1d3aa9a5083a08a5e4ee99920cfb268c95929336bc044bd904  ./docs/images/nav-kurd-v9-cover.jpg
 da53d56e390ac10e99e2cc4bf3d1a9ad94d184a6a8a84fb4a2ad57475519ce7e  ./docs/images/nav-kurd-v9-screen-1.jpg
 1d497ecefd1ddb82cb098f560fa09361e9eb058aeb8b22653bb7784ee60f3c49  ./docs/images/nav-kurd-v9-screen-2.jpg
@@ -94,10 +96,10 @@ cfbc4337413477e64c319c9720bf469ab1cb58e3dd31be45a7a4eaad5cb0da59  ./docs/images/
 5988c5a4b3e3e48cf21addab6359f4044c1d15d496943683cc74647d24a0c412  ./lib/src/app_config.dart
 b7c153cdc33e62aea317e55d5f63b48bd37f67aa9d46f92cf9dd35b71303c458  ./lib/src/download_name.dart
 698b4a55854cea0c80bf84006594caa07b73248b5a62ff6b59304ad9aa5e0c33  ./lib/src/native_bridge.dart
-010e12714dc11a3b2af14b9cc5fd1110444fa5b7a0eed8259eecc1cd2d1d3f07  ./lib/src/nav_kurd_page.dart
+658a527094f1f4cd223bbb020cfb1a0a1b44db6f378a34a182780cf8c8daac6b  ./lib/src/nav_kurd_page.dart
 9dd4bb9d66cd12b1a2be45538e81cd5891a398f2e956d6458470d716cf825e4b  ./lib/src/permission_coordinator.dart
 2aa3df37244f3e5cab14b645b7adda03e6b32ac206586817abfbc6d964660b3f  ./lib/src/url_policy.dart
-5f68c841a2bf831f2445b84f31854826303d5a317b2d648099012ca322beee6a  ./pubspec.yaml
+8b1b76666f3eb762e984851e60eb3a89381e20f293b86e1fe662e26e1868d1f2  ./pubspec.yaml
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./signing/ANDROID_APP_LINK_SHA256.txt
 09445a20e388d18364d6a7ac96762a5a767fba02f65ddb494f3943eb9650a24a  ./signing/CERTIFICATE.txt
 edc3993bb30e97c17a217428714ea3573141b340bde39f6f420a5843eaf8daeb  ./signing/README.md
@@ -106,5 +108,5 @@ b3c765497cadebf9e17ba60e45efb1c860e991f4d5c2a49fa1586e91a2b822c3  ./test/downloa
 f5f2f77445af219a02e84533c01c6f8970eba997127a22372bb3b4ee60158a7d  ./test/url_policy_test.dart
 a982684c29b8749ad5703e5f82dcef15a32e065f3a85209bdcb96c6cfb7a6c81  ./tools/generate-signing.sh
 3b8e835ae36e4976eff36bfebfac2087c98985ffdebe2e388d6b87ca136ed83b  ./tools/package-source.py
-e388f774507a5af9447c935db63d03f5d7bb4acbce69049358addba87342e2f1  ./tools/validate-source.sh
+d3041c07b647495a75b8f7540e91ddb4bcebb169457b7aac85246b5fd74ba736  ./tools/validate-source.sh
 cc3efd003f73fd985a6f99d6b08b144c320ba1e15f3712864e570f2e325c44fd  ./tools/verify-release-signature.sh

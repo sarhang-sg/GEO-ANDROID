@@ -70,7 +70,7 @@ delivery still requires the owner's Firebase project and a real
 | --- | --- |
 | App name | NAV KURD |
 | Android application ID | `com.navkurd.app` |
-| Version | `9.0.0+90000` |
+| Version | `9.0.0+90001` |
 | Minimum Android | 7.0 / API 24 |
 | Target Android | API 36 |
 | Default origin | `https://geo-map-kappa.vercel.app` |
