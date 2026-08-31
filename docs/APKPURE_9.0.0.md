@@ -4,7 +4,7 @@
 | --- | --- |
 | Package | `com.navkurd.app` |
 | Version name | `9.0.0` |
-| Version code | `90000` |
+| Version code | `90001` |
 | Minimum Android | Android 7.0 / API 24 |
 | Upload | `NAV-KURD-9.0.0.apk` signed universal APK |
 

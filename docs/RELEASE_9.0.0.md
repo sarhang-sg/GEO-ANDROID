@@ -1,6 +1,6 @@
 # NAV KURD Android 9.0.0
 
-Version name/code: `9.0.0` / `90000`
+Version name/code: `9.0.0` / `90001`
 Package: `com.navkurd.app`
 Minimum/target Android: API `24` / `36`
 
@@ -38,7 +38,7 @@ Minimum/target Android: API `24` / `36`
 ## Release gate
 
 The signed workflow builds universal and split APKs plus an AAB, validates
-`9.0.0+90000`, and verifies the established certificate fingerprint before
+`9.0.0+90001`, and verifies the established certificate fingerprint before
 publishing artifacts. The Termux publisher updates the completed Web repository
 with only the verified APK and generated download/release metadata; it never
 replaces Web UI/runtime source.
