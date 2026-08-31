@@ -1,13 +1,13 @@
 # Build status
 
-Prepared on 2026-08-29.
+Prepared on 2026-08-30.
 
 ## Completed locally
 
 - Audited the supplied NAV KURD web source and confirmed no embedded
   service-role, private-key or provider-secret values were present.
 - Updated the Flutter/Dart Android shell and Kotlin platform bridge to
-  `8.0.4+80004`.
+  `9.0.0+90000`.
 - Removed both duplicate Android/Flutter launch logos so the deployed animated
   map loader is the only loading screen.
 - Added native API-36 immersive mode, scoped offline storage, GPS resume events,
@@ -44,16 +44,22 @@ Prepared on 2026-08-29.
   support/payment styling unchanged.
 - Completed the Web typecheck, production/offline build, security, platform,
   PMTiles and release-integrity suites successfully.
+- Locked Android satellite rendering to hardware-accelerated hybrid composition,
+  disabled WebView force-dark/algorithmic darkening and enabled offscreen raster
+  preparation so raster satellite tiles do not turn black in the APK.
 
 ## Build gate
 
 This workspace does not include a local Flutter SDK, so the signed binary gate
 must run in the pinned GitHub Actions Flutter 3.47.1 environment.
 
-Use `NAV-KURD-v8.0.4-ANDROID-TERMUX.sh` after GitHub authentication. It creates
+The complete Web v9 source has already passed its quality/Chromium/migration
+gates and reached private `main`. Use `NAV-KURD-v9.0.0-ANDROID-TERMUX.sh` after
+GitHub authentication. It creates
 the fresh private repository (or a review branch when `main` already exists),
 dispatches the signed workflow, waits for all checks, verifies the checksum and
 certificate, and downloads the APK/AAB artifact without requiring desktop
-Flutter in Termux. It then sends the exact Web fixes and verified APK through a
-separate review branch and waits for the Web quality/Chromium workflow before
-merging to production.
+Flutter in Termux. It then sends only the certificate-verified APK and generated
+download/release metadata through a separate Web review branch. It never copies
+Android-packaged Web UI/runtime source over the completed Web release, and it
+merges only after the Web quality/Chromium workflow succeeds.

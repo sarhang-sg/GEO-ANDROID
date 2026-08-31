@@ -541,10 +541,6 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                 R.id.widget_weather_icon,
                 NavKurdWidgetArtwork.weatherIcon(kind.name, isDay, frame),
             )
-            views.setImageViewBitmap(
-                R.id.widget_season_icon,
-                NavKurdWidgetArtwork.seasonIcon(season.key),
-            )
             views.setTextViewText(R.id.widget_temperature, temperature)
             views.setTextViewText(R.id.widget_city, city)
             views.setTextViewText(R.id.widget_condition, condition)
@@ -563,6 +559,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                 dust?.let { String.format(Locale.ROOT, "%.0f µg/m³", it) } ?: "",
             )
             val dustVisibility = if (dust != null) View.VISIBLE else View.GONE
+            views.setViewVisibility(R.id.widget_dust_group, dustVisibility)
             views.setViewVisibility(R.id.widget_dust_icon, dustVisibility)
             views.setViewVisibility(R.id.widget_dust, dustVisibility)
             views.setString(R.id.widget_local_time, "setTimeZone", timezone)
@@ -855,7 +852,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             }
             return PendingIntent.getBroadcast(
                 context,
-                80004,
+                90000,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )

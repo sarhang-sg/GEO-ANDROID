@@ -23,6 +23,7 @@ import android.webkit.URLUtil
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -358,7 +359,11 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 }
             } ?: error("The selected image could not be opened")
             require(destination.length() > 0L) { "The selected image is empty" }
-            return Uri.fromFile(destination).toString()
+            return FileProvider.getUriForFile(
+                this,
+                "$packageName.fileprovider",
+                destination,
+            ).toString()
         } catch (error: Exception) {
             destination.delete()
             throw error

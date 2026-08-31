@@ -9,10 +9,10 @@ fail() {
   exit 1
 }
 
-test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "8.0.4+80004" \
-  || fail "pubspec version is not 8.0.4+80004"
-grep -F "defaultValue: '8.0.4'" lib/src/app_config.dart >/dev/null \
-  || fail "Dart app version is not 8.0.4"
+test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "9.0.0+90000" \
+  || fail "pubspec version is not 9.0.0+90000"
+grep -F "defaultValue: '9.0.0'" lib/src/app_config.dart >/dev/null \
+  || fail "Dart app version is not 9.0.0"
 grep -F 'compileSdk = 36' android/app/build.gradle.kts >/dev/null \
   || fail "compileSdk must be 36"
 grep -F 'targetSdk = 36' android/app/build.gradle.kts >/dev/null \
@@ -39,9 +39,22 @@ grep -F 'onShowFileChooser: _handleFileChooser' lib/src/nav_kurd_page.dart >/dev
   || fail "WebView image chooser integration is missing"
 grep -F "handlerName: 'nativeShare'" lib/src/nav_kurd_page.dart >/dev/null \
   || fail "WebView native share integration is missing"
-grep -F 'controller.platform.clearAllCache()' lib/src/nav_kurd_page.dart >/dev/null \
-  || fail "WebView cache cleanup does not use the current platform API"
-if grep -E '(InAppWebViewController\.clearAllCache|\.clearCache\()' \
+grep -F 'InAppWebViewController.clearAllCache()' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "WebView cache cleanup does not use the current static API"
+grep -F 'useHybridComposition: true' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "satellite rendering does not use Android hybrid composition"
+grep -F 'hardwareAcceleration: true' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "satellite rendering is not hardware accelerated"
+grep -F 'algorithmicDarkeningAllowed: false' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "Android may still darken satellite raster tiles"
+grep -F 'forceDark: ForceDark.OFF' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "WebView force-dark is not disabled for satellite imagery"
+grep -F 'offscreenPreRaster: true' lib/src/nav_kurd_page.dart >/dev/null \
+  || fail "satellite tiles are not pre-rasterized offscreen"
+grep -F 'android:hardwareAccelerated="true"' \
+  android/app/src/main/AndroidManifest.xml >/dev/null \
+  || fail "Android application hardware acceleration is disabled"
+if grep -E '(controller\.platform\.clearAllCache|\.clearCache\()' \
     lib/src/nav_kurd_page.dart >/dev/null; then
   fail "deprecated WebView cache API is still present"
 fi
@@ -65,6 +78,30 @@ grep -F 'air-quality-api.open-meteo.com' \
 grep -F 'NavKurdWidgetArtwork.scene' \
   android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt >/dev/null \
   || fail "state-driven widget artwork is missing"
+grep -F 'R.id.widget_dust_group' \
+  android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt >/dev/null \
+  || fail "widget metric-group visibility is not synchronized"
+grep -F '@font/nav_kurd_arabic' android/app/src/main/res/layout/nav_kurd_widget.xml >/dev/null \
+  || fail "Kurdish/Arabic widget font does not match the app"
+grep -F '@font/nav_kurd_latin' android/app/src/main/res/layout/nav_kurd_widget_en.xml >/dev/null \
+  || fail "English widget font does not match the app"
+if grep -R -E 'widget_season_icon|seasonIcon\(' \
+    android/app/src/main/res/layout \
+    android/app/src/main/kotlin/com/navkurd/app >/dev/null; then
+  fail "widget still renders a duplicate seasonal sun/moon symbol"
+fi
+for widget_layout in \
+  android/app/src/main/res/layout/nav_kurd_widget.xml \
+  android/app/src/main/res/layout/nav_kurd_widget_en.xml; do
+  test "$(grep -c '@+id/widget_weather_icon' "$widget_layout")" = "1" \
+    || fail "$widget_layout must contain exactly one primary weather symbol"
+done
+grep -F 'androidx.core.content.FileProvider' android/app/src/main/AndroidManifest.xml >/dev/null \
+  || fail "secure native image-picker provider is missing"
+grep -F 'FileProvider.getUriForFile' android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt >/dev/null \
+  || fail "image picker still lacks a secure content URI"
+grep -F 'android:allowBackup="false"' android/app/src/main/AndroidManifest.xml >/dev/null \
+  || fail "backup/clone hardening is missing"
 grep -F 'nativeRuntimeInfo' lib/src/nav_kurd_page.dart >/dev/null \
   || fail "real Android hardware bridge is missing"
 grep -F 'RELEASE_URL' \
@@ -117,7 +154,7 @@ grep -F -- '--dart-define=NAV_KURD_APP_URL=https://geo-map-kappa.vercel.app' \
   .github/workflows/android-release.yml >/dev/null \
   || fail "release workflow does not build the canonical production origin"
 if grep -R -F --exclude='validate-source.sh' 'geo-map-two.vercel.app' \
-    .github android lib test tools GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh \
+    .github android lib test tools NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh \
     >/dev/null 2>&1; then
   fail "obsolete geo-map-two production origin is still present"
 fi
@@ -125,27 +162,34 @@ grep -F 'Refusing to upload a signing key with the wrong Android identity.' \
   TERMUX.sh >/dev/null \
   || fail "Termux signing-secret upload is not fingerprint-gated"
 grep -F 'readonly repo_name="sarhang-sg/GEO-ANDROID"' \
-  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null \
   || fail "Termux updater does not target the final private Android repository"
 grep -F 'gh repo create "$repo_name"' \
-  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null \
   || fail "Termux updater cannot create the fresh private Android repository"
-grep -F 'FAILURE ANNOTATIONS' GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+grep -F 'FAILURE ANNOTATIONS' NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null \
   || fail "Termux updater does not preserve fallback workflow diagnostics"
 grep -F 'Verified APK certificate record was not found.' \
-  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null \
   || fail "Termux updater does not verify the workflow certificate record"
 grep -F 'readonly web_repo_name="sarhang-sg/GEO-MAP"' \
-  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null \
   || fail "Termux updater does not target the canonical private Web repository"
-grep -F 'WEB_UPDATE_MANIFEST.sha256' \
-  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
-  || fail "Termux updater does not verify the shared Web payload"
+if grep -E 'WEB_UPDATE_(PATHS|MANIFEST)|source_root/web-update' \
+    NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null; then
+  fail "Android publisher can still overwrite the completed Web source"
+fi
+grep -F 'Preparing the signed direct-download update on current Web main' \
+  NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  || fail "Android publisher does not preserve the completed Web main"
+grep -F 'public/downloads/NAV-KURD-9.0.0.apk' \
+  NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  || fail "Android publisher does not install the verified direct APK"
 grep -F 'Waiting for Web quality and Chromium checks' \
-  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null \
+  NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null \
   || fail "Termux updater does not gate the Web deployment on quality checks"
 if grep -F 'APK v1 certificate block was not found.' \
-  GEO-ANDROID-V8-UPDATE-UPLOAD-BUILD.sh >/dev/null; then
+  NAV-KURD-V9-UPDATE-UPLOAD-BUILD.sh >/dev/null; then
   fail "Termux updater still assumes obsolete APK v1 signing"
 fi
 
@@ -170,4 +214,4 @@ if command -v node >/dev/null 2>&1; then
     lib/src/nav_kurd_page.dart | sed '1d;$d' | node --check -
 fi
 
-echo "NAV KURD 8.0.4 source checks passed."
+echo "NAV KURD 9.0.0 source checks passed."

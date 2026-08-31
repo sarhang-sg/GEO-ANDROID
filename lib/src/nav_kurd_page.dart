@@ -13,6 +13,13 @@ import 'package:geo_android/src/permission_coordinator.dart';
 import 'package:geo_android/src/url_policy.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+Map<String, Object?> _stringKeyedPayload(Map<Object?, Object?> value) {
+  return <String, Object?>{
+    for (final entry in value.entries)
+      if (entry.key case final String key) key: entry.value,
+  };
+}
+
 final class NavKurdPage extends StatefulWidget {
   const NavKurdPage({required this.initialDeepLink, super.key});
 
@@ -36,7 +43,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
   int _webViewGeneration = 0;
   String? _offlinePackStatus;
 
-  static const Color _background = Color(0xFF090D19);
+  static const Color _background = Color(0xFF061225);
 
   final InAppWebViewSettings _settings = InAppWebViewSettings(
     javaScriptEnabled: true,
@@ -66,7 +73,12 @@ final class _NavKurdPageState extends State<NavKurdPage>
     allowFileAccessFromFileURLs: false,
     allowUniversalAccessFromFileURLs: false,
     useHybridComposition: true,
-    offscreenPreRaster: false,
+    // Keep MapLibre's raster compositor on the GPU and prevent Android's dark
+    // theme engine from recoloring satellite imagery into a black surface.
+    hardwareAcceleration: true,
+    algorithmicDarkeningAllowed: false,
+    forceDark: ForceDark.OFF,
+    offscreenPreRaster: true,
     isInspectable: kDebugMode,
     applicationNameForUserAgent:
         'NAV-KURD-Flutter/${AppConfig.appVersion}',
@@ -137,9 +149,24 @@ final class _NavKurdPageState extends State<NavKurdPage>
   }
 
   void _handleDeepLink(String value) {
+    if (!mounted) return;
+    final controller = _controller;
+    final raw = Uri.tryParse(value);
+    if (raw?.scheme.toLowerCase() == 'navkurd' &&
+        (raw?.host.toLowerCase() == 'open' ||
+            raw?.host.toLowerCase() == 'locate')) {
+      final action = raw?.host.toLowerCase() ?? 'open';
+      unawaited(
+        controller?.evaluateJavascript(
+          source:
+              "window.dispatchEvent(new CustomEvent('nav-kurd:widget-open',{detail:{action:'$action',at:Date.now()}}));",
+        ),
+      );
+      return;
+    }
     final target = UrlPolicy.appUriForDeepLink(value);
     unawaited(
-      _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(target.toString()))),
+      controller?.loadUrl(urlRequest: URLRequest(url: WebUri(target.toString()))),
     );
   }
 
@@ -187,14 +214,21 @@ final class _NavKurdPageState extends State<NavKurdPage>
               },
               onLoadStop: _onLoadStop,
               onReceivedError: (controller, request, error) {
+                final description = error.description.toUpperCase();
+                final isMainFrame = request.isForMainFrame == true;
+                final isCancelledSubresource = !isMainFrame &&
+                    (description.contains('ERR_FAILED') ||
+                        description.contains('ERR_ABORTED') ||
+                        description.contains('CANCEL'));
+                if (isCancelledSubresource) return;
                 unawaited(
                   _bridge.recordDiagnostic(
-                    level: request.isForMainFrame == true ? 'error' : 'warning',
+                    level: isMainFrame ? 'error' : 'warning',
                     source: 'webview.resource',
                     message: '${error.type}: ${error.description}',
                   ),
                 );
-                if (request.isForMainFrame != true || !mounted) return;
+                if (!isMainFrame || !mounted) return;
                 setState(() {
                   _mainFrameFailed = true;
                 });
@@ -330,7 +364,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
       handlerName: 'nativeClearTransientCache',
       callback: (_) async {
         if (!await _isCurrentOriginTrusted()) return <String, bool>{'cleared': false};
-        await controller.platform.clearAllCache();
+        await InAppWebViewController.clearAllCache();
         final cleared = await _bridge.clearTransientCache();
         return <String, bool>{'cleared': cleared};
       },
@@ -467,8 +501,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<Object?> _handleNativeShare(List<dynamic> arguments) async {
     if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
     final value = arguments.first;
-    if (value is! Map) return false;
-    final data = Map<String, dynamic>.from(value);
+    if (value is! Map<Object?, Object?>) return false;
+    final data = _stringKeyedPayload(value);
     final title = data['title']?.toString().trim() ?? '';
     final text = data['text']?.toString().trim() ?? '';
     final url = data['url']?.toString().trim() ?? '';
@@ -504,19 +538,26 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<Object?> _handleBase64Download(List<dynamic> arguments) async {
     if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
     final value = arguments.first;
-    if (value is! Map) return false;
-    final data = Map<String, dynamic>.from(value);
-    final encoded = data['data'] as String?;
+    if (value is! Map<Object?, Object?>) return false;
+    final data = _stringKeyedPayload(value);
+    final rawEncoded = data['data'];
+    final encoded = rawEncoded is String ? rawEncoded : null;
     if (encoded == null || encoded.isEmpty) return false;
     if (encoded.length > 70 * 1024 * 1024) {
       _showMessage('This blob is too large for the native bridge.');
       return false;
     }
     if (!await _permissions.ensureDownloadPermission()) return false;
-    final fileName = DownloadName.sanitize(data['fileName'] as String?);
+    final rawFileName = data['fileName'];
+    final rawMimeType = data['mimeType'];
+    final fileName = DownloadName.sanitize(
+      rawFileName is String ? rawFileName : null,
+    );
     final uri = await _bridge.saveBase64Download(
       fileName: fileName,
-      mimeType: (data['mimeType'] as String?) ?? 'application/octet-stream',
+      mimeType: rawMimeType is String
+          ? rawMimeType
+          : 'application/octet-stream',
       base64Data: encoded,
     );
     _showMessage(
@@ -530,10 +571,14 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<Object?> _handleOfflinePackStatus(List<dynamic> arguments) async {
     if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
     final value = arguments.first;
-    if (value is! Map) return false;
-    final data = Map<String, dynamic>.from(value);
-    final status = (data['status'] as String? ?? 'idle').toLowerCase();
-    final progress = data['progress'] as int? ?? 0;
+    if (value is! Map<Object?, Object?>) return false;
+    final data = _stringKeyedPayload(value);
+    final rawStatus = data['status'];
+    final rawProgress = data['progress'];
+    final status = (rawStatus is String ? rawStatus : 'idle').toLowerCase();
+    final progress = rawProgress is num
+        ? rawProgress.toInt().clamp(0, 100)
+        : 0;
     final previous = _offlinePackStatus;
     _offlinePackStatus = status;
     await _bridge.updateWidget(
@@ -554,8 +599,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<Object?> _handleLocationSnapshot(List<dynamic> arguments) async {
     if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
     final value = arguments.first;
-    if (value is! Map) return false;
-    final data = Map<String, dynamic>.from(value);
+    if (value is! Map<Object?, Object?>) return false;
+    final data = _stringKeyedPayload(value);
     final latitude = data['latitude'];
     final longitude = data['longitude'];
     final accuracy = data['accuracy'];
@@ -578,8 +623,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<Object?> _handleNativeDiagnostic(List<dynamic> arguments) async {
     if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
     final value = arguments.first;
-    if (value is! Map) return false;
-    final data = Map<String, dynamic>.from(value);
+    if (value is! Map<Object?, Object?>) return false;
+    final data = _stringKeyedPayload(value);
     final message = data['message']?.toString().trim() ?? '';
     if (message.isEmpty) return false;
     await _bridge.recordDiagnostic(
@@ -669,7 +714,7 @@ final class _OfflinePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: const Color(0xFF090D19),
+      color: const Color(0xFF061225),
       child: SafeArea(
         child: Center(
           child: Directionality(
