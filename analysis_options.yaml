@@ -1,0 +1,18 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - packages/**
+  errors:
+    avoid_print: error
+
+linter:
+  rules:
+    always_use_package_imports: true
+    avoid_dynamic_calls: true
+    cancel_subscriptions: true
+    close_sinks: true
+    directives_ordering: true
+    prefer_final_locals: true
+    unawaited_futures: true
