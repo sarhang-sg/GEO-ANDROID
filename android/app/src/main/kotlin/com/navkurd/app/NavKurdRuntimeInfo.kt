@@ -5,16 +5,12 @@ import android.app.ActivityManager
 import android.app.usage.StorageStatsManager
 import android.content.Context
 import android.graphics.Rect
-import android.opengl.EGL14
-import android.opengl.EGLConfig
-import android.opengl.GLES20
 import android.os.Build
 import android.os.Process
 import android.os.StatFs
 import android.os.storage.StorageManager
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.ViewCompat
-import java.io.File
 import kotlin.math.roundToInt
 
 /** Reads real Android capabilities. Values that Android cannot expose remain null. */
@@ -23,8 +19,9 @@ object NavKurdRuntimeInfo {
         val memory = activity.getSystemService(ActivityManager::class.java)
         val memoryInfo = ActivityManager.MemoryInfo().also(memory::getMemoryInfo)
         val display = displayInfo(activity)
-        val gpu = readGpu()
-        val storage = storageInfo(activity)
+        // MapLibre owns the active EGL/WebGL context. Creating a second EGL
+        // context on the Android UI thread during startup caused visible stalls.
+        val gpu = unavailableGpu()
         val safeArea = safeArea(activity)
         val packageInfo = activity.packageManager.getPackageInfo(activity.packageName, 0)
 
@@ -55,9 +52,6 @@ object NavKurdRuntimeInfo {
             "screen" to display,
             "gpu" to gpu,
             "safeArea" to safeArea,
-            "cacheBytes" to directoryBytes(activity.cacheDir),
-            "appStorageBytes" to storage["appStorageBytes"],
-            "storage" to storage,
         )
     }
 
@@ -105,13 +99,23 @@ object NavKurdRuntimeInfo {
         )
     }
 
+    /** StorageStatsManager may perform slow binder/disk work; call off the UI thread. */
+    fun withStorage(context: Context, snapshot: Map<String, Any?>): Map<String, Any?> {
+        val storage = storageInfo(context)
+        return snapshot + mapOf(
+            "cacheBytes" to storage["cacheBytes"],
+            "appStorageBytes" to storage["appStorageBytes"],
+            "storage" to storage,
+        )
+    }
+
     private fun storageInfo(context: Context): Map<String, Any?> {
         val stat = StatFs(context.filesDir.absolutePath)
         val appStorage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             runCatching {
                 val manager = context.getSystemService(StorageStatsManager::class.java)
                 val stats = manager.queryStatsForUid(StorageManager.UUID_DEFAULT, Process.myUid())
-                stats.appBytes + stats.dataBytes + stats.cacheBytes
+                mapOf("appStorageBytes" to (stats.appBytes + stats.dataBytes + stats.cacheBytes), "cacheBytes" to stats.cacheBytes)
             }.getOrNull()
         } else {
             null
@@ -119,81 +123,10 @@ object NavKurdRuntimeInfo {
         return mapOf(
             "totalBytes" to stat.totalBytes,
             "availableBytes" to stat.availableBytes,
-            "appStorageBytes" to appStorage,
-            "filesBytes" to directoryBytes(context.filesDir),
-            "cacheBytes" to directoryBytes(context.cacheDir),
+            "appStorageBytes" to appStorage?.get("appStorageBytes"),
+            "filesBytes" to null,
+            "cacheBytes" to appStorage?.get("cacheBytes"),
         )
-    }
-
-    private fun directoryBytes(root: File): Long {
-        if (!root.exists()) return 0L
-        return runCatching {
-            root.walkTopDown()
-                .filter(File::isFile)
-                .fold(0L) { total, file -> total + file.length() }
-        }.getOrDefault(0L)
-    }
-
-    private fun readGpu(): Map<String, Any?> {
-        var display = EGL14.EGL_NO_DISPLAY
-        var surface = EGL14.EGL_NO_SURFACE
-        var context = EGL14.EGL_NO_CONTEXT
-        return try {
-            display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
-            if (display == EGL14.EGL_NO_DISPLAY) return unavailableGpu()
-            val versions = IntArray(2)
-            if (!EGL14.eglInitialize(display, versions, 0, versions, 1)) return unavailableGpu()
-            val attributes = intArrayOf(
-                EGL14.EGL_RED_SIZE, 8,
-                EGL14.EGL_GREEN_SIZE, 8,
-                EGL14.EGL_BLUE_SIZE, 8,
-                EGL14.EGL_ALPHA_SIZE, 8,
-                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-                EGL14.EGL_NONE,
-            )
-            val configs = arrayOfNulls<EGLConfig>(1)
-            val count = IntArray(1)
-            if (!EGL14.eglChooseConfig(display, attributes, 0, configs, 0, 1, count, 0) || count[0] == 0) {
-                return unavailableGpu()
-            }
-            val config = configs[0] ?: return unavailableGpu()
-            context = EGL14.eglCreateContext(
-                display,
-                config,
-                EGL14.EGL_NO_CONTEXT,
-                intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE),
-                0,
-            )
-            surface = EGL14.eglCreatePbufferSurface(
-                display,
-                config,
-                intArrayOf(EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE),
-                0,
-            )
-            if (context == EGL14.EGL_NO_CONTEXT || surface == EGL14.EGL_NO_SURFACE ||
-                !EGL14.eglMakeCurrent(display, surface, surface, context)
-            ) {
-                return unavailableGpu()
-            }
-            val textureSize = IntArray(1)
-            GLES20.glGetIntegerv(GLES20.GL_MAX_TEXTURE_SIZE, textureSize, 0)
-            mapOf(
-                "vendor" to GLES20.glGetString(GLES20.GL_VENDOR),
-                "renderer" to GLES20.glGetString(GLES20.GL_RENDERER),
-                "version" to GLES20.glGetString(GLES20.GL_VERSION),
-                "shadingLanguageVersion" to GLES20.glGetString(GLES20.GL_SHADING_LANGUAGE_VERSION),
-                "maxTextureSize" to textureSize[0].takeIf { it > 0 },
-            )
-        } catch (_: Exception) {
-            unavailableGpu()
-        } finally {
-            if (display != EGL14.EGL_NO_DISPLAY) {
-                EGL14.eglMakeCurrent(display, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)
-                if (surface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(display, surface)
-                if (context != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(display, context)
-                EGL14.eglTerminate(display)
-            }
-        }
     }
 
     private fun unavailableGpu(): Map<String, Any?> = mapOf(

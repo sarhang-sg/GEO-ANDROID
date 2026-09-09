@@ -9,9 +9,16 @@ final class PermissionCoordinator {
   PermissionCoordinator(this._bridge);
 
   final NativeBridge _bridge;
+  Future<bool>? _locationRequest;
 
-  Future<bool> requestLocation(Uri? origin) async {
-    if (!AppConfig.isTrustedOrigin(origin)) return false;
+  Future<bool> requestLocation(Uri? origin) {
+    if (!AppConfig.isTrustedOrigin(origin)) return Future<bool>.value(false);
+    return _locationRequest ??= _requestLocation().whenComplete(() {
+      _locationRequest = null;
+    });
+  }
+
+  Future<bool> _requestLocation() async {
     var status = await Permission.locationWhenInUse.status;
     if (!status.isGranted && !status.isLimited) {
       status = await Permission.locationWhenInUse.request();

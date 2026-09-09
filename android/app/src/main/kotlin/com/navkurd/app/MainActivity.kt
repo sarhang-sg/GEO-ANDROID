@@ -32,6 +32,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
+import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     companion object {
@@ -40,6 +41,8 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         private const val DOWNLOAD_FOLDER = "NAV KURD"
         private const val NOTIFICATION_PREFS = "nav_kurd_notification_markers"
     }
+
+    private val deviceIo = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "nav-kurd-device-io") }
 
     private var deepLinkSink: EventChannel.EventSink? = null
     private var pendingDeepLink: String? = null
@@ -92,13 +95,33 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         deepLinkSink = null
     }
 
+    override fun onDestroy() {
+        deviceIo.shutdown()
+        super.onDestroy()
+    }
+
+    private fun runDeviceTask(result: MethodChannel.Result, work: () -> Any?) {
+        deviceIo.execute {
+            val outcome = runCatching(work)
+            runOnUiThread {
+                outcome.fold(
+                    onSuccess = { result.success(it) },
+                    onFailure = { result.error("DEVICE_IO", it.message, null) },
+                )
+            }
+        }
+    }
+
     private fun handleMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
                 "getInitialDeepLink" -> result.success(intent?.dataString)
                 "getSdkInt" -> result.success(Build.VERSION.SDK_INT)
-                "getRuntimeInfo" -> result.success(NavKurdRuntimeInfo.collect(this))
-                "clearTransientCache" -> result.success(clearTransientCache())
+                "getRuntimeInfo" -> {
+                    val snapshot = NavKurdRuntimeInfo.collect(this)
+                    runDeviceTask(result) { NavKurdRuntimeInfo.withStorage(applicationContext, snapshot) }
+                }
+                "clearTransientCache" -> runDeviceTask(result) { clearTransientCache() }
                 "shareText" -> result.success(shareText(call))
                 "setLanguage" -> {
                     NavKurdWidgetProvider.setLanguage(
@@ -117,7 +140,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                     applyImmersiveMode()
                     result.success(null)
                 }
-                "recordDiagnostic" -> {
+                "recordDiagnostic" -> runDeviceTask(result) {
                     NavKurdDiagnostics.record(
                         this,
                         call.argument<String>("level") ?: "warning",
@@ -125,9 +148,9 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                         call.argument<String>("message") ?: "Unknown runtime issue",
                         call.argument<String>("stack"),
                     )
-                    result.success(null)
+                    null
                 }
-                "getDiagnosticReport" -> result.success(NavKurdDiagnostics.report(this))
+                "getDiagnosticReport" -> runDeviceTask(result) { NavKurdDiagnostics.report(applicationContext) }
                 "enqueueDownload" -> result.success(enqueueDownload(call))
                 "saveBase64Download" -> result.success(saveBase64Download(call))
                 "showNotification" -> {

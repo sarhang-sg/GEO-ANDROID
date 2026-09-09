@@ -11,12 +11,12 @@ dfeb7b82cdc81e0b79010060bf8d5ed5d17f28394a8be5751f53b24ee73e1c21  ./android/app/
 62e3c5cced1f6469a3a038f6bb0085f0751ca71028fdd62eacd7c957286062d1  ./android/app/proguard-rules.pro
 678647a824ef7ab16066708585790ab265135d32fdf84bcd918a4b050f8891b9  ./android/app/src/debug/AndroidManifest.xml
 6da7cd37f934a0638c015f3c8e6ab1061524e473d6f6fffdf81390a92efd7aa5  ./android/app/src/main/AndroidManifest.xml
-afbcab3c866093182a1232659652a7c4c8a68d503366f1a8a1f4bcc76db30cb3  ./android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt
+cb1f45307539150035900973fb9c997d4d95c2b4461c0ec561737fde068fb25d  ./android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt
 357bb6ea8fa00df597fc528a09a79f9f6d9aac98ac81eb40cec5451d3a75fde6  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdDiagnostics.kt
 02e97a77ce50d2c2df3039efb7eee4db51168064a686398a5e4e8d21b7e7de09  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdNotificationReceiver.kt
 cd9d7100409f8ced1865b1141994944370170f4a13e149924063e9ac86551581  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdNotificationScheduler.kt
 cc7d038b7ce13e83e81050910b8dea65cbcd517c314cc369fc509dbc59215e17  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdNotifications.kt
-40371dabd49ca55097c14e56026d50b1cd3ff7a504d458588a3901c55b4dacc6  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdRuntimeInfo.kt
+a52d07381fd8f9aa7fe057db086d8100b700590016f7a60bd49ddea870a983d5  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdRuntimeInfo.kt
 8084073ee3ebc9e20e94742c7497306a362949da80234f2647a1512a6a181069  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt
 95882f0eee31d1d9785e43acc854192b83adc502aeef2eb6564d1386db0b2ec4  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
 5eaa31c7f8b4c168a59cdee733ea626c864e857d23fe9b2b389d69e606fbc707  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt
@@ -92,8 +92,8 @@ d3dbe049ad6a1fa39eb19d38853b378ae034f4f0be058bfdbd685096a2ec16be  ./docs/images/
 92293adc0f9441060aa5d184b7ff9944baf021724e2296992a87d33a2d0d3910  ./lib/src/app_config.dart
 b7c153cdc33e62aea317e55d5f63b48bd37f67aa9d46f92cf9dd35b71303c458  ./lib/src/download_name.dart
 86ef6a2297e670a914dfc39418a99b220c65c52ba4eecc8b7c128738313a606d  ./lib/src/native_bridge.dart
-7415ba47c1783b27cfa92152c80203692a9b122a668443cd515a8b71c3c2767f  ./lib/src/nav_kurd_page.dart
-9dd4bb9d66cd12b1a2be45538e81cd5891a398f2e956d6458470d716cf825e4b  ./lib/src/permission_coordinator.dart
+402e223b6c06af142fb7df532730f443af40195c8bcf932153435540e396f8f1  ./lib/src/nav_kurd_page.dart
+a44351d70a2e7a61a0e4b60e5e39c5ba23ee973f3841cea9d6f817997b6048b3  ./lib/src/permission_coordinator.dart
 2aa3df37244f3e5cab14b645b7adda03e6b32ac206586817abfbc6d964660b3f  ./lib/src/url_policy.dart
 23d164b37c82a2c2e1061bbc367c609f718951ddb70de7e0ac5fe9058c91844a  ./packages/flutter_inappwebview_android/LICENSE
 c4facebf0b203b17b35002aef7314f7f6b999fb9cc75a0f13e37e2fdfb4cf3eb  ./packages/flutter_inappwebview_android/NAV_KURD_INTEGRATION.md
@@ -310,6 +310,6 @@ bacc220ac47f0ade5c79efbd35228c61fcea70c304922564218474e245903f63  ./tools/assets
 f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/install-android-sdk.sh
 40d5be5148a25c6e95175898c657f2604349c9954fa42613405b024755ed862f  ./tools/package-source.py
 491fc697bf803ce0dbd9c22b47efb9f1f8e1d3b3705bdeccca742737e15acd33  ./tools/update-source-manifest.py
-c418c8b704ac6ede3df8a2bb3424471a0d94a1c28b27330f4430f46c08f0fd2f  ./tools/validate-source.sh
+32c7a3359d0d7c553a6e84125ff6a39ec9fe08bec9ede803ad360e4e9ce332aa  ./tools/validate-source.sh
 4f84eec39436ff539429ab9eea78ef3a0bfabcd7e9e6d4909c8be9f46bd9b7bf  ./tools/verify-launcher-pngs.py
 cc3efd003f73fd985a6f99d6b08b144c320ba1e15f3712864e570f2e325c44fd  ./tools/verify-release-signature.sh

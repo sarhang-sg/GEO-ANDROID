@@ -93,7 +93,7 @@ fi
 require_text lib/src/nav_kurd_page.dart 'useHybridComposition: true' "hybrid composition is missing"
 require_text lib/src/nav_kurd_page.dart 'hardwareAcceleration: true' "hardware acceleration is missing"
 require_text lib/src/nav_kurd_page.dart 'algorithmicDarkeningAllowed: false' "satellite darkening protection is missing"
-require_text lib/src/nav_kurd_page.dart 'offscreenPreRaster: true' "offscreen pre-rasterization is missing"
+require_text lib/src/nav_kurd_page.dart 'offscreenPreRaster: false' "fullscreen WebView must not pre-rasterize offscreen copies"
 if grep -E '(forceDark:|controller\.platform\.clearAllCache|\.clearCache\()' lib/src/nav_kurd_page.dart >/dev/null; then
   fail "deprecated WebView API remains"
 fi

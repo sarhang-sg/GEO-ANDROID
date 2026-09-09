@@ -39,6 +39,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
   InAppWebViewController? _controller;
   bool _mainFrameFailed = false;
   bool _isOnline = true;
+  bool _connectivityKnown = false;
   bool _notificationsAsked = false;
   int _webViewGeneration = 0;
   String? _offlinePackStatus;
@@ -77,7 +78,9 @@ final class _NavKurdPageState extends State<NavKurdPage>
     // darkening control so satellite raster tiles retain their source colors.
     hardwareAcceleration: true,
     algorithmicDarkeningAllowed: false,
-    offscreenPreRaster: true,
+    // This WebView already fills the screen; off-screen pre-rasterization is
+    // unnecessary and adds work while the map compositor is active.
+    offscreenPreRaster: false,
     isInspectable: kDebugMode,
     applicationNameForUserAgent:
         'NAV-KURD-Flutter/${AppConfig.appVersion}',
@@ -139,7 +142,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
 
   void _handleConnectivity(List<ConnectivityResult> results) {
     final online = !results.contains(ConnectivityResult.none);
-    if (!mounted) return;
+    if (!mounted || (_connectivityKnown && _isOnline == online)) return;
+    _connectivityKnown = true;
     setState(() => _isOnline = online);
     unawaited(
       _bridge.updateWidget(
@@ -800,12 +804,28 @@ const String _documentStartBridgeScript = r'''
     }
     return platformFetch(input, init);
   };
+  let lastPublishedPosition = null;
   const publishPosition = position => {
     const coords = position?.coords;
     if (!coords) return;
+    const latitude = Number(coords.latitude);
+    const longitude = Number(coords.longitude);
+    const now = Date.now();
+    const moved = lastPublishedPosition
+      ? Math.hypot(
+          latitude - lastPublishedPosition.latitude,
+          (longitude - lastPublishedPosition.longitude) *
+            Math.cos(latitude * Math.PI / 180)
+        )
+      : Number.POSITIVE_INFINITY;
+    // The web map consumes every GPS fix directly. The native bridge only feeds
+    // the launcher widget, so forwarding stationary fixes every second wastes
+    // two platform-channel trips and repeatedly schedules widget work.
+    if (lastPublishedPosition && now - lastPublishedPosition.at < 30_000 && moved < .008) return;
+    lastPublishedPosition = { latitude, longitude, at: now };
     call('nativeLocationSnapshot', {
-      latitude: Number(coords.latitude),
-      longitude: Number(coords.longitude),
+      latitude,
+      longitude,
       accuracy: Number(coords.accuracy || 0)
     });
   };
@@ -1006,14 +1026,30 @@ const String _afterLoadBridgeScript = r'''
   const scheduleMerge = () => {
     if (!mergeTimer) mergeTimer = window.setTimeout(mergeNativeReport, 100);
   };
-  const reportObserver = new MutationObserver(() => {
-    if (!applyingNativeReport) scheduleMerge();
-  });
-  reportObserver.observe(document.documentElement, {
-    childList: true,
-    subtree: true
-  });
-  document.addEventListener('click', scheduleMerge, true);
+  const watchFeedbackHost = host => {
+    const reportObserver = new MutationObserver(() => {
+      if (!applyingNativeReport) scheduleMerge();
+    });
+    reportObserver.observe(host, { childList: true, subtree: true });
+    host.addEventListener('click', scheduleMerge, true);
+    scheduleMerge();
+  };
+  const existingFeedbackHost = document.querySelector('.feedback-studio');
+  if (existingFeedbackHost) {
+    watchFeedbackHost(existingFeedbackHost);
+  } else {
+    const discoveryObserver = new MutationObserver(records => {
+      const added = records.flatMap(record => Array.from(record.addedNodes));
+      const host = added.find(node => node.nodeType === 1 && node.matches('.feedback-studio'));
+      if (!host) return;
+      discoveryObserver.disconnect();
+      watchFeedbackHost(host);
+    });
+    // Observe only until the lazily loaded feedback host appears. The earlier code watched
+    // every MapLibre DOM mutation forever and queried the whole document every
+    // 100 ms while the map was busy.
+    discoveryObserver.observe(document.body || document.documentElement, { childList: true });
+  }
   installOfflineObserver();
 })();
 ''';
