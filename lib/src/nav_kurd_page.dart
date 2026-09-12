@@ -215,12 +215,6 @@ final class _NavKurdPageState extends State<NavKurdPage>
                 ],
               ),
               onWebViewCreated: _onWebViewCreated,
-              onLoadStart: (controller, url) {
-                if (!mounted) return;
-                if (_mainFrameFailed) {
-                  setState(() => _mainFrameFailed = false);
-                }
-              },
               onLoadStop: _onLoadStop,
               onReceivedError: (controller, request, error) {
                 final description = error.description.toUpperCase();
@@ -314,7 +308,6 @@ final class _NavKurdPageState extends State<NavKurdPage>
                       key: const ValueKey<String>('offline'),
                       isOnline: _isOnline,
                       onRetry: () {
-                        setState(() => _mainFrameFailed = false);
                         unawaited(_controller?.reload());
                       },
                       onSettings: _bridge.openAppSettings,
@@ -403,6 +396,17 @@ final class _NavKurdPageState extends State<NavKurdPage>
     WebUri? url,
   ) async {
     if (!AppConfig.isTrustedOrigin(Uri.tryParse(url?.toString() ?? ''))) return;
+    // A service worker can successfully return offline.html for a failed main
+    // navigation. WebView reports that fallback as a normal load, which used to
+    // dismiss the native error panel and expose a second, web-owned offline
+    // card. Android owns this state: keep its one retry/settings panel visible
+    // until the real application document has loaded successfully.
+    if (await _isOfflineFallbackDocument(controller)) {
+      if (mounted && !_mainFrameFailed) {
+        setState(() => _mainFrameFailed = true);
+      }
+      return;
+    }
     await controller.evaluateJavascript(source: _afterLoadBridgeScript);
     if (!mounted) return;
     if (_mainFrameFailed) setState(() => _mainFrameFailed = false);
@@ -410,6 +414,22 @@ final class _NavKurdPageState extends State<NavKurdPage>
     if (!_notificationsAsked) {
       _notificationsAsked = true;
       unawaited(_requestNotificationsAfterLoad());
+    }
+  }
+
+  Future<bool> _isOfflineFallbackDocument(
+    InAppWebViewController controller,
+  ) async {
+    try {
+      final result = await controller.evaluateJavascript(
+        source: '''
+          (() => document.documentElement.dataset.navKurdOfflineFallback === 'true'
+            || Boolean(document.querySelector('main.offline-shell')))()
+        ''',
+      );
+      return result == true || result == 1 || result == 'true';
+    } on Object {
+      return false;
     }
   }
 

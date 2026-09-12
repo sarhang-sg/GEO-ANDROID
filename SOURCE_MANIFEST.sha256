@@ -92,7 +92,7 @@ d3dbe049ad6a1fa39eb19d38853b378ae034f4f0be058bfdbd685096a2ec16be  ./docs/images/
 92293adc0f9441060aa5d184b7ff9944baf021724e2296992a87d33a2d0d3910  ./lib/src/app_config.dart
 b7c153cdc33e62aea317e55d5f63b48bd37f67aa9d46f92cf9dd35b71303c458  ./lib/src/download_name.dart
 86ef6a2297e670a914dfc39418a99b220c65c52ba4eecc8b7c128738313a606d  ./lib/src/native_bridge.dart
-402e223b6c06af142fb7df532730f443af40195c8bcf932153435540e396f8f1  ./lib/src/nav_kurd_page.dart
+bd0899c4bd32bea42b2b7d4a21d17820372091cde7c4a1cc95323cc1e7a05c54  ./lib/src/nav_kurd_page.dart
 a44351d70a2e7a61a0e4b60e5e39c5ba23ee973f3841cea9d6f817997b6048b3  ./lib/src/permission_coordinator.dart
 2aa3df37244f3e5cab14b645b7adda03e6b32ac206586817abfbc6d964660b3f  ./lib/src/url_policy.dart
 23d164b37c82a2c2e1061bbc367c609f718951ddb70de7e0ac5fe9058c91844a  ./packages/flutter_inappwebview_android/LICENSE
@@ -310,6 +310,6 @@ bacc220ac47f0ade5c79efbd35228c61fcea70c304922564218474e245903f63  ./tools/assets
 f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/install-android-sdk.sh
 40d5be5148a25c6e95175898c657f2604349c9954fa42613405b024755ed862f  ./tools/package-source.py
 491fc697bf803ce0dbd9c22b47efb9f1f8e1d3b3705bdeccca742737e15acd33  ./tools/update-source-manifest.py
-32c7a3359d0d7c553a6e84125ff6a39ec9fe08bec9ede803ad360e4e9ce332aa  ./tools/validate-source.sh
+741a2d51ec18acd66298f53262c03d70322708716d0467b2829124a406f185f4  ./tools/validate-source.sh
 4f84eec39436ff539429ab9eea78ef3a0bfabcd7e9e6d4909c8be9f46bd9b7bf  ./tools/verify-launcher-pngs.py
 cc3efd003f73fd985a6f99d6b08b144c320ba1e15f3712864e570f2e325c44fd  ./tools/verify-release-signature.sh

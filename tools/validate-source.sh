@@ -68,6 +68,13 @@ if grep -F '_LaunchPanel' lib/src/nav_kurd_page.dart >/dev/null; then
 fi
 require_text lib/src/nav_kurd_page.dart "nav-kurd:native-resume" \
   "native document-picker resume recovery is missing"
+require_text lib/src/nav_kurd_page.dart "_isOfflineFallbackDocument" \
+  "native single-surface offline fallback detection is missing"
+require_text lib/src/nav_kurd_page.dart "navKurdOfflineFallback" \
+  "native offline document marker detection is missing"
+if grep -F 'onLoadStart:' lib/src/nav_kurd_page.dart >/dev/null; then
+  fail "WebView load-start must not dismiss the native offline panel"
+fi
 if grep -F 'nav-kurd:native-pause' lib/src/nav_kurd_page.dart >/dev/null; then
   fail "obsolete native-pause JavaScript injection remains"
 fi
