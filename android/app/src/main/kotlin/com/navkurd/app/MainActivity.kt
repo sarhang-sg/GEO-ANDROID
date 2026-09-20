@@ -1,5 +1,8 @@
 package com.navkurd.app
 
+import com.navkurd.app.localcore.LocalCoreChannel
+import com.navkurd.app.location.NativeLocationService
+
 import android.Manifest
 import android.app.DownloadManager
 import android.app.PendingIntent
@@ -46,6 +49,8 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
 
     private var deepLinkSink: EventChannel.EventSink? = null
     private var pendingDeepLink: String? = null
+    private var localCore: LocalCoreChannel? = null
+    private var nativeLocation: NativeLocationService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,8 +61,11 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
 
     override fun onResume() {
         super.onResume()
+        nativeLocation?.resume()
         applyImmersiveMode()
     }
+
+    override fun onPause() { nativeLocation?.pause(); super.onPause() }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -66,6 +74,9 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        localCore?.close(); nativeLocation?.close()
+        localCore = LocalCoreChannel(this, flutterEngine.dartExecutor.binaryMessenger)
+        nativeLocation = NativeLocationService(this, flutterEngine.dartExecutor.binaryMessenger)
         NavKurdNotifications.createChannels(this)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL)
@@ -96,6 +107,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     }
 
     override fun onDestroy() {
+        localCore?.close(); nativeLocation?.close()
         deviceIo.shutdown()
         super.onDestroy()
     }
@@ -119,7 +131,11 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 "getSdkInt" -> result.success(Build.VERSION.SDK_INT)
                 "getRuntimeInfo" -> {
                     val snapshot = NavKurdRuntimeInfo.collect(this)
-                    runDeviceTask(result) { NavKurdRuntimeInfo.withStorage(applicationContext, snapshot) }
+                    if (call.argument<Boolean>("includeStorage") == true) {
+                        runDeviceTask(result) { NavKurdRuntimeInfo.withStorage(applicationContext, snapshot) }
+                    } else {
+                        result.success(snapshot)
+                    }
                 }
                 "clearTransientCache" -> runDeviceTask(result) { clearTransientCache() }
                 "shareText" -> result.success(shareText(call))
@@ -173,23 +189,6 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                     updateWidget(
                         call.argument<String>("status") ?: "ONLINE",
                         call.argument<String>("detail") ?: "Kurdistan Atlas",
-                    )
-                    result.success(null)
-                }
-                "updateWidgetLocation" -> {
-                    val latitude = call.argument<Number>("latitude")?.toDouble()
-                        ?: error("Missing latitude")
-                    val longitude = call.argument<Number>("longitude")?.toDouble()
-                        ?: error("Missing longitude")
-                    val accuracy = call.argument<Number>("accuracy")?.toDouble() ?: 0.0
-                    require(latitude in -90.0..90.0 && longitude in -180.0..180.0) {
-                        "Invalid widget location"
-                    }
-                    NavKurdWidgetProvider.storeLocationAndRefresh(
-                        this,
-                        latitude,
-                        longitude,
-                        accuracy,
                     )
                     result.success(null)
                 }

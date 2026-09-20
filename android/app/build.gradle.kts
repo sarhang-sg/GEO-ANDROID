@@ -18,6 +18,12 @@ android {
     buildToolsVersion = "37.0.0"
     ndkVersion = flutter.ndkVersion
 
+    androidResources {
+        // PMTiles stays random-access inside the signed APK, including after
+        // the user removes the installed offline-map copy.
+        noCompress += "pmtiles"
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

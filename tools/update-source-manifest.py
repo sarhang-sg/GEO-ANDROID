@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import re
 from pathlib import Path
@@ -17,6 +18,7 @@ EXCLUDED_DIRECTORIES = {
     ".idea",
     ".plugin_symlinks",
     ".vscode",
+    "__pycache__",
     "build",
     "coverage",
     "node_modules",
@@ -34,6 +36,8 @@ EXCLUDED_SUFFIXES = {
     ".keystore",
     ".log",
     ".orig",
+    ".pyc",
+    ".pyo",
     ".swp",
     ".tmp",
     ".zip",
@@ -70,16 +74,40 @@ def included_files() -> list[Path]:
     return sorted(files, key=lambda item: item.relative_to(ROOT).as_posix())
 
 
+def expected_manifest(files: list[Path]) -> str:
+    return "\n".join(
+        f"{digest(path)}  ./{path.relative_to(ROOT).as_posix()}"
+        for path in files
+    ) + "\n"
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="fail unless SOURCE_MANIFEST.sha256 exactly covers the current source tree",
+    )
+    args = parser.parse_args()
+
     files = included_files()
     if not files:
         raise SystemExit("No Android source files were found.")
-    lines = [
-        f"{digest(path)}  ./{path.relative_to(ROOT).as_posix()}"
-        for path in files
-    ]
+    expected = expected_manifest(files)
+
+    if args.check:
+        if not MANIFEST.is_file():
+            raise SystemExit(f"{MANIFEST.name} is missing.")
+        if MANIFEST.read_text(encoding="utf-8") != expected:
+            raise SystemExit(
+                f"{MANIFEST.name} does not exactly match the current source tree. "
+                "Run tools/update-source-manifest.py only from the approved release source."
+            )
+        print(f"Verified {MANIFEST.name}: {len(files)} files")
+        return
+
     temporary = MANIFEST.with_suffix(".sha256.tmp")
-    temporary.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    temporary.write_text(expected, encoding="utf-8")
     temporary.replace(MANIFEST)
     print(f"Updated {MANIFEST.name}: {len(files)} files")
 

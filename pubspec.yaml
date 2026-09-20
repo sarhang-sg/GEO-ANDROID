@@ -7,6 +7,9 @@ environment:
   sdk: ">=3.10.0 <4.0.0"
 
 dependencies:
+  crypto: 3.0.6
+  nav_kurd_local_core:
+    path: packages/nav_kurd_local_core
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -29,6 +32,8 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
+    - assets/r16/
+    - assets/r16/assets/
     - assets/images/nav-kurd-logo.png
   fonts:
     - family: NAVKurdArabic

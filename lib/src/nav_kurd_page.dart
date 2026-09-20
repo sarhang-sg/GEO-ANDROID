@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,10 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:geo_android/src/app_config.dart';
 import 'package:geo_android/src/download_name.dart';
 import 'package:geo_android/src/native_bridge.dart';
+import 'package:geo_android/src/local/android_local_runtime.dart';
+import 'package:geo_android/src/local/android_location.dart';
+import 'package:geo_android/src/local/location_presentation_bridge.dart';
+import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
 import 'package:geo_android/src/permission_coordinator.dart';
 import 'package:geo_android/src/url_policy.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,7 +38,15 @@ final class _NavKurdPageState extends State<NavKurdPage>
     with WidgetsBindingObserver {
   final NativeBridge _bridge = NativeBridge.instance;
   late final PermissionCoordinator _permissions;
-  late final Uri _initialUri;
+  late final AndroidLocation _location;
+  late Future<AndroidLocalRuntime> _localOpening;
+  AndroidLocalRuntime? _local;
+  Map<String, dynamic>? _runtimeInfo;
+  StreamSubscription<Map<String, dynamic>>? _locationSubscription;
+  StreamSubscription<Map<String,dynamic>>? _mapSubscription;
+  bool _trustedDocument = false;
+  late Uri _initialUri;
+  Future<void> _documentNavigation = Future.value();
   StreamSubscription<String>? _deepLinkSubscription;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   InAppWebViewController? _controller;
@@ -51,7 +64,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
     javaScriptCanOpenWindowsAutomatically: false,
     domStorageEnabled: true,
     databaseEnabled: true,
-    geolocationEnabled: true,
+    geolocationEnabled: false,
+    useShouldInterceptRequest: true,
     cacheEnabled: true,
     cacheMode: CacheMode.LOAD_DEFAULT,
     useShouldOverrideUrlLoading: true,
@@ -91,6 +105,12 @@ final class _NavKurdPageState extends State<NavKurdPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _permissions = PermissionCoordinator(_bridge);
+    _location = AndroidLocation(_permissions);
+    _locationSubscription = _location.events.listen(_deliverLocation, onError: (Object error) {
+      unawaited(_bridge.recordDiagnostic(level: 'error', source: 'native.location', message: error.toString()));
+      _deliverLocation({'type':'error','code':'location_channel','message':'Native location service failed.'});
+    });
+    _localOpening = _openLocal();
     _initialUri = UrlPolicy.appUriForDeepLink(widget.initialDeepLink);
     _deepLinkSubscription = _bridge.deepLinks.listen(_handleDeepLink);
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
@@ -105,11 +125,45 @@ final class _NavKurdPageState extends State<NavKurdPage>
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_deepLinkSubscription?.cancel());
     unawaited(_connectivitySubscription?.cancel());
+    unawaited(_locationSubscription?.cancel());
+    unawaited(_mapSubscription?.cancel());
+    unawaited(_location.stop());
+    unawaited(_local?.close());
     super.dispose();
+  }
+
+  Future<AndroidLocalRuntime> _openLocal() async {
+    try {
+      final runtimeFuture = AndroidLocalRuntime.open();
+      final runtimeInfoFuture = _bridge.runtimeInfo();
+      final runtime = await runtimeFuture;
+      _runtimeInfo = await runtimeInfoFuture;
+      if (!mounted) { await runtime.close(); throw StateError('Page disposed during local installation.'); }
+      _local = runtime;
+      _mapSubscription = runtime.mapEvents.listen((snapshot)=>unawaited(_deliverMapSnapshot(snapshot)),onError:(Object error,StackTrace stack){
+        unawaited(_bridge.recordDiagnostic(level:'error',source:'local.maps.events',message:'$error',stack:stack.toString()));
+      });
+      return runtime;
+    } catch (error, stack) {
+      unawaited(_bridge.recordDiagnostic(level: 'error', source: 'local.startup', message: error.toString(), stack: stack.toString()));
+      rethrow;
+    }
+  }
+  void _deliverLocation(Map<String, dynamic> event) {
+    final controller = _controller;
+    if (!mounted || !_trustedDocument || controller == null) return;
+    unawaited(controller.evaluateJavascript(source:
+      'window.dispatchEvent(new CustomEvent("nav-kurd:native-location",{detail:${jsonEncode(event)}}));').catchError((Object error) {
+        unawaited(_bridge.recordDiagnostic(level: 'error', source: 'location.presentation', message: error.toString()));
+        return null;
+      }));
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if(state==AppLifecycleState.inactive||state==AppLifecycleState.paused){
+      unawaited(_persistLocalUi());
+    }
     if (state == AppLifecycleState.resumed) {
       unawaited(_bridge.enterImmersiveMode());
       unawaited(_bridge.refreshWidgetWeather());
@@ -117,7 +171,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
       // activity. Tell the web runtime explicitly when its surface is usable
       // again; focus/visibility events are not reliable on every WebView OEM.
       unawaited(_notifyWebViewResumed());
-      if (_mainFrameFailed && _isOnline) unawaited(_controller?.reload());
+      if (_mainFrameFailed) unawaited(_loadLocalDocument());
     }
   }
 
@@ -129,10 +183,46 @@ final class _NavKurdPageState extends State<NavKurdPage>
         source:
             "window.dispatchEvent(new CustomEvent('nav-kurd:native-resume',{detail:{at:Date.now()}}));",
       );
-    } on Object {
-      // The page may still be attaching after Android recreates the surface.
-      // The web visibility/pageshow fallbacks provide the next recovery path.
+    } catch (error, stack) {
+      await _bridge.recordDiagnostic(level: 'warning', source: 'local.resume',
+        message: '$error', stack: stack.toString());
     }
+  }
+
+  Future<void> _persistLocalUi() async {
+    final controller = _controller;
+    if (controller == null || !_trustedDocument) return;
+    try {
+      final result = await controller.callAsyncJavaScript(
+        functionBody: "if(window.__navKurdPersistUi) await window.__navKurdPersistUi(); else window.dispatchEvent(new Event('nav-kurd:native-suspend'));");
+      if (result?.error != null) throw CoreFailure('preference_write', result!.error.toString());
+    } catch (error, stack) {
+      await _bridge.recordDiagnostic(level: 'error', source: 'local.lifecycle',
+        message: 'UI persistence failed: $error', stack: stack.toString());
+    }
+  }
+
+  Future<void> _loadLocalDocument({Uri? target}) {
+    final task = _documentNavigation.then((_) async {
+      final controller = _controller;
+      if (controller == null || !mounted) return;
+      final current = Uri.tryParse((await controller.getUrl())?.toString() ?? '');
+      final next = target ?? (AppConfig.isTrustedOrigin(current) ? current! : _initialUri);
+      if (!AppConfig.isTrustedOrigin(next)) throw const CoreFailure('untrusted_origin', 'Local navigation requires the approved origin.');
+      await _persistLocalUi();
+      final local = await _localOpening;
+      if (!mounted || controller != _controller) return;
+      _initialUri = next;
+      _trustedDocument = false;
+      await controller.loadData(data: local.initialDocument, baseUrl: WebUri(next.toString()),
+        historyUrl: WebUri(next.toString()), mimeType: 'text/html', encoding: 'utf-8');
+    });
+    _documentNavigation = task.catchError((Object error, StackTrace stack) async {
+      await _bridge.recordDiagnostic(level: 'error', source: 'local.navigation',
+        message: '$error', stack: stack.toString());
+      if (mounted) setState(() => _mainFrameFailed = true);
+    });
+    return _documentNavigation;
   }
 
   Future<void> _readInitialConnectivity() async {
@@ -154,7 +244,6 @@ final class _NavKurdPageState extends State<NavKurdPage>
       ),
     );
     if (online) unawaited(_bridge.refreshWidgetWeather());
-    if (online && _mainFrameFailed) unawaited(_controller?.reload());
   }
 
   void _handleDeepLink(String value) {
@@ -174,13 +263,22 @@ final class _NavKurdPageState extends State<NavKurdPage>
       return;
     }
     final target = UrlPolicy.appUriForDeepLink(value);
-    unawaited(
-      controller?.loadUrl(urlRequest: URLRequest(url: WebUri(target.toString()))),
-    );
+    unawaited(_loadLocalDocument(target: target));
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => FutureBuilder<AndroidLocalRuntime>(
+    future: _localOpening,
+    builder: (context, snapshot) {
+      if (snapshot.hasError) return Scaffold(backgroundColor: _background,
+        body: _OfflinePanel(isOnline: true, localDataFailure: true,
+          onRetry: () => setState(() => _localOpening = _openLocal()), onSettings: _bridge.openAppSettings));
+      if (!snapshot.hasData) return const Scaffold(backgroundColor: _background);
+      return _buildReady(context);
+    },
+  );
+
+  Widget _buildReady(BuildContext context) {
     return PopScope<Object?>(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -199,22 +297,32 @@ final class _NavKurdPageState extends State<NavKurdPage>
           children: <Widget>[
             InAppWebView(
               key: ValueKey<int>(_webViewGeneration),
-              initialUrlRequest: URLRequest(
-                url: WebUri(_initialUri.toString()),
-                headers: const <String, String>{
-                  'X-NAV-KURD-CLIENT': 'flutter-android',
-                },
-              ),
+              initialData: InAppWebViewInitialData(data:_local!.initialDocument,
+                baseUrl:WebUri(_initialUri.toString()),historyUrl:WebUri(_initialUri.toString()),
+                mimeType:'text/html',encoding:'utf-8'),
               initialSettings: _settings,
               initialUserScripts: UnmodifiableListView<UserScript>(
                 <UserScript>[
                   UserScript(
-                    source: _documentStartBridgeScript,
+                    source:
+                        'window.__NAV_KURD_NATIVE_HARDWARE__=Object.freeze(${jsonEncode(_runtimeInfo)});$_documentStartBridgeScript',
+                  forMainFrameOnly: true,
                     injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
                   ),
+                UserScript(source: nativeLocationPresentationScript,
+                  injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START, forMainFrameOnly: true),
                 ],
               ),
               onWebViewCreated: _onWebViewCreated,
+              shouldInterceptRequest: (controller, request) => _local!.resources.respond(request),
+              onLoadStart: (controller, url) {
+                _trustedDocument = AppConfig.isTrustedOrigin(Uri.tryParse(url?.toString() ?? ''));
+                unawaited(_location.stop());
+                if (!mounted) return;
+                if (_mainFrameFailed) {
+                  setState(() => _mainFrameFailed = false);
+                }
+              },
               onLoadStop: _onLoadStop,
               onReceivedError: (controller, request, error) {
                 final description = error.description.toUpperCase();
@@ -285,15 +393,6 @@ final class _NavKurdPageState extends State<NavKurdPage>
                   _webViewGeneration += 1;
                 });
               },
-              onGeolocationPermissionsShowPrompt: (controller, origin) async {
-                final uri = Uri.tryParse(origin);
-                final allowed = await _permissions.requestLocation(uri);
-                return GeolocationPermissionShowPromptResponse(
-                  origin: origin,
-                  allow: allowed,
-                  retain: allowed,
-                );
-              },
               onPermissionRequest: (controller, request) =>
                   _permissions.handleWebPermission(request),
               onDownloadStartRequest: (controller, request) async {
@@ -308,7 +407,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
                       key: const ValueKey<String>('offline'),
                       isOnline: _isOnline,
                       onRetry: () {
-                        unawaited(_controller?.reload());
+                        setState(() => _mainFrameFailed = false);
+                        unawaited(_loadLocalDocument());
                       },
                       onSettings: _bridge.openAppSettings,
                     )
@@ -321,6 +421,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
   }
 
   void _onWebViewCreated(InAppWebViewController controller) {
+    controller.addJavaScriptHandler(handlerName: 'nativeLocalCore', callback: _handleLocalCore);
     _controller = controller;
     controller.addJavaScriptHandler(
       handlerName: 'nativeShare',
@@ -335,12 +436,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
       callback: _handleBase64Download,
     );
     controller.addJavaScriptHandler(
-      handlerName: 'offlinePackStatus',
-      callback: _handleOfflinePackStatus,
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'nativeLocationSnapshot',
-      callback: _handleLocationSnapshot,
+      handlerName: 'nativeLocationControl',
+      callback: _handleLocationControl,
     );
     controller.addJavaScriptHandler(
       handlerName: 'nativeDiagnostics',
@@ -355,9 +452,12 @@ final class _NavKurdPageState extends State<NavKurdPage>
     );
     controller.addJavaScriptHandler(
       handlerName: 'nativeRuntimeInfo',
-      callback: (_) async {
+      callback: (arguments) async {
         if (!await _isCurrentOriginTrusted()) return <String, dynamic>{};
-        return _bridge.runtimeInfo();
+        final request = arguments.isNotEmpty && arguments.first is Map
+            ? arguments.first as Map
+            : const <Object?, Object?>{};
+        return _bridge.runtimeInfo(includeStorage: request['includeStorage'] == true);
       },
     );
     controller.addJavaScriptHandler(
@@ -396,17 +496,6 @@ final class _NavKurdPageState extends State<NavKurdPage>
     WebUri? url,
   ) async {
     if (!AppConfig.isTrustedOrigin(Uri.tryParse(url?.toString() ?? ''))) return;
-    // A service worker can successfully return offline.html for a failed main
-    // navigation. WebView reports that fallback as a normal load, which used to
-    // dismiss the native error panel and expose a second, web-owned offline
-    // card. Android owns this state: keep its one retry/settings panel visible
-    // until the real application document has loaded successfully.
-    if (await _isOfflineFallbackDocument(controller)) {
-      if (mounted && !_mainFrameFailed) {
-        setState(() => _mainFrameFailed = true);
-      }
-      return;
-    }
     await controller.evaluateJavascript(source: _afterLoadBridgeScript);
     if (!mounted) return;
     if (_mainFrameFailed) setState(() => _mainFrameFailed = false);
@@ -414,22 +503,6 @@ final class _NavKurdPageState extends State<NavKurdPage>
     if (!_notificationsAsked) {
       _notificationsAsked = true;
       unawaited(_requestNotificationsAfterLoad());
-    }
-  }
-
-  Future<bool> _isOfflineFallbackDocument(
-    InAppWebViewController controller,
-  ) async {
-    try {
-      final result = await controller.evaluateJavascript(
-        source: '''
-          (() => document.documentElement.dataset.navKurdOfflineFallback === 'true'
-            || Boolean(document.querySelector('main.offline-shell')))()
-        ''',
-      );
-      return result == true || result == 1 || result == 'true';
-    } on Object {
-      return false;
     }
   }
 
@@ -569,57 +642,84 @@ final class _NavKurdPageState extends State<NavKurdPage>
     return uri != null;
   }
 
-  Future<Object?> _handleOfflinePackStatus(List<dynamic> arguments) async {
-    if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
-    final value = arguments.first;
-    if (value is! Map<Object?, Object?>) return false;
-    final data = _stringKeyedPayload(value);
-    final rawStatus = data['status'];
-    final rawProgress = data['progress'];
-    final status = (rawStatus is String ? rawStatus : 'idle').toLowerCase();
-    final progress = rawProgress is num
-        ? rawProgress.toInt().clamp(0, 100)
-        : 0;
-    final previous = _offlinePackStatus;
-    _offlinePackStatus = status;
-    await _bridge.updateWidget(
-      status: status == 'ready' ? 'OFFLINE READY' : status.toUpperCase(),
-      detail: status == 'ready'
-          ? 'Kurdistan Atlas is available offline'
-          : 'Offline map $progress%',
-    );
-    if (status == 'ready' && previous != 'ready') {
-      await _bridge.showNotificationOnce(
-        key: 'offline-map-ready',
-        title: 'NAV KURD',
-        body: 'The Kurdistan offline map is ready.',
-      );
+  Future<void> _deliverMapSnapshot(Map<String,dynamic> data) async {
+    try {
+      final status=data['status'] as String,progress=((data['progress'] as num)*100).round().clamp(0,100);
+      final previous=_offlinePackStatus;
+      _offlinePackStatus=status;
+      final controller=_controller;
+      if(mounted&&_trustedDocument&&controller!=null){
+        await controller.evaluateJavascript(source:'window.dispatchEvent(new CustomEvent("nav-kurd:native-map-pack",{detail:${jsonEncode(data)}}));');
+      }
+      if(previous!=status){
+        await _bridge.updateWidget(status:status=='ready'?'OFFLINE READY':status.toUpperCase(),
+          detail:status=='ready'?'Kurdistan Atlas is available offline':'Offline map $progress%');
+        if(status=='ready')await _bridge.showNotificationOnce(key:'offline-map-ready',title:'NAV KURD',body:'The Kurdistan offline map is ready.');
+      }
+    }catch(error,stack){
+      await _bridge.recordDiagnostic(level:'error',source:'local.maps.presentation',message:'$error',stack:stack.toString());
     }
-    return true;
   }
 
-  Future<Object?> _handleLocationSnapshot(List<dynamic> arguments) async {
-    if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
-    final value = arguments.first;
-    if (value is! Map<Object?, Object?>) return false;
-    final data = _stringKeyedPayload(value);
-    final latitude = data['latitude'];
-    final longitude = data['longitude'];
-    final accuracy = data['accuracy'];
-    if (latitude is! num || longitude is! num) return false;
-    final lat = latitude.toDouble();
-    final lon = longitude.toDouble();
-    if (!lat.isFinite || !lon.isFinite || lat.abs() > 90 || lon.abs() > 180) {
-      return false;
-    }
-    await _bridge.updateWidgetLocation(
-      latitude: lat,
-      longitude: lon,
-      accuracy: accuracy is num && accuracy.isFinite
-          ? accuracy.toDouble().clamp(0, 100000).toDouble()
-          : 0,
-    );
-    return true;
+  Map<String, Object?> _localError(Object error) {
+    final code = error is CoreFailure ? error.code : error is PlatformException ? error.code : 'local_request';
+    final message = error is CoreFailure ? error.message : error is PlatformException ? error.message ?? error.code : error.toString();
+    if (code != 'cancelled') unawaited(_bridge.recordDiagnostic(level: 'error', source: 'local.request', message: '$code: $message'));
+    return {'ok':false, 'error':{'code':code,'message':message}};
+  }
+  Future<Object?> _handleLocationControl(List<dynamic> arguments) async {
+    try {
+      if (!await _isCurrentOriginTrusted()) throw const CoreFailure('untrusted_origin','Location request origin is not trusted.');
+      final request = Map<String, dynamic>.from(arguments.single as Map);
+      final Object? value;
+      switch (request['operation']) {
+        case 'start': await _location.start(); value = null;
+        case 'stop': await _location.stop(); value = null;
+        case 'status': value = await _location.status();
+        default: throw const CoreFailure('invalid_operation','Unknown location operation.');
+      }
+      return {'ok':true,'value':value};
+    } catch (error) { return _localError(error); }
+  }
+  Future<Object?> _handleLocalCore(List<dynamic> arguments) async {
+    try {
+      if (!await _isCurrentOriginTrusted()) throw const CoreFailure('untrusted_origin','Local request origin is not trusted.');
+      final request = Map<String, dynamic>.from(arguments.single as Map);
+      final runtime = await _localOpening;
+      final data = runtime.data;
+      final Object? value;
+      switch (request['operation']) {
+        case 'mapPackSnapshot':value=runtime.takeInitialMapSnapshot()??await runtime.mapSnapshot();
+        case 'mapPackDownload':value=await runtime.downloadMaps();
+        case 'mapPackPause':value=await runtime.pauseMaps();
+        case 'mapPackDelete':value=await runtime.deleteMaps();
+        case 'poiManifest': value=await data.poiManifest();
+        case 'poiShard': value=await data.poiShard(request['dataset'] as String,request['key'] as String);
+        case 'statistics': value=await data.statistics();
+        case 'localitySearch': value=await data.localitySearch(request['text'] as String,request['language'] as String,quick:request['quick']==true);
+        case 'versions': value = await data.versions();
+        case 'search': value = await data.search(request['text'] as String, request['language'] as String, limit: (request['limit'] as num?)?.toInt() ?? 24);
+        case 'viewport': value = await data.viewport((request['bounds'] as List).map((v) => (v as num).toDouble()).toList(), request['language'] as String,
+          datasets: List<String>.from(request['datasets'] as List), minimumLocalityRank:(request['minimumLocalityRank'] as num?)?.toInt()??0, after: (request['after'] as num?)?.toInt() ?? 0, limit: (request['limit'] as num?)?.toInt() ?? 128);
+        case 'place': value = await data.place((request['id'] as num).toInt(), request['language'] as String);
+        case 'reverse': value = await data.reverse((request['longitude'] as num).toDouble(), (request['latitude'] as num).toDouble(), request['language'] as String);
+        case 'importNavigationHistory':value=await data.importNavigationHistory(request['raw'] as String?);
+        case 'navigationHistory':value=await data.navigationHistory(request['userId'] as String?);
+        case 'queueNavigationHistory':await data.queueNavigationHistory(Map<String,Object?>.from(request['entry'] as Map),request['userId'] as String?);value=null;
+        case 'removeNavigationHistory':await data.removeNavigationHistory(request['id'] as String?,request['userId'] as String,expectedRevision:request['expectedRevision'] as int?);value=null;
+        case 'importR16Preferences':value=await data.importR16Preferences(Map<String,Object?>.from(request['values'] as Map));
+        case 'saveUiSnapshot':await data.saveUiSnapshot(Map<String,Object?>.from(request['snapshot'] as Map));value=null;
+        case 'preference': value = await data.preference(request['key'] as String);
+        case 'setPreference': await data.setPreference(request['key'] as String, request['value']); value = null;
+        case 'removePreference': await data.removePreference(request['key'] as String); value = null;
+        case 'mapMetadata': value = await data.mapMetadata(request['archive'] as String);
+        case 'mapTile':
+          final tile = await data.mapTile(request['archive'] as String, (request['z'] as num).toInt(), (request['x'] as num).toInt(), (request['y'] as num).toInt());
+          value = tile == null ? null : base64Encode(tile);
+        default: throw const CoreFailure('invalid_operation','Unknown local operation.');
+      }
+      return {'ok':true,'value':value};
+    } catch (error) { return _localError(error); }
   }
 
   Future<Object?> _handleNativeDiagnostic(List<dynamic> arguments) async {
@@ -639,10 +739,9 @@ final class _NavKurdPageState extends State<NavKurdPage>
   }
 
   Future<bool> _isCurrentOriginTrusted() async {
-    final current = await _controller?.getUrl();
-    return AppConfig.isTrustedOrigin(
-      Uri.tryParse(current?.toString() ?? ''),
-    );
+    // onLoadStart invalidates this flag before an untrusted document can run;
+    // avoid a WebView URL round-trip on every native bridge request.
+    return _trustedDocument && _controller != null;
   }
 
   Future<bool> _launchExternal(Uri uri) async {
@@ -704,12 +803,14 @@ final class _NavKurdPageState extends State<NavKurdPage>
 final class _OfflinePanel extends StatelessWidget {
   const _OfflinePanel({
     required this.isOnline,
+    this.localDataFailure = false,
     required this.onRetry,
     required this.onSettings,
     super.key,
   });
 
   final bool isOnline;
+  final bool localDataFailure;
   final VoidCallback onRetry;
   final Future<void> Function() onSettings;
 
@@ -743,8 +844,8 @@ final class _OfflinePanel extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'دووبارە هەوڵ بدە، یان Settings بکەرەوە. پەکی خەریتەی offline دوای یەکەم دابەزاندن بەردەست دەبێت.',
+                  Text(
+                    localDataFailure ? 'داتای خەریتەی ناوخۆیی نەکرایەوە. دووبارە هەوڵ بدە یان Settings بکەرەوە.' : 'دووبارە هەوڵ بدە، یان Settings بکەرەوە. پەکی خەریتەی offline دوای یەکەم دابەزاندن بەردەست دەبێت.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Color(0xFFB8BCD1), height: 1.6),
                   ),
@@ -779,6 +880,7 @@ final class _OfflinePanel extends StatelessWidget {
 const String _documentStartBridgeScript = r'''
 (() => {
   'use strict';
+  Object.defineProperty(window, '__NAV_KURD_LOCAL_CORE__', {value: 1});
   Object.defineProperty(window, '__NAV_KURD_FLUTTER__', {
     value: true,
     configurable: false,
@@ -824,56 +926,6 @@ const String _documentStartBridgeScript = r'''
     }
     return platformFetch(input, init);
   };
-  let lastPublishedPosition = null;
-  const publishPosition = position => {
-    const coords = position?.coords;
-    if (!coords) return;
-    const latitude = Number(coords.latitude);
-    const longitude = Number(coords.longitude);
-    const now = Date.now();
-    const moved = lastPublishedPosition
-      ? Math.hypot(
-          latitude - lastPublishedPosition.latitude,
-          (longitude - lastPublishedPosition.longitude) *
-            Math.cos(latitude * Math.PI / 180)
-        )
-      : Number.POSITIVE_INFINITY;
-    // The web map consumes every GPS fix directly. The native bridge only feeds
-    // the launcher widget, so forwarding stationary fixes every second wastes
-    // two platform-channel trips and repeatedly schedules widget work.
-    if (lastPublishedPosition && now - lastPublishedPosition.at < 30_000 && moved < .008) return;
-    lastPublishedPosition = { latitude, longitude, at: now };
-    call('nativeLocationSnapshot', {
-      latitude,
-      longitude,
-      accuracy: Number(coords.accuracy || 0)
-    });
-  };
-
-  const geolocation = navigator.geolocation;
-  if (geolocation) {
-    try {
-      const getCurrentPosition = geolocation.getCurrentPosition.bind(geolocation);
-      Object.defineProperty(geolocation, 'getCurrentPosition', {
-        configurable: true,
-        value: (success, failure, options) => getCurrentPosition(position => {
-          publishPosition(position);
-          if (typeof success === 'function') success(position);
-        }, failure, options)
-      });
-    } catch (_) { /* Keep the platform implementation if it is read-only. */ }
-    try {
-      const watchPosition = geolocation.watchPosition.bind(geolocation);
-      Object.defineProperty(geolocation, 'watchPosition', {
-        configurable: true,
-        value: (success, failure, options) => watchPosition(position => {
-          publishPosition(position);
-          if (typeof success === 'function') success(position);
-        }, failure, options)
-      });
-    } catch (_) { /* Keep the platform implementation if it is read-only. */ }
-  }
-
   try {
     Object.defineProperty(navigator, 'share', {
       configurable: true,
@@ -962,45 +1014,9 @@ const String _afterLoadBridgeScript = r'''
   if (window.__NAV_KURD_FLUTTER_OBSERVER__) return;
   window.__NAV_KURD_FLUTTER_OBSERVER__ = true;
 
-  navigator.storage?.persist?.().catch(() => false);
-
   const call = (name, payload) => {
     if (!window.flutter_inappwebview?.callHandler) return Promise.resolve(false);
     return window.flutter_inappwebview.callHandler(name, payload);
-  };
-
-  call('nativeRuntimeInfo', {}).then(info => {
-    if (!info || typeof info !== 'object') return;
-    window.__NAV_KURD_NATIVE_HARDWARE__ = Object.freeze(info);
-    window.dispatchEvent(new CustomEvent('nav-kurd:native-hardware', { detail: info }));
-  }).catch(() => false);
-
-  const publish = () => {
-    const root = document.querySelector('#offlineMapPack');
-    const track = document.querySelector('#offlinePackProgress')?.parentElement;
-    if (!root || !track) return;
-    const status = root.dataset.status || 'idle';
-    const progress = Number(track.getAttribute('aria-valuenow') || 0);
-    call('offlinePackStatus', {
-      status,
-      progress: Number.isFinite(progress) ? Math.round(progress) : 0
-    });
-  };
-
-  const installOfflineObserver = () => {
-    const root = document.querySelector('#offlineMapPack');
-    const track = document.querySelector('#offlinePackProgress')?.parentElement;
-    if (!root || !track) return setTimeout(installOfflineObserver, 700);
-    const observer = new MutationObserver(publish);
-    observer.observe(root, {
-      attributes: true,
-      attributeFilter: ['data-status', 'data-progress-phase']
-    });
-    observer.observe(track, {
-      attributes: true,
-      attributeFilter: ['aria-valuenow']
-    });
-    publish();
   };
 
   const marker = '[META] Native Android diagnostics';
@@ -1070,6 +1086,5 @@ const String _afterLoadBridgeScript = r'''
     // 100 ms while the map was busy.
     discoveryObserver.observe(document.body || document.documentElement, { childList: true });
   }
-  installOfflineObserver();
 })();
 ''';

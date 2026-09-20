@@ -8,6 +8,8 @@ import hashlib
 import json
 import re
 import stat
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -88,6 +90,11 @@ def main() -> None:
     if Path(args.name).name != args.name or not args.name.endswith(".zip"):
         raise SystemExit("--name must be a plain ZIP filename.")
 
+    subprocess.run(
+        [sys.executable, str(ROOT / "tools" / "update-source-manifest.py"), "--check"],
+        cwd=ROOT,
+        check=True,
+    )
     source_files = load_verified_files()
     packaged_files = sorted([SOURCE_MANIFEST, *source_files], key=lambda path: path.as_posix())
     args.output_dir.mkdir(parents=True, exist_ok=True)

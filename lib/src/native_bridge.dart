@@ -30,10 +30,11 @@ final class NativeBridge {
     }
   }
 
-  Future<Map<String, dynamic>> runtimeInfo() async {
+  Future<Map<String, dynamic>> runtimeInfo({bool includeStorage = false}) async {
     try {
       final value = await _methods.invokeMapMethod<String, dynamic>(
         'getRuntimeInfo',
+        <String, bool>{'includeStorage': includeStorage},
       );
       return value ?? <String, dynamic>{};
     } on PlatformException {
@@ -122,22 +123,6 @@ final class NativeBridge {
           '[META] Native Android diagnostics are unavailable.';
     } on PlatformException {
       return '[WARN] Native Android diagnostics could not be collected.';
-    }
-  }
-
-  Future<void> updateWidgetLocation({
-    required double latitude,
-    required double longitude,
-    required double accuracy,
-  }) async {
-    try {
-      await _methods.invokeMethod<void>('updateWidgetLocation', <String, double>{
-        'latitude': latitude,
-        'longitude': longitude,
-        'accuracy': accuracy,
-      });
-    } on PlatformException {
-      // The map remains fully usable when a launcher has no widget support.
     }
   }
 

@@ -68,13 +68,6 @@ if grep -F '_LaunchPanel' lib/src/nav_kurd_page.dart >/dev/null; then
 fi
 require_text lib/src/nav_kurd_page.dart "nav-kurd:native-resume" \
   "native document-picker resume recovery is missing"
-require_text lib/src/nav_kurd_page.dart "_isOfflineFallbackDocument" \
-  "native single-surface offline fallback detection is missing"
-require_text lib/src/nav_kurd_page.dart "navKurdOfflineFallback" \
-  "native offline document marker detection is missing"
-if grep -F 'onLoadStart:' lib/src/nav_kurd_page.dart >/dev/null; then
-  fail "WebView load-start must not dismiss the native offline panel"
-fi
 if grep -F 'nav-kurd:native-pause' lib/src/nav_kurd_page.dart >/dev/null; then
   fail "obsolete native-pause JavaScript injection remains"
 fi
@@ -110,7 +103,7 @@ require_text lib/src/nav_kurd_page.dart 'Map<Object?, Object?>' "native language
 require_text lib/src/nav_kurd_page.dart 'nativeRuntimeInfo' "real Android runtime bridge is missing"
 require_text lib/src/native_bridge.dart "'showNotificationOnce'" \
   "one-time native notification bridge is missing"
-require_text lib/src/nav_kurd_page.dart "key: 'offline-map-ready'" \
+require_text lib/src/nav_kurd_page.dart "key:'offline-map-ready'" \
   "offline-map completion notification is not one-time"
 require_text android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt \
   'private const val NOTIFICATION_PREFS = "nav_kurd_notification_markers"' \
@@ -211,6 +204,8 @@ test "$(find .github/workflows -maxdepth 1 -type f | wc -l | tr -d ' ')" = "1" \
   || fail "Android repository must contain exactly one workflow"
 require_text .github/workflows/android-release.yml 'name: NAV KURD Android release' "workflow name is stale"
 require_text .github/workflows/android-release.yml 'Use Flutter 3.47.1' "Flutter 3.47.1 is required"
+require_text .github/workflows/android-release.yml 'python3 tools/update-source-manifest.py --check' \
+  "CI does not verify the exhaustive release source manifest"
 require_text .github/workflows/android-release.yml 'bash tools/install-android-sdk.sh' "canonical Android SDK setup is missing"
 require_text .github/workflows/android-release.yml '      - "packages/**"' \
   "vendored package changes must trigger Android CI"
@@ -232,6 +227,12 @@ require_text tools/install-android-sdk.sh 'readonly ANDROID_DEFAULT_BUILD_TOOLS=
 require_text tools/install-android-sdk.sh 'readonly ANDROID_BUILD_TOOLS="37.0.0"' "Android 17 build-tools package is incorrect"
 require_text tools/install-android-sdk.sh '"platform-tools"' "Android platform-tools package is missing"
 require_text .github/workflows/android-release.yml 'Build signed universal APK' "universal APK build is missing"
+require_text .github/workflows/android-release.yml 'ANDROID-FINAL.apk' \
+  "final production APK naming is missing"
+require_text .github/workflows/android-release.yml 'ANDROID-FINAL.aab' \
+  "final production AAB naming is missing"
+require_text .github/workflows/android-release.yml 'bundletool-all-${BUNDLETOOL_VERSION}.jar' \
+  "pinned App Bundle verification is missing"
 if grep -F -- '--split-per-abi' .github/workflows/android-release.yml >/dev/null; then
   fail "obsolete ABI-split APK builds remain"
 fi

@@ -11,8 +11,7 @@ final class PermissionCoordinator {
   final NativeBridge _bridge;
   Future<bool>? _locationRequest;
 
-  Future<bool> requestLocation(Uri? origin) {
-    if (!AppConfig.isTrustedOrigin(origin)) return Future<bool>.value(false);
+  Future<bool> requestNativeLocation() {
     return _locationRequest ??= _requestLocation().whenComplete(() {
       _locationRequest = null;
     });
