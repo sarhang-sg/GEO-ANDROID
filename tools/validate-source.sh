@@ -177,10 +177,18 @@ test "$(grep -Ec '<Text(View|Clock)' android/app/src/main/res/layout/nav_kurd_wi
 test "$(grep -Ec '<Text(View|Clock)' android/app/src/main/res/layout/nav_kurd_widget_en.xml)" = \
   "$(grep -Fc '@font/red_hat_display_variable' android/app/src/main/res/layout/nav_kurd_widget_en.xml)" \
   || fail "every English widget text node must use Red Hat Display"
-if find android/app/src/main lib -type f \( -name '*.kt' -o -name '*.dart' -o -name '*.xml' \) -print0 \
-  | xargs -0 grep -Pn '[\x{1F300}-\x{1FAFF}]' >/dev/null; then
-  fail "emoji found in Android or Flutter source"
-fi
+# Portable Unicode emoji scan: works in GNU/Linux CI and Termux grep builds.
+python3 - <<'PY_EMOJI'
+from pathlib import Path
+
+for root in (Path("android/app/src/main"), Path("lib")):
+    for path in root.rglob("*"):
+        if not path.is_file() or path.suffix not in {".kt", ".dart", ".xml"}:
+            continue
+        text = path.read_text(encoding="utf-8")
+        if any(0x1F300 <= ord(character) <= 0x1FAFF for character in text):
+            raise SystemExit(f"emoji found in Android or Flutter source: {path}")
+PY_EMOJI
 
 python3 tools/verify-launcher-pngs.py
 test "$(sha256sum tools/assets/nav-kurd-launcher-source.png | awk '{print $1}')" = \

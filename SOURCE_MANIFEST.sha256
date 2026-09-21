@@ -1,5 +1,6 @@
 74d17ea6ad508590064eebbd85ff7eeb62bb3682b818eca909d3877f210a021a  ./.gitattributes
 fb547a952bce20991507827f8c49b05125afba24052e3ee3defe88544f8e88dd  ./.github/workflows/android-release.yml
+16d2eef93deb5761778f523f54e5bbcf3304f04feb648926c608e4d7984a7763  ./.github/workflows/nav-kurd-lock-repair.yml
 fb7afbc14980e0bffd09c7eb7a4c6c2e5e745beb2796ab3d7d48f3c7a634d705  ./.gitignore
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./ANDROID_APP_LINK_SHA256.txt
@@ -956,6 +957,6 @@ f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/instal
 c08e2a3b6d864184546ec46771979d06663b89dbf7a9f56ebb2c9492c67d2937  ./tools/native-data/search-service-index.mjs
 de9bb566c56c4f6491ffcadb7054ee37360f83ede0af9f77a75f6bf40079b94f  ./tools/package-source.py
 49dc0704f32759791e9c109f58a4e8212a5442f4e8dad3b36af91c14fe346109  ./tools/update-source-manifest.py
-a61e5cfd9c80264017a85f619340dfaaf884a384fc3beef7a19cd5967991bdcb  ./tools/validate-source.sh
+0f6358c35d3a292cf170678d6b6bc52d6f9cda4894da4e806ed460ebb9c6f488  ./tools/validate-source.sh
 4f84eec39436ff539429ab9eea78ef3a0bfabcd7e9e6d4909c8be9f46bd9b7bf  ./tools/verify-launcher-pngs.py
 cc3efd003f73fd985a6f99d6b08b144c320ba1e15f3712864e570f2e325c44fd  ./tools/verify-release-signature.sh
