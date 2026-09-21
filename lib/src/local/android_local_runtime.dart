@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'bundled_presentation.dart';
+
 import 'package:flutter/services.dart';
-import 'package:geo_android/src/native_bridge.dart';
+import 'package:geo_android/src/local/bundled_presentation.dart';
 import 'package:geo_android/src/local/core_resource_handler.dart';
+import 'package:geo_android/src/native_bridge.dart';
 import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
 
 /// One installed immutable pack and one data isolate for the application.

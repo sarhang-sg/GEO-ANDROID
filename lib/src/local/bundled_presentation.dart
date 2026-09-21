@@ -1,6 +1,5 @@
-import 'dart:collection';
 import 'dart:convert';
-import 'dart:typed_data';
+
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:geo_android/src/app_config.dart';
@@ -10,7 +9,7 @@ import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
 final class BundledPresentation {
   BundledPresentation._(this.files);
   final Map<String,Map<String,Object?>> files;
-  final _cache = LinkedHashMap<String, Uint8List>();
+  final _cache = <String, Uint8List>{};
   int _cacheBytes = 0;
   static const _maximumCacheBytes = 8 * 1024 * 1024;
   static Future<BundledPresentation> open() async {
@@ -34,7 +33,7 @@ final class BundledPresentation {
       _cache[path] = cached;
       return cached;
     }
-    final data=await rootBundle.load('assets/r16${path}'),bytes=data.buffer.asUint8List(data.offsetInBytes,data.lengthInBytes);
+    final data=await rootBundle.load('assets/r16$path'),bytes=data.buffer.asUint8List(data.offsetInBytes,data.lengthInBytes);
     if(bytes.length!=file['bytes']||sha256.convert(bytes).toString()!=file['sha256'])throw CoreFailure('presentation_integrity','Bundled resource is corrupt: $path');
     if (bytes.length <= _maximumCacheBytes) {
       while (_cache.isNotEmpty && _cacheBytes + bytes.length > _maximumCacheBytes) {

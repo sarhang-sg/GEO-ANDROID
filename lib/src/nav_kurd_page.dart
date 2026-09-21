@@ -9,13 +9,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:geo_android/src/app_config.dart';
 import 'package:geo_android/src/download_name.dart';
-import 'package:geo_android/src/native_bridge.dart';
 import 'package:geo_android/src/local/android_local_runtime.dart';
 import 'package:geo_android/src/local/android_location.dart';
 import 'package:geo_android/src/local/location_presentation_bridge.dart';
-import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
+import 'package:geo_android/src/native_bridge.dart';
 import 'package:geo_android/src/permission_coordinator.dart';
 import 'package:geo_android/src/url_policy.dart';
+import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Map<String, Object?> _stringKeyedPayload(Map<Object?, Object?> value) {
@@ -270,9 +270,11 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Widget build(BuildContext context) => FutureBuilder<AndroidLocalRuntime>(
     future: _localOpening,
     builder: (context, snapshot) {
-      if (snapshot.hasError) return Scaffold(backgroundColor: _background,
-        body: _OfflinePanel(isOnline: true, localDataFailure: true,
-          onRetry: () => setState(() => _localOpening = _openLocal()), onSettings: _bridge.openAppSettings));
+      if (snapshot.hasError) {
+        return Scaffold(backgroundColor: _background,
+          body: _OfflinePanel(isOnline: true, localDataFailure: true,
+            onRetry: () => setState(() => _localOpening = _openLocal()), onSettings: _bridge.openAppSettings));
+      }
       if (!snapshot.hasData) return const Scaffold(backgroundColor: _background);
       return _buildReady(context);
     },

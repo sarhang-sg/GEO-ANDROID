@@ -1,10 +1,10 @@
-import 'dart:io';
-import 'bundled_presentation.dart';
-import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:geo_android/src/app_config.dart';
+import 'package:geo_android/src/local/bundled_presentation.dart';
 import 'package:geo_android/src/native_bridge.dart';
 import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
 
@@ -15,7 +15,7 @@ final class CoreResourceHandler {
   final BundledPresentation _presentation;
   final LocalDataClient _data;
   final Map<String, Map<String, Object>> _assets;
-  final _layerCache = LinkedHashMap<String, Uint8List>();
+  final _layerCache = <String, Uint8List>{};
   final _layerLoads = <String, Future<Uint8List>>{};
   final _metadataLoads = <String, Future<Map<String, Object?>>>{};
   Future<Map<String, Uint8List>>? _coverageLoad;
@@ -49,8 +49,9 @@ final class CoreResourceHandler {
     final original = prefix != '/' && path.startsWith(prefix)
         ? '/${path.substring(prefix.length)}'
         : path;
-    if (original.startsWith('/__navkurd/maps/'))
+    if (original.startsWith('/__navkurd/maps/')) {
       return _map(request, uri, original);
+    }
     final dataset = _layers[original];
     if (dataset != null) return _layer(request, dataset);
     final uiPath = original == '/' ? '/index.html' : original;
@@ -62,32 +63,36 @@ final class CoreResourceHandler {
         throw const CoreFailure('asset_method', 'Local assets are read-only.');
       }
       final size = asset['bytes']! as int;
-      if (size > 8 * 1024 * 1024)
+      if (size > 8 * 1024 * 1024) {
         throw const CoreFailure(
           'asset_size',
           'UI resource exceeds the bounded response size.',
         );
+      }
       final file = File(asset['path']! as String);
-      if (await file.length() != size)
+      if (await file.length() != size) {
         throw CoreFailure(
           'corrupt_core',
           'Installed resource size changed: $original',
         );
+      }
       final bytes = request.method == 'HEAD'
           ? Uint8List(0)
           : await file.readAsBytes();
-      if (request.method != 'HEAD' && bytes.length != size)
+      if (request.method != 'HEAD' && bytes.length != size) {
         throw CoreFailure(
           'corrupt_core',
           'Installed resource changed during read: $original',
         );
+      }
       final extension = original.split('.').last.toLowerCase(),
           mime = _mime[extension];
-      if (mime == null)
+      if (mime == null) {
         throw CoreFailure(
           'asset_type',
           'Unsupported bundled resource type: $extension',
         );
+      }
       return WebResourceResponse(
         contentType: mime,
         contentEncoding:
@@ -130,11 +135,12 @@ final class CoreResourceHandler {
     try {
       _readOnly(request);
       final mime = _mime[path.split('.').last];
-      if (mime == null)
+      if (mime == null) {
         throw CoreFailure(
           'asset_type',
           'Unsupported bundled presentation resource: $path',
         );
+      }
       return _response(request, await _presentation.read(path), mime);
     } catch (error, stack) {
       return _failure('local.presentation', error, stack);
@@ -191,8 +197,9 @@ final class CoreResourceHandler {
     },
   );
   void _readOnly(WebResourceRequest request) {
-    if (request.method != 'GET' && request.method != 'HEAD')
+    if (request.method != 'GET' && request.method != 'HEAD') {
       throw const CoreFailure('asset_method', 'Local resources are read-only.');
+    }
   }
 
   Future<WebResourceResponse> _failure(
@@ -262,8 +269,9 @@ final class CoreResourceHandler {
       final tile = RegExp(
         r'^/__navkurd/maps/(base|roads)/(\d{1,2})/(\d{1,10})/(\d{1,10})\.pbf$',
       ).firstMatch(path);
-      if (tile == null)
+      if (tile == null) {
         return _response(request, Uint8List(0), 'text/plain', status: 404);
+      }
       final bytes = await _data.mapTile(
         tile.group(1)!,
         int.parse(tile.group(2)!),
@@ -419,16 +427,18 @@ final class CoreResourceHandler {
         limit: 256,
       );
       total += page['decodedSourceBytes'] as int;
-      if (total > 8 * 1024 * 1024)
+      if (total > 8 * 1024 * 1024) {
         throw const CoreFailure(
           'layer_size',
           'Static map layer exceeds 8 MiB.',
         );
+      }
       features.addAll(page['features'] as List);
       if (page['hasMore'] != true) break;
       final next = page['nextId'] as int;
-      if (next <= after)
+      if (next <= after) {
         throw const CoreFailure('cursor', 'Map layer cursor did not advance.');
+      }
       after = next;
     }
     return _encodeLayer(features);
