@@ -13,6 +13,8 @@ android/app/.cxx/
 android/app/build/
 android/key.properties
 android/app/*.jks
+android/app/*.p12
+android/app/*.pfx
 android/app/*.keystore
 
 # Signing material: never commit private update keys.

@@ -22,8 +22,8 @@ RELEASE_DATE = (2026, 9, 6, 0, 0, 0)
 MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  \./(.+)$")
 FORBIDDEN = re.compile(
     r"(?:^|/)(?:"
-    r"[^/]*\.(?:jks|keystore|apk|aab)|"
-    r"signing\.properties|key\.properties|local\.properties"
+    r"[^/]*\.(?:jks|keystore|p12|pfx|apk|aab)|"
+    r"signing\.properties|key\.properties|local\.properties|\.env(?:\..*)?"
     r")$",
     re.IGNORECASE,
 )

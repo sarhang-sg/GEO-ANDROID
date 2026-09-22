@@ -12,6 +12,21 @@ if (hasReleaseKey) {
     keyPropertiesFile.inputStream().use { keyProperties.load(it) }
 }
 
+val releaseRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+if (releaseRequested) {
+    check(hasReleaseKey) { "Release signing configuration is required." }
+    for (property in listOf("keyAlias", "keyPassword", "storeFile", "storePassword")) {
+        check(!keyProperties.getProperty(property).isNullOrBlank()) {
+            "Release signing property is missing: $property"
+        }
+    }
+    check(file(keyProperties.getProperty("storeFile")).isFile) {
+        "The established release keystore is unavailable."
+    }
+}
+
 android {
     namespace = "com.navkurd.app"
     compileSdk = 37
@@ -59,11 +74,7 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
-            signingConfig = if (hasReleaseKey) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

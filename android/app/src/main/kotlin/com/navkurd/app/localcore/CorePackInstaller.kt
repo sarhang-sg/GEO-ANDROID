@@ -499,8 +499,21 @@ class CorePackInstaller(context: Context) {
         if (!directory.isDirectory && !directory.mkdirs()) throw LocalCoreException("core_io", "Cannot create private core directory.")
     }
     private fun syncDirectory(directory: File) {
-        val fd = Os.open(directory.absolutePath, OsConstants.O_RDONLY or OsConstants.O_DIRECTORY, 0)
-        try { Os.fsync(fd) } finally { Os.close(fd) }
+        // Use public API 21+ flags; O_DIRECTORY is not exposed by the Android SDK.
+        // Check the opened descriptor, so a path change cannot fsync a non-directory.
+        val fd = Os.open(
+            directory.absolutePath,
+            OsConstants.O_RDONLY or OsConstants.O_CLOEXEC or OsConstants.O_NOFOLLOW,
+            0,
+        )
+        try {
+            if (!OsConstants.S_ISDIR(Os.fstat(fd).st_mode)) {
+                throw LocalCoreException("core_io", "Core metadata parent is not a directory.")
+            }
+            Os.fsync(fd)
+        } finally {
+            Os.close(fd)
+        }
     }
     private fun bounded(input: InputStream, maximum: Int): ByteArray {
         val output = java.io.ByteArrayOutputStream()

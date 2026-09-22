@@ -1,6 +1,6 @@
 74d17ea6ad508590064eebbd85ff7eeb62bb3682b818eca909d3877f210a021a  ./.gitattributes
-fb547a952bce20991507827f8c49b05125afba24052e3ee3defe88544f8e88dd  ./.github/workflows/android-release.yml
-fb7afbc14980e0bffd09c7eb7a4c6c2e5e745beb2796ab3d7d48f3c7a634d705  ./.gitignore
+4c0449bde110d924237d6417c1403c756cb1e4f9b5595b29d84c7a63190268cc  ./.github/workflows/android-release.yml
+9b68643e2ec7420189c48ded49a74f50e5a86ed10581f9c252e2d4864902a679  ./.gitignore
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./ANDROID_APP_LINK_SHA256.txt
 a96ea0e7adbaa74254cf7f6fb0d681477ea4ecdffaf822dc24a00b540466f577  ./LICENSE
@@ -8,7 +8,7 @@ b98b9f0cde7e4e4280524e19360b7331113dc8e1bc88f71ef244dc6af1e858f0  ./README.md
 a827e93b00fbfcc8ad648465aaa07ecba67c700077bddee23531c380d4353fff  ./SECURITY.md
 9dcbd22782ee300e2cda01603b29f33d2e16c0b795a57f87c36a83c1d4ff466e  ./TERMUX.sh
 6b5de17d3ac9a5821d49236b67cbac9a297ca0091f99b00be57f5738d9de98a7  ./analysis_options.yaml
-05511f880bda915475d5532b3b1458083ff8fb4934fb8d26137b503f71028b19  ./android/app/build.gradle.kts
+f0e31491d0abc4ec21f977d8ef9a69278f0ee7befcac945db6e99d2870bca432  ./android/app/build.gradle.kts
 62e3c5cced1f6469a3a038f6bb0085f0751ca71028fdd62eacd7c957286062d1  ./android/app/proguard-rules.pro
 678647a824ef7ab16066708585790ab265135d32fdf84bcd918a4b050f8891b9  ./android/app/src/debug/AndroidManifest.xml
 6da7cd37f934a0638c015f3c8e6ab1061524e473d6f6fffdf81390a92efd7aa5  ./android/app/src/main/AndroidManifest.xml
@@ -614,7 +614,7 @@ a52d07381fd8f9aa7fe057db086d8100b700590016f7a60bd49ddea870a983d5  ./android/app/
 8084073ee3ebc9e20e94742c7497306a362949da80234f2647a1512a6a181069  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt
 95882f0eee31d1d9785e43acc854192b83adc502aeef2eb6564d1386db0b2ec4  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
 5eaa31c7f8b4c168a59cdee733ea626c864e857d23fe9b2b389d69e606fbc707  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt
-3f60f75db017e6a68906b95ccf3320d680030dd5f794fdf5e70005dc0961d409  ./android/app/src/main/kotlin/com/navkurd/app/localcore/CorePackInstaller.kt
+43812d931030ef3b60e91f566c64f26080805fadd6c77637f0e27a0c995f55ef  ./android/app/src/main/kotlin/com/navkurd/app/localcore/CorePackInstaller.kt
 16d4cf2ce55e3608662ec69ecfdacf2d3a2e81f3b67b9521a5db1f293683af08  ./android/app/src/main/kotlin/com/navkurd/app/localcore/LocalCoreChannel.kt
 4832fcf3c976af1c89ea955bd86c1c80de17a359bc0d755a3a9e2d39b3babf9d  ./android/app/src/main/kotlin/com/navkurd/app/location/NativeLocationService.kt
 0df7db82a4a47f9623a0d3ae75ca8c8c3bb67c20f3fccd8c1d29399d78f81920  ./android/app/src/main/res/drawable-nodpi/widget_scene_autumn.webp
@@ -666,7 +666,7 @@ adc86ea0d443d2d309493896daab8af78c2e60d70cf0e00c352eb972da603070  ./android/app/
 dbc726438a7e99c69fdfc39146cd51ef8300dacb236843bbce3ecd2a1712a80f  ./android/app/src/main/res/xml/network_security_config.xml
 678647a824ef7ab16066708585790ab265135d32fdf84bcd918a4b050f8891b9  ./android/app/src/profile/AndroidManifest.xml
 aefdea096bdd551a39d5e4f8cb445c22de4e3c7cd202eb5b0470046c5c147c31  ./android/build.gradle.kts
-3e3e7a3a81e16b7cec3b808689c584c8569f154e85578e65144b485e3aaca930  ./android/gradle.properties
+fb24aa8803edc3961633bc5951d0a354022eaeca8cb283d3437cf21a21e82f73  ./android/gradle.properties
 16caeaf66d57a0d1d2087fef6a97efa62de8da69afa5b908f40db35afc4342da  ./android/gradle/wrapper/gradle-wrapper.jar
 03404090bed999d73b4bf2717f46ec3887e816e582a3f0f65a2d876ac9d6945e  ./android/gradle/wrapper/gradle-wrapper.properties
 ec56c02543666d92d9ac5ae7fcc48f88ce4de0deb8b7f9b39928ca46f68c1b2b  ./android/gradlew
@@ -954,8 +954,9 @@ f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/instal
 21588489dd463ca2cfe4c785f77fa8ed643989903238e82850b61bfa88f4f5d7  ./tools/native-data/r16.mjs
 1b738e7dcde18c570d70fec964b46d871395ff6f98430cc7927a130c51e577fc  ./tools/native-data/schema.sql
 c08e2a3b6d864184546ec46771979d06663b89dbf7a9f56ebb2c9492c67d2937  ./tools/native-data/search-service-index.mjs
-de9bb566c56c4f6491ffcadb7054ee37360f83ede0af9f77a75f6bf40079b94f  ./tools/package-source.py
-49dc0704f32759791e9c109f58a4e8212a5442f4e8dad3b36af91c14fe346109  ./tools/update-source-manifest.py
+206070864a13604f32b98f4cb6b9051e28554065e057339868eb4df68225e2c6  ./tools/package-source.py
+be34ef1ce0ba34be54739cc196aebd9dd68eb865d69aa6b64a267fbeb74c1f77  ./tools/update-source-manifest.py
 0f6358c35d3a292cf170678d6b6bc52d6f9cda4894da4e806ed460ebb9c6f488  ./tools/validate-source.sh
 4f84eec39436ff539429ab9eea78ef3a0bfabcd7e9e6d4909c8be9f46bd9b7bf  ./tools/verify-launcher-pngs.py
+cd94d42e421078d001b16f3840dd2009157841c2182f58fee259c367ef9a541c  ./tools/verify-release-assets.py
 cc3efd003f73fd985a6f99d6b08b144c320ba1e15f3712864e570f2e325c44fd  ./tools/verify-release-signature.sh

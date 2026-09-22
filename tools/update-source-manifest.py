@@ -34,6 +34,8 @@ EXCLUDED_SUFFIXES = {
     ".bak",
     ".jks",
     ".keystore",
+    ".p12",
+    ".pfx",
     ".log",
     ".orig",
     ".pyc",
@@ -43,7 +45,7 @@ EXCLUDED_SUFFIXES = {
     ".zip",
 }
 PRIVATE_FILE = re.compile(
-    r"(?:^|/)(?:signing\.properties|key\.properties|local\.properties|\.env)$",
+    r"(?:^|/)(?:signing\.properties|key\.properties|local\.properties|\.env(?:\..*)?)$",
     re.IGNORECASE,
 )
 

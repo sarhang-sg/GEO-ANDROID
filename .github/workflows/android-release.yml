@@ -88,8 +88,15 @@ jobs:
         run: |
           set -Eeuo pipefail
           for attempt in $(seq 1 12); do
-            if flutter pub get --enforce-lockfile; then
+            if flutter pub get --enforce-lockfile > "$RUNNER_TEMP/nav-kurd-pub.log" 2>&1; then
+              cat "$RUNNER_TEMP/nav-kurd-pub.log"
+              git diff --exit-code -- pubspec.lock pubspec.yaml
               exit 0
+            fi
+            cat "$RUNNER_TEMP/nav-kurd-pub.log"
+            if grep -E "Unable to satisfy|version solving failed|--enforce-lockfile|requires SDK version" "$RUNNER_TEMP/nav-kurd-pub.log" >/dev/null; then
+              echo 'Dependency contract failed; a deterministic source error will not be retried as a network failure.' >&2
+              exit 1
             fi
             if [ "$attempt" -eq 12 ]; then
               exit 1
@@ -310,6 +317,9 @@ jobs:
             echo "Debug or staging content exists in the release AAB" >&2
             exit 1
           fi
+
+          python3 tools/verify-release-assets.py \
+            --apk "release/$apk_name" --aab "release/$aab_name"
 
           printf '%s\n' "$apk_digest" > release/CERTIFICATE_SHA256.txt
           cp ANDROID_APP_LINK_SHA256.txt release/
