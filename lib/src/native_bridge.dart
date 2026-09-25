@@ -128,7 +128,7 @@ final class NativeBridge {
 
   Future<bool> widgetLocationOptions({bool? enabled}) async {
     return await _methods.invokeMethod<bool>('widgetLocationOptions',
-      <String, Object?>{if (enabled != null) 'enabled': enabled}) ?? false;
+      <String, Object?>{'enabled': ?enabled}) ?? false;
   }
 
   Future<void> refreshWidgetWeather() async {

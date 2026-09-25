@@ -718,7 +718,7 @@ e007996d9545a1ecd38d3d8584fcb208b797a25ea3a4a9ba8d5e8352571ddab2  ./lib/src/loca
 b6d1338de016e098d47453ad809d72d62a23d534725940318767c0ba336daa9c  ./lib/src/local/bundled_presentation.dart
 d7719fa102b9cb3d13bc33d4e4b2019fdae3673ffa77020f6ffad814d6ee628f  ./lib/src/local/core_resource_handler.dart
 52426bdc491b2162c8e501602c742da949f48fcc27caef69fd9a45cdeff0b07f  ./lib/src/local/location_presentation_bridge.dart
-d344f1e4e44bd97431ec9f676336786fcc7639d4676aef42e951a568d3b51b4d  ./lib/src/native_bridge.dart
+e9f82998ba158ec3ce4cc64a2d1491beae126a9516442d4ddc2a61756aa06d80  ./lib/src/native_bridge.dart
 cef4a269f641e2420e341986f9e1c49af0ff045d35006d3d310fa701da4fb689  ./lib/src/nav_kurd_page.dart
 bcae15e965731addc9b549140264bc76b7f6e475ae425a5245dcde3802fea363  ./lib/src/permission_coordinator.dart
 2aa3df37244f3e5cab14b645b7adda03e6b32ac206586817abfbc6d964660b3f  ./lib/src/url_policy.dart
