@@ -28,6 +28,9 @@ object NavKurdWidgetTypography {
 
     private const val SCALE = 2f
     private val typefaces = mutableMapOf<Int, Typeface>()
+    private val rendered = object : android.util.LruCache<String, Bitmap>(2 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
 
     @Synchronized
     private fun font(context: Context, latin: Boolean): Typeface {
@@ -49,6 +52,12 @@ object NavKurdWidgetTypography {
         maxWidthDp: Float,
         color: String,
     ) {
+        val cacheKey = listOf(text, language, sizeSp, maxWidthDp, color, context.resources.configuration.fontScale).joinToString("\u0000")
+        rendered.get(cacheKey)?.let {
+            views.setImageViewBitmap(viewId, it)
+            views.setContentDescription(viewId, text)
+            return
+        }
         val latin = language == "en" || text.none {
             it in '\u0600'..'\u08ff' || it in '\ufb50'..'\ufdff' || it in '\ufe70'..'\ufeff'
         }
@@ -71,6 +80,7 @@ object NavKurdWidgetTypography {
         val bitmap = Bitmap.createBitmap(width, layout.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
         bitmap.density = (160 * SCALE).toInt()
         layout.draw(Canvas(bitmap))
+        rendered.put(cacheKey, bitmap)
         views.setImageViewBitmap(viewId, bitmap)
         // Preserve the label for TalkBack; this is not decorative image text.
         views.setContentDescription(viewId, text)

@@ -77,10 +77,16 @@ final class AndroidLocalRuntime {
     _initialMapSnapshot = null;
     return snapshot;
   }
+  static Map<String,dynamic> _requiredMap(Map<String,dynamic>? value) {
+    if (value == null || value['status'] is! String) {
+      throw const CoreFailure('map_protocol', 'Native map state is missing or invalid.');
+    }
+    return value;
+  }
   Future<Map<String,dynamic>> mapSnapshot() async =>
-      (await _channel.invokeMapMethod<String,dynamic>('mapSnapshot'))!;
+      _requiredMap(await _channel.invokeMapMethod<String,dynamic>('mapSnapshot'));
   Future<Map<String,dynamic>> pauseMaps() async =>
-      (await _channel.invokeMapMethod<String,dynamic>('pauseMaps'))!;
+      _requiredMap(await _channel.invokeMapMethod<String,dynamic>('pauseMaps'));
   Future<Map<String,dynamic>> downloadMaps()=>_changeMaps('downloadMaps');
   Future<Map<String,dynamic>> deleteMaps() async {
     try {await pauseMaps();}catch(error,stack){
@@ -97,7 +103,7 @@ final class AndroidLocalRuntime {
       // Drain the sole PMTiles readers before changing/removing their files.
       final bundled=await _channel.invokeMapMethod<String,dynamic>('mapArchives',{'bundled':true});
       await data.setMapArchives(_archives(bundled));
-      final result=(await _channel.invokeMapMethod<String,dynamic>(method))!;
+      final result=_requiredMap(await _channel.invokeMapMethod<String,dynamic>(method));
       final selected=await _channel.invokeMapMethod<String,dynamic>('mapArchives');
       await data.setMapArchives(_archives(selected));
       return result;

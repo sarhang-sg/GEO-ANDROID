@@ -115,6 +115,10 @@ object NavKurdDiagnostics {
                     else -> "INFO"
                 }
                 lines += "[$label] ${event.optString("at")} · ${event.optString("source")} · ${event.optString("message").take(700)}"
+                // The already-sanitized stack is essential for identifying a null failure.
+                event.optString("stack").takeIf { it.isNotBlank() }?.let { stack ->
+                    lines += stack.lineSequence().take(10).joinToString("\n").take(1800)
+                }
             }
         }
         return lines.joinToString("\n")

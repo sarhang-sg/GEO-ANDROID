@@ -164,14 +164,31 @@ class CorePackInstaller(context: Context) {
             state.getString("status") !in setOf("ready", "idle", "downloading", "paused", "error")) {
             throw LocalCoreException("map_state", "Invalid installed-map state.")
         }
+        if (!state.has("confirmedBytes")) {
+            // Upgrade the old journal once without resetting retained progress.
+            val target = File(root, "packs/$packId")
+            val confirmed = JSONObject()
+            for (spec in mapSpecs(manifest)) {
+                val path = spec.getString("path")
+                val complete = safeFile(target, path)
+                val candidate = if (complete.isFile) complete else safeFile(target, "$path.copying")
+                val count = if (state.getString("status") == "idle" || !candidate.isFile) 0L
+                    else RandomAccessFile(candidate, "rw").use { it.fd.sync(); it.length() }
+                if (count > spec.getLong("bytes")) throw LocalCoreException("map_corrupt", "Oversized retained map: $path")
+                confirmed.put(path, count)
+            }
+            state.put("confirmedBytes", confirmed)
+            atomicBytes(file, state.toString().toByteArray(Charsets.UTF_8))
+        }
         cachedMapStatePackId = packId
         cachedMapState = state
         return state
     }
 
-    private fun writeMapState(manifest: JSONObject, status: String, error: String? = null) {
+    private fun writeMapState(manifest: JSONObject, status: String, error: String? = null, confirmed: JSONObject? = null) {
         val state = JSONObject().put("packId", manifest.getString("packId")).put("status", status)
             .put("error", error ?: JSONObject.NULL).put("updatedAt", System.currentTimeMillis())
+            .put("confirmedBytes", if (status == "idle") JSONObject() else confirmed ?: JSONObject(readMapState(manifest).getJSONObject("confirmedBytes").toString()))
         atomicBytes(mapStateFile(manifest), state.toString().toByteArray(Charsets.UTF_8))
         // The durable atomic write remains authoritative. This process-local
         // copy only avoids reopening/parsing the same journal for every 150 ms
@@ -225,14 +242,20 @@ class CorePackInstaller(context: Context) {
         val total = mapSpecs(manifest).sumOf { it.getLong("bytes") }
         val count = mapSpecs(manifest).sumOf { spec ->
             val file = safeFile(target, spec.getString("path"))
-            val partial = File(file.parentFile, "${file.name}.copying")
-            (if (file.isFile) file.length() else if (partial.isFile) partial.length() else 0L).coerceIn(0, spec.getLong("bytes"))
+            val partial = safeFile(target, "${spec.getString("path")}.copying")
+            val confirmed = state.getJSONObject("confirmedBytes").optLong(spec.getString("path"), 0L)
+            val actual = if (file.isFile) file.length() else if (partial.isFile) partial.length() else 0L
+            if (confirmed < 0L || confirmed > spec.getLong("bytes") || confirmed > actual) {
+                throw LocalCoreException("map_corrupt", "Confirmed map data is missing: ${spec.getString("path")}")
+            }
+            confirmed
         }
         // An interrupted extraction is resumable and does not resume itself.
         val status = state.getString("status").let { if (it == "downloading" && mapDownload == null) "paused" else it }
         val versions = manifest.getJSONObject("versions")
         return mapOf("status" to status, "downloadedBytes" to count, "totalBytes" to total,
             "progress" to count.toDouble() / total, "persisted" to true,
+            "source" to "bundled", "bundledAvailable" to true,
             "storageUsageBytes" to count, "storageQuotaBytes" to root.totalSpace,
             "storageAvailableBytes" to root.usableSpace,
             "verifiedAt" to if (status == "ready") File(target, "ready.json").lastModified() else null,
@@ -257,7 +280,7 @@ class CorePackInstaller(context: Context) {
                 if (readMapState(manifest).getString("status") != "ready") {
                     val needed = mapSpecs(manifest).sumOf { spec ->
                         val file = safeFile(target, spec.getString("path"))
-                        val partial = File(file.parentFile, "${file.name}.copying")
+                        val partial = safeFile(target, "${spec.getString("path")}.copying")
                         (spec.getLong("bytes") - (if (file.isFile) file.length() else partial.length())).coerceAtLeast(0)
                     }
                     if (target.usableSpace < needed + 4L * 1024 * 1024) {
@@ -290,13 +313,26 @@ class CorePackInstaller(context: Context) {
 
     /** Resume compares the persisted prefix against bundled bytes before append;
      * every successful install hashes the complete file with a bounded buffer. */
+    private fun commitMapBytes(manifest: JSONObject, path: String, count: Long) {
+        val state = readMapState(manifest)
+        val confirmed = JSONObject(state.getJSONObject("confirmedBytes").toString())
+        if (count > confirmed.optLong(path, 0L)) {
+            confirmed.put(path, count)
+            writeMapState(manifest, state.getString("status"), confirmed = confirmed)
+        }
+        publishMapSnapshot(manifest)
+    }
+
     private fun copyMap(manifest: JSONObject, target: File, spec: JSONObject): Boolean {
         val path = spec.getString("path")
         val file = safeFile(target, path)
-        if (validFile(file, spec)) return true
+        if (validFile(file, spec)) { commitMapBytes(manifest, path, file.length()); return true }
+        if (file.exists() && readMapState(manifest).getJSONObject("confirmedBytes").optLong(path, 0L) > 0L) {
+            throw LocalCoreException("map_corrupt", "Confirmed installed map failed verification: $path")
+        }
         if (file.exists() && !file.delete()) throw LocalCoreException("map_io", "Cannot replace invalid installed map: $path")
         mkdir(file.parentFile!!)
-        val partial = File(file.parentFile, "${file.name}.copying")
+        val partial = safeFile(target, "${spec.getString("path")}.copying")
         val digest = MessageDigest.getInstance("SHA-256")
         var count = 0L
         var emitted = 0L
@@ -307,7 +343,7 @@ class CorePackInstaller(context: Context) {
                 val buffer = ByteArray(COPY_BUFFER)
                 val previous = ByteArray(COPY_BUFFER)
                 while (true) {
-                    if (pauseMapsRequested.get()) { output.fd.sync(); return false }
+                    if (pauseMapsRequested.get()) { output.fd.sync(); commitMapBytes(manifest, path, count); return false }
                     val read = input.read(buffer)
                     if (read < 0) break
                     if (count + read > spec.getLong("bytes")) throw LocalCoreException("corrupt_core", "Oversized bundled map: $path")
@@ -322,9 +358,10 @@ class CorePackInstaller(context: Context) {
                     digest.update(buffer, 0, read)
                     count += read
                     val now = android.os.SystemClock.elapsedRealtime()
-                    if (now - emitted >= 150) { publishMapSnapshot(manifest); emitted = now }
+                    if (now - emitted >= 150) { output.fd.sync(); commitMapBytes(manifest, path, count); emitted = now }
                 }
                 output.fd.sync()
+                commitMapBytes(manifest, path, count)
             }
         }
         if (count != spec.getLong("bytes") || hex(digest.digest()) != spec.getString("sha256")) {

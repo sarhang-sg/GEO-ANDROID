@@ -1,6 +1,5 @@
 package com.navkurd.app
 
-import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -8,16 +7,14 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
-import android.location.LocationManager
 import android.net.Uri
-import android.os.SystemClock
 import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
-import androidx.core.content.ContextCompat
+import org.json.JSONArray
+import java.text.SimpleDateFormat
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -56,19 +53,22 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
         const val KEY_WIND_GUSTS = "wind_gusts"
         const val KEY_DUST = "dust"
         const val KEY_WEATHER_AT = "weather_at"
+        const val KEY_FORECAST = "hourly_forecast"
+        private const val KEY_WEATHER_LAT = "weather_latitude"
+        private const val KEY_WEATHER_LON = "weather_longitude"
         const val KEY_LAST_RENDER_AT = "last_render_at"
         const val KEY_LAST_RENDER_ERROR = "last_render_error"
 
         private const val ACTION_REFRESH = "com.navkurd.app.WIDGET_REFRESH"
         private const val ACTION_LOCATE = "com.navkurd.app.WIDGET_LOCATE"
         private const val WEATHER_TTL_MILLIS = 30L * 60L * 1000L
-        private const val WIDGET_REFRESH_MILLIS = 30L * 60L * 1000L
         private const val DUST_THRESHOLD = 50.0
         private const val STRONG_WIND_KMH = 40.0
         private const val STRONG_GUST_KMH = 60.0
         private val executor = Executors.newSingleThreadExecutor()
         private val refreshRunning = AtomicBoolean(false)
         private val forcedRefreshPending = AtomicBoolean(false)
+        private val refreshCallbacks = mutableListOf<() -> Unit>()
 
         private data class WeatherPayload(
             val temperature: Double,
@@ -88,6 +88,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             val windSpeed: Double?,
             val windGusts: Double?,
             val dust: Double?,
+            val forecast: JSONArray,
         )
 
         private enum class WeatherKind {
@@ -158,7 +159,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
 
         fun dailyWeatherSummary(context: Context): Pair<String, String>? {
             val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-            if (!preferences.contains(KEY_TEMPERATURE)) return null
+            if (!preferences.contains(KEY_TEMPERATURE) || System.currentTimeMillis() - preferences.getLong(KEY_WEATHER_AT, 0L) !in 0..90L * 60L * 1000L) return null
             val language = preferences.getString(KEY_LANGUAGE, "ku") ?: "ku"
             val copy = copyFor(language)
             val city = preferences.getString(KEY_CITY, copy.locationUnknown) ?: copy.locationUnknown
@@ -202,6 +203,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             longitude: Double,
             accuracy: Double,
         ) {
+            if (!latitude.isFinite() || !longitude.isFinite() || latitude !in -90.0..90.0 || longitude !in -180.0..180.0) return
             val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
             val previousLatitude = if (preferences.contains(KEY_LATITUDE)) {
                 preferences.getFloat(KEY_LATITUDE, 0f).toDouble()
@@ -235,6 +237,9 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             refreshWeather(context, force = moved)
         }
 
+        fun hasWidgets(context: Context): Boolean = AppWidgetManager.getInstance(context)
+            .getAppWidgetIds(ComponentName(context, NavKurdWidgetProvider::class.java)).isNotEmpty()
+
         fun updateAll(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
             val component = ComponentName(context, NavKurdWidgetProvider::class.java)
@@ -243,40 +248,38 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        fun refreshWeather(
-            context: Context,
-            force: Boolean,
-            onComplete: (() -> Unit)? = null,
-        ) {
+        fun refreshWeather(context: Context, force: Boolean, onComplete: (() -> Unit)? = null) {
+            if (!hasWidgets(context) && onComplete == null) return
             val appContext = context.applicationContext
-            if (!refreshRunning.compareAndSet(false, true)) {
-                if (force) forcedRefreshPending.set(true)
-                onComplete?.invoke()
-                return
+            synchronized(refreshRunning) {
+                onComplete?.let { refreshCallbacks.add(it) }
+                if (refreshRunning.get()) {
+                    if (force) forcedRefreshPending.set(true)
+                    return
+                }
+                refreshRunning.set(true)
             }
             executor.execute {
-                try {
-                    refreshWeatherBlocking(appContext, force)
-                } catch (error: Exception) {
-                    val preferences = appContext.getSharedPreferences(
-                        PREFERENCES,
-                        Context.MODE_PRIVATE,
-                    )
-                    if (!preferences.contains(KEY_WEATHER_AT)) {
-                        NavKurdDiagnostics.record(
-                            appContext,
-                            "warning",
-                            "widget.weather",
-                            error.message ?: "Weather update failed",
-                        )
+                var forceNext = force
+                while (true) {
+                    try {
+                        refreshWeatherBlocking(appContext, forceNext)
+                    } catch (error: Exception) {
+                        NavKurdDiagnostics.record(appContext, "warning", "widget.weather",
+                            "Weather refresh unavailable; retained readings keep their original timestamp: ${error.javaClass.simpleName}")
+                    } finally { updateAll(appContext) }
+                    var completed: List<() -> Unit> = emptyList()
+                    val again = synchronized(refreshRunning) {
+                        if (forcedRefreshPending.getAndSet(false)) true
+                        else {
+                            refreshRunning.set(false)
+                            completed = refreshCallbacks.toList()
+                            refreshCallbacks.clear()
+                            false
+                        }
                     }
-                } finally {
-                    updateAll(appContext)
-                    refreshRunning.set(false)
-                    onComplete?.invoke()
-                    if (forcedRefreshPending.getAndSet(false)) {
-                        refreshWeather(appContext, force = true)
-                    }
+                    if (!again) { completed.forEach { runCatching { it() } }; break }
+                    forceNext = true
                 }
             }
         }
@@ -284,14 +287,19 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
         private fun refreshWeatherBlocking(context: Context, force: Boolean) {
             val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
             var coordinates = storedCoordinates(preferences)
+            val fresh = NavKurdWidgetLocation.latest(context) ?: if (NavKurdWidgetLocation.enabled(context) &&
+                System.currentTimeMillis() - preferences.getLong(KEY_LOCATION_AT, 0L) > 15L * 60000L) NavKurdWidgetLocation.current(context) else null
+            if (fresh != null && fresh.time > preferences.getLong(KEY_LOCATION_AT, 0L)) {
+                coordinates = fresh.latitude to fresh.longitude
+                preferences.edit().putFloat(KEY_LATITUDE, fresh.latitude.toFloat()).putFloat(KEY_LONGITUDE, fresh.longitude.toFloat())
+                    .putFloat(KEY_ACCURACY, fresh.accuracy).putLong(KEY_LOCATION_AT, fresh.time).apply()
+            }
             if (coordinates == null) {
-                coordinates = lastKnownCoordinates(context)
-                coordinates?.let { (latitude, longitude) ->
-                    preferences.edit()
-                        .putFloat(KEY_LATITUDE, latitude.toFloat())
-                        .putFloat(KEY_LONGITUDE, longitude.toFloat())
-                        .putLong(KEY_LOCATION_AT, System.currentTimeMillis())
-                        .apply()
+                val located = NavKurdWidgetLocation.current(context)
+                if (located != null) {
+                    coordinates = located.latitude to located.longitude
+                    preferences.edit().putFloat(KEY_LATITUDE, located.latitude.toFloat()).putFloat(KEY_LONGITUDE, located.longitude.toFloat())
+                        .putFloat(KEY_ACCURACY, located.accuracy).putLong(KEY_LOCATION_AT, located.time).apply()
                 }
             }
             if (coordinates == null) return
@@ -299,15 +307,25 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             val now = System.currentTimeMillis()
             val weatherAt = preferences.getLong(KEY_WEATHER_AT, 0L)
             val hasWeather = preferences.contains(KEY_TEMPERATURE)
-            if (!force && hasWeather && now - weatherAt in 0 until WEATHER_TTL_MILLIS) {
+            val samePlace = preferences.contains(KEY_WEATHER_LAT) &&
+                kotlin.math.abs(preferences.getFloat(KEY_WEATHER_LAT, Float.NaN).toDouble() - coordinates.first) < 0.005 &&
+                kotlin.math.abs(preferences.getFloat(KEY_WEATHER_LON, Float.NaN).toDouble() - coordinates.second) < 0.005
+            if (!force && samePlace && hasWeather && now - weatherAt in 0 until WEATHER_TTL_MILLIS) {
                 return
             }
 
             val (latitude, longitude) = coordinates
-            val city = resolveCity(context, latitude, longitude)
-            preferences.edit().putString(KEY_CITY, city).apply()
+            val city = if (samePlace) preferences.getString(KEY_CITY, null)?.takeIf { it.isNotBlank() } ?: resolveCity(context, latitude, longitude) else resolveCity(context, latitude, longitude)
             val payload = fetchWeather(context, latitude, longitude)
+            val latest = storedCoordinates(preferences)
+            if (latest != null && (kotlin.math.abs(latest.first - latitude) > 0.005 || kotlin.math.abs(latest.second - longitude) > 0.005)) {
+                forcedRefreshPending.set(true)
+                return
+            }
             preferences.edit()
+                .putString(KEY_CITY, city)
+                .putFloat(KEY_WEATHER_LAT, latitude.toFloat()).putFloat(KEY_WEATHER_LON, longitude.toFloat())
+                .putString(KEY_FORECAST, payload.forecast.toString())
                 .putFloat(KEY_TEMPERATURE, payload.temperature.toFloat())
                 .putFloat(
                     KEY_APPARENT_TEMPERATURE,
@@ -338,29 +356,9 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             if (!preferences.contains(KEY_LATITUDE) || !preferences.contains(KEY_LONGITUDE)) {
                 return null
             }
-            return preferences.getFloat(KEY_LATITUDE, 0f).toDouble() to
-                preferences.getFloat(KEY_LONGITUDE, 0f).toDouble()
-        }
-
-        private fun lastKnownCoordinates(context: Context): Pair<Double, Double>? {
-            val fine = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-            ) == PackageManager.PERMISSION_GRANTED
-            val coarse = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!fine && !coarse) return null
-            return runCatching {
-                val manager = context.getSystemService(LocationManager::class.java)
-                manager.allProviders
-                    .mapNotNull { provider ->
-                        runCatching { manager.getLastKnownLocation(provider) }.getOrNull()
-                    }
-                    .maxByOrNull { it.time }
-                    ?.let { it.latitude to it.longitude }
-            }.getOrNull()
+            val latitude = preferences.getFloat(KEY_LATITUDE, Float.NaN).toDouble()
+            val longitude = preferences.getFloat(KEY_LONGITUDE, Float.NaN).toDouble()
+            return if (latitude.isFinite() && longitude.isFinite() && latitude in -90.0..90.0 && longitude in -180.0..180.0) latitude to longitude else null
         }
 
         @Suppress("DEPRECATION")
@@ -397,12 +395,13 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                     "&current=temperature_2m,relative_humidity_2m,apparent_temperature," +
                     "is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover," +
                     "wind_speed_10m,wind_gusts_10m" +
-                    "&daily=sunrise,sunset&forecast_days=1" +
+                    "&daily=sunrise,sunset&forecast_days=2" +
+                    "&hourly=temperature_2m,weather_code,is_day,precipitation_probability" +
                     "&temperature_unit=celsius&wind_speed_unit=kmh&timezone=auto",
             )
             val connection = endpoint.openConnection() as HttpURLConnection
-            connection.connectTimeout = 10000
-            connection.readTimeout = 10000
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/json")
             val version = context.packageManager
@@ -420,9 +419,33 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                     val value = current.optDouble(key, Double.NaN)
                     return value.takeIf { it.isFinite() }
                 }
-                val timezone = root.optString("timezone", TimeZone.getDefault().id)
-                    .takeIf { it.isNotBlank() }
-                    ?: TimeZone.getDefault().id
+                val timezone = root.getString("timezone")
+                require(timezone in TimeZone.getAvailableIDs()) { "Invalid weather timezone" }
+                val validCodes = setOf(0,1,2,3,45,48,51,53,55,56,57,61,63,65,66,67,71,73,75,77,80,81,82,85,86,95,96,99)
+                val temperature = current.getDouble("temperature_2m")
+                val code = current.getInt("weather_code")
+                val day = current.getInt("is_day")
+                val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone(timezone); isLenient = false
+                }
+                val observedAt = current.getString("time")
+                val observedTime = parser.parse(observedAt)?.time ?: error("Missing observation time")
+                val now = System.currentTimeMillis()
+                require(temperature.isFinite() && temperature in -90.0..65.0 && code in validCodes && day in 0..1 &&
+                    now - observedTime in -3600000L..10800000L) { "Invalid current weather data" }
+                val forecast = JSONArray()
+                val hourly = root.optJSONObject("hourly")
+                val times = hourly?.optJSONArray("time")
+                for (i in 0 until minOf(times?.length() ?: 0, 72)) {
+                    val at = runCatching { parser.parse(times?.optString(i) ?: "")?.time }.getOrNull() ?: continue
+                    val temp = hourly?.optJSONArray("temperature_2m")?.optDouble(i, Double.NaN) ?: Double.NaN
+                    val weather = hourly?.optJSONArray("weather_code")?.optInt(i, -1) ?: -1
+                    val phase = hourly?.optJSONArray("is_day")?.optInt(i, -1) ?: -1
+                    val chance = hourly?.optJSONArray("precipitation_probability")?.optInt(i, -1) ?: -1
+                    if (at <= now || at > now + 10L * 3600000L || !temp.isFinite() || temp !in -90.0..65.0 || weather !in validCodes || phase !in 0..1) continue
+                    forecast.put(JSONObject().put("at", at).put("temperature", temp).put("code", weather)
+                        .put("isDay", phase == 1).put("chance", if (chance in 0..100) chance else JSONObject.NULL))
+                }
                 val daily = root.optJSONObject("daily")
                 val sunrise = daily?.optJSONArray("sunrise")
                     ?.optString(0)
@@ -434,14 +457,14 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                     fetchDust(context, latitude, longitude)
                 }.getOrNull()
                 return WeatherPayload(
-                    temperature = current.getDouble("temperature_2m"),
+                    temperature = temperature,
                     apparentTemperature = optionalDouble("apparent_temperature"),
-                    weatherCode = current.getInt("weather_code"),
-                    isDay = current.optInt("is_day", 1) == 1,
+                    weatherCode = code,
+                    isDay = day == 1,
                     timezone = timezone,
                     sunrise = sunrise,
                     sunset = sunset,
-                    observedAt = current.optString("time", ""),
+                    observedAt = observedAt,
                     humidity = current.optInt("relative_humidity_2m", -1).takeIf { it >= 0 },
                     precipitation = optionalDouble("precipitation"),
                     rain = optionalDouble("rain"),
@@ -451,6 +474,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                     windSpeed = optionalDouble("wind_speed_10m"),
                     windGusts = optionalDouble("wind_gusts_10m"),
                     dust = dust,
+                    forecast = forecast,
                 )
             } finally {
                 connection.disconnect()
@@ -469,8 +493,8 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                     "&current=dust&timezone=auto",
             )
             val connection = endpoint.openConnection() as HttpURLConnection
-            connection.connectTimeout = 7000
-            connection.readTimeout = 7000
+            connection.connectTimeout = 3000
+            connection.readTimeout = 3000
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/json")
             val version = context.packageManager
@@ -509,11 +533,11 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             val temperatureValue = preferences.getFloat(KEY_TEMPERATURE, Float.NaN)
                 .toDouble()
                 .takeIf { it.isFinite() }
-            val temperature = if (hasWeather) {
+            val temperature = if (temperatureValue != null) {
                 String.format(
                     Locale.ROOT,
                     "%.0f°",
-                    temperatureValue ?: 0.0,
+                    temperatureValue,
                 )
             } else {
                 "—°"
@@ -587,7 +611,29 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             label(R.id.widget_phase, phaseLabel, 10f, 95f, "#C5D3E9")
             label(R.id.widget_status, status, 8f, 80f, "#D9F3FF")
             label(R.id.widget_detail, detail, 9f, 175f, "#BBCBE0")
-            label(R.id.widget_updated, if (hasWeather) "Open-Meteo · DEV: SARHANG.IO" else copy.tapLocate, 7.5f, 160f, "#9DB4CE")
+            val age = System.currentTimeMillis() - preferences.getLong(KEY_WEATHER_AT, 0L)
+            val cachedLabel = when (language) { "en" -> "Cached"; "ar" -> "محفوظ"; else -> "پاشەکەوتکراو" }
+            val observed = preferences.getString(KEY_OBSERVED_AT, "")?.replace('T', ' ')?.take(16).orEmpty()
+            val attribution = "Open-Meteo · DEV: SARHANG.IO"
+            label(R.id.widget_updated, if (hasWeather) "$observed · $attribution${if (age !in 0..90L * 60000L) " · $cachedLabel" else ""}" else copy.tapLocate,
+                7.5f, 300f, "#B6C9E1")
+            val forecast = runCatching { JSONArray(preferences.getString(KEY_FORECAST, "[]")) }.getOrElse { JSONArray() }
+            val future = (0 until forecast.length()).mapNotNull { forecast.optJSONObject(it) }
+                .filter { it.optLong("at") > System.currentTimeMillis() && it.optLong("at") <= System.currentTimeMillis() + 10L * 3600000L }
+            if (future.isNotEmpty()) label(R.id.widget_detail, when (language) {
+                "en" -> "Upcoming hours · forecast"; "ar" -> "الساعات القادمة · توقعات"; else -> "کاتژمێرەکانی داهاتوو · پێشبینی"
+            }, 9f, 210f, "#BBCBE0")
+            val timeIds = intArrayOf(R.id.widget_hour_0, R.id.widget_hour_1, R.id.widget_hour_2, R.id.widget_hour_3, R.id.widget_hour_4)
+            val tempIds = intArrayOf(R.id.widget_forecast_0, R.id.widget_forecast_1, R.id.widget_forecast_2, R.id.widget_forecast_3, R.id.widget_forecast_4)
+            val formatter = SimpleDateFormat("HH:mm", Locale.ROOT).apply { timeZone = TimeZone.getTimeZone(timezone) }
+            views.setViewVisibility(R.id.widget_forecast_row, if (future.isNotEmpty()) View.VISIBLE else View.GONE)
+            for (index in 0..4) {
+                val hour = future.getOrNull(if (future.size > 5) index * (future.size - 1) / 4 else index)
+                val at = hour?.optLong("at")
+                val temp = hour?.optDouble("temperature", Double.NaN)
+                label(timeIds[index], if (at != null) formatter.format(java.util.Date(at)) else "—", 9f, 48f, "#BDD8F4")
+                label(tempIds[index], if (temp != null && temp.isFinite()) String.format(Locale.ROOT, "%.0f°", temp) else "—", 13f, 48f, "#FFFFFF")
+            }
             label(R.id.widget_humidity, humidity?.let { "$it%" } ?: "—%", 9f, 48f, "#FFFFFF")
             label(R.id.widget_wind, windSpeed?.let { String.format(Locale.ROOT, "%.0f km/h", it) } ?: "— km/h", 9f, 58f, "#FFFFFF")
             label(R.id.widget_dust, dust?.let { String.format(Locale.ROOT, "%.0f µg/m³", it) } ?: "", 8.5f, 62f, "#FFFFFF")
@@ -602,8 +648,10 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                 data = Uri.parse("navkurd://open")
                 flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
-            val locateIntent = Intent(context, NavKurdWidgetProvider::class.java).apply {
-                action = ACTION_LOCATE
+            val locateIntent = Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                data = Uri.parse("navkurd://locate?action=locate")
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
             val refreshIntent = Intent(context, NavKurdWidgetProvider::class.java).apply {
                 action = ACTION_REFRESH
@@ -619,7 +667,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(
                 R.id.widget_locate,
-                PendingIntent.getBroadcast(context, widgetId + 10000, locateIntent, flags),
+                PendingIntent.getActivity(context, widgetId + 10000, locateIntent, flags),
             )
             views.setOnClickPendingIntent(
                 R.id.widget_refresh,
@@ -932,26 +980,24 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
         }
 
         fun scheduleRefresh(context: Context) {
-            val alarmManager = context.getSystemService(AlarmManager::class.java)
-            alarmManager.setInexactRepeating(
-                AlarmManager.ELAPSED_REALTIME,
-                SystemClock.elapsedRealtime() + WIDGET_REFRESH_MILLIS,
-                WIDGET_REFRESH_MILLIS,
-                refreshPendingIntent(context),
-            )
+            // Retire the old repeating alarm so only one periodic owner remains.
+            context.getSystemService(AlarmManager::class.java).cancel(refreshPendingIntent(context))
+            if (hasWidgets(context)) NavKurdWeatherJob.schedule(context, periodic = true)
+            else NavKurdWeatherJob.cancelWidget(context)
+            NavKurdWidgetLocation.configure(context)
         }
 
         private fun cancelRefresh(context: Context) {
-            context.getSystemService(AlarmManager::class.java)
-                .cancel(refreshPendingIntent(context))
+            context.getSystemService(AlarmManager::class.java).cancel(refreshPendingIntent(context))
+            NavKurdWeatherJob.cancelWidget(context)
+            NavKurdWidgetLocation.configure(context)
         }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             ACTION_REFRESH -> {
-                val pending = goAsync()
-                refreshWeather(context, force = true) { pending.finish() }
+                NavKurdWeatherJob.schedule(context, force = true)
             }
             ACTION_LOCATE -> {
                 val launch = Intent(context, MainActivity::class.java).apply {
@@ -966,8 +1012,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             AppWidgetManager.ACTION_APPWIDGET_UPDATE -> {
                 super.onReceive(context, intent)
                 scheduleRefresh(context)
-                val pending = goAsync()
-                refreshWeather(context, force = false) { pending.finish() }
+                if (hasWidgets(context)) NavKurdWeatherJob.schedule(context)
             }
             else -> super.onReceive(context, intent)
         }
@@ -985,7 +1030,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
         scheduleRefresh(context)
-        refreshWeather(context, force = false)
+        NavKurdWeatherJob.schedule(context)
     }
 
     override fun onAppWidgetOptionsChanged(

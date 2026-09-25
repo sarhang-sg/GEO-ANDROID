@@ -201,6 +201,29 @@
                 android:src="@drawable/ic_widget_locate" />
         </LinearLayout>
 
+        <LinearLayout android:id="@+id/widget_forecast_row" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="5dp" android:orientation="horizontal" android:layoutDirection="ltr" android:visibility="gone">
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="2dp" android:layout_marginEnd="2dp" android:background="@drawable/widget_metric_chip" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/widget_hour_0" android:layout_width="match_parent" android:layout_height="17dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+                <ImageView android:id="@+id/widget_forecast_0" android:layout_width="match_parent" android:layout_height="22dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="2dp" android:layout_marginEnd="2dp" android:background="@drawable/widget_metric_chip" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/widget_hour_1" android:layout_width="match_parent" android:layout_height="17dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+                <ImageView android:id="@+id/widget_forecast_1" android:layout_width="match_parent" android:layout_height="22dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="2dp" android:layout_marginEnd="2dp" android:background="@drawable/widget_metric_chip" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/widget_hour_2" android:layout_width="match_parent" android:layout_height="17dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+                <ImageView android:id="@+id/widget_forecast_2" android:layout_width="match_parent" android:layout_height="22dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="2dp" android:layout_marginEnd="2dp" android:background="@drawable/widget_metric_chip" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/widget_hour_3" android:layout_width="match_parent" android:layout_height="17dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+                <ImageView android:id="@+id/widget_forecast_3" android:layout_width="match_parent" android:layout_height="22dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="2dp" android:layout_marginEnd="2dp" android:background="@drawable/widget_metric_chip" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/widget_hour_4" android:layout_width="match_parent" android:layout_height="17dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+                <ImageView android:id="@+id/widget_forecast_4" android:layout_width="match_parent" android:layout_height="22dp" android:scaleType="fitCenter" android:contentDescription="@string/widget_description" />
+            </LinearLayout>
+        </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

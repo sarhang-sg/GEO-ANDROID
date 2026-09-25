@@ -22,6 +22,7 @@ final class CoreResourceHandler {
   int _layerCacheBytes = 0;
   static const _maximumLayerCacheBytes = 12 * 1024 * 1024;
   static const _mime = <String, String>{
+    'wav': 'audio/wav',
     'css': 'text/css',
     'html': 'text/html',
     'js': 'application/javascript',

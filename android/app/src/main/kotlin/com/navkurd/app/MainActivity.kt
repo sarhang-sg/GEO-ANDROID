@@ -61,11 +61,13 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
 
     override fun onResume() {
         super.onResume()
+        NavKurdWidgetLocation.foreground = true
+        NavKurdWidgetLocation.configure(this)
         nativeLocation?.resume()
         applyImmersiveMode()
     }
 
-    override fun onPause() { nativeLocation?.pause(); super.onPause() }
+    override fun onPause() { NavKurdWidgetLocation.foreground = false; nativeLocation?.pause(); super.onPause() }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -191,6 +193,10 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                         call.argument<String>("detail") ?: "Kurdistan Atlas",
                     )
                     result.success(null)
+                }
+                "widgetLocationOptions" -> {
+                    val enabled = call.argument<Boolean>("enabled")
+                    result.success(if (enabled == null) NavKurdWidgetLocation.enabled(this) else NavKurdWidgetLocation.setEnabled(this, enabled))
                 }
                 "refreshWidgetWeather" -> {
                     NavKurdWidgetProvider.refreshWeather(this, force = false)

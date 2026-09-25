@@ -45,6 +45,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
   StreamSubscription<Map<String, dynamic>>? _locationSubscription;
   StreamSubscription<Map<String,dynamic>>? _mapSubscription;
   bool _trustedDocument = false;
+  int _documentEpoch = 0;
+  Future<bool>? _trustCheck;
   late Uri _initialUri;
   Future<void> _documentNavigation = Future.value();
   StreamSubscription<String>? _deepLinkSubscription;
@@ -53,6 +55,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
   bool _mainFrameFailed = false;
   bool _isOnline = true;
   bool _connectivityKnown = false;
+  String _networkTransport = "";
   bool _notificationsAsked = false;
   int _webViewGeneration = 0;
   String? _offlinePackStatus;
@@ -214,6 +217,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
       if (!mounted || controller != _controller) return;
       _initialUri = next;
       _trustedDocument = false;
+      _documentEpoch += 1;
+      _trustCheck = null;
       await controller.loadData(data: local.initialDocument, baseUrl: WebUri(next.toString()),
         historyUrl: WebUri(next.toString()), mimeType: 'text/html', encoding: 'utf-8');
     });
@@ -231,10 +236,14 @@ final class _NavKurdPageState extends State<NavKurdPage>
   }
 
   void _handleConnectivity(List<ConnectivityResult> results) {
-    final online = !results.contains(ConnectivityResult.none);
-    if (!mounted || (_connectivityKnown && _isOnline == online)) return;
+    final online = results.any((value) => value != ConnectivityResult.none);
+    final transports = results.map((value) => value.name).toList()..sort();
+    final transport = transports.join(',');
+    if (!mounted || (_connectivityKnown && _isOnline == online && _networkTransport == transport)) return;
     _connectivityKnown = true;
+    _networkTransport = transport;
     setState(() => _isOnline = online);
+    unawaited(_deliverConnectivity());
     unawaited(
       _bridge.updateWidget(
         status: online ? 'ONLINE' : 'OFFLINE',
@@ -244,6 +253,19 @@ final class _NavKurdPageState extends State<NavKurdPage>
       ),
     );
     if (online) unawaited(_bridge.refreshWidgetWeather());
+  }
+
+  Future<void> _deliverConnectivity() async {
+    final controller = _controller;
+    if (!mounted || !_trustedDocument || controller == null) return;
+    try {
+      final detail = jsonEncode({'connected': _isOnline, 'transport': _networkTransport});
+      await controller.evaluateJavascript(source:
+        "window.dispatchEvent(new CustomEvent('nav-kurd:native-network',{detail:$detail}));");
+    } catch (error, stack) {
+      await _bridge.recordDiagnostic(level: 'warning', source: 'network.presentation',
+        message: '$error', stack: stack.toString());
+    }
   }
 
   void _handleDeepLink(String value) {
@@ -276,11 +298,11 @@ final class _NavKurdPageState extends State<NavKurdPage>
             onRetry: () => setState(() => _localOpening = _openLocal()), onSettings: _bridge.openAppSettings));
       }
       if (!snapshot.hasData) return const Scaffold(backgroundColor: _background);
-      return _buildReady(context);
+      return _buildReady(context, snapshot.requireData);
     },
   );
 
-  Widget _buildReady(BuildContext context) {
+  Widget _buildReady(BuildContext context, AndroidLocalRuntime runtime) {
     return PopScope<Object?>(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -299,7 +321,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
           children: <Widget>[
             InAppWebView(
               key: ValueKey<int>(_webViewGeneration),
-              initialData: InAppWebViewInitialData(data:_local!.initialDocument,
+              initialData: InAppWebViewInitialData(data:runtime.initialDocument,
                 baseUrl:WebUri(_initialUri.toString()),historyUrl:WebUri(_initialUri.toString()),
                 mimeType:'text/html',encoding:'utf-8'),
               initialSettings: _settings,
@@ -316,8 +338,10 @@ final class _NavKurdPageState extends State<NavKurdPage>
                 ],
               ),
               onWebViewCreated: _onWebViewCreated,
-              shouldInterceptRequest: (controller, request) => _local!.resources.respond(request),
+              shouldInterceptRequest: (controller, request) => runtime.resources.respond(request),
               onLoadStart: (controller, url) {
+                _documentEpoch += 1;
+                _trustCheck = null;
                 _trustedDocument = AppConfig.isTrustedOrigin(Uri.tryParse(url?.toString() ?? ''));
                 unawaited(_location.stop());
                 if (!mounted) return;
@@ -391,6 +415,9 @@ final class _NavKurdPageState extends State<NavKurdPage>
                 if (!mounted) return;
                 setState(() {
                   _controller = null;
+                  _trustedDocument = false;
+                  _documentEpoch += 1;
+                  _trustCheck = null;
                   _mainFrameFailed = true;
                   _webViewGeneration += 1;
                 });
@@ -463,6 +490,18 @@ final class _NavKurdPageState extends State<NavKurdPage>
       },
     );
     controller.addJavaScriptHandler(
+      handlerName: 'nativeWidgetLocationOptions',
+      callback: (arguments) async {
+        if (!await _isCurrentOriginTrusted()) return false;
+        final request = arguments.isNotEmpty && arguments.first is Map ? arguments.first as Map : null;
+        final enabled = request?['enabled'];
+        if (enabled is! bool) return _bridge.widgetLocationOptions();
+        if (enabled && !await _permissions.requestWidgetBackgroundLocation()) return false;
+        if (!mounted || !await _isCurrentOriginTrusted()) return false;
+        return _bridge.widgetLocationOptions(enabled: enabled);
+      },
+    );
+    controller.addJavaScriptHandler(
       handlerName: 'nativeClearTransientCache',
       callback: (_) async {
         if (!await _isCurrentOriginTrusted()) return <String, bool>{'cleared': false};
@@ -498,7 +537,10 @@ final class _NavKurdPageState extends State<NavKurdPage>
     WebUri? url,
   ) async {
     if (!AppConfig.isTrustedOrigin(Uri.tryParse(url?.toString() ?? ''))) return;
+    if (!mounted || !identical(controller, _controller)) return;
+    _trustedDocument = true;
     await controller.evaluateJavascript(source: _afterLoadBridgeScript);
+    await _deliverConnectivity();
     if (!mounted) return;
     if (_mainFrameFailed) setState(() => _mainFrameFailed = false);
     unawaited(_bridge.refreshWidgetWeather());
@@ -741,9 +783,25 @@ final class _NavKurdPageState extends State<NavKurdPage>
   }
 
   Future<bool> _isCurrentOriginTrusted() async {
-    // onLoadStart invalidates this flag before an untrusted document can run;
-    // avoid a WebView URL round-trip on every native bridge request.
-    return _trustedDocument && _controller != null;
+    final controller = _controller;
+    if (!mounted || controller == null) return false;
+    if (_trustedDocument) return true;
+    final pending = _trustCheck;
+    if (pending != null) return pending;
+    final epoch = _documentEpoch;
+    final task = () async {
+      final url = await controller.getUrl();
+      if (!mounted || !identical(controller, _controller) || epoch != _documentEpoch) return false;
+      // Validate the native document URL, never a JavaScript-supplied origin.
+      _trustedDocument = AppConfig.isTrustedOrigin(Uri.tryParse(url?.toString() ?? ''));
+      return _trustedDocument;
+    }();
+    _trustCheck = task;
+    try {
+      return await task;
+    } finally {
+      if (identical(_trustCheck, task)) _trustCheck = null;
+    }
   }
 
   Future<bool> _launchExternal(Uri uri) async {

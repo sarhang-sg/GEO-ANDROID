@@ -131,7 +131,7 @@ require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt \
   'views.setContentDescription(viewId, text)' "widget text accessibility is missing"
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  '&daily=sunrise,sunset&forecast_days=1' "solar day-length weather data is missing"
+  '&daily=sunrise,sunset&forecast_days=2' "solar day-length weather data is missing"
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
   'in 621..921 -> "summer"' "astronomical season boundaries are missing"
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
@@ -255,12 +255,21 @@ require_text .github/workflows/android-release.yml 'actions/upload-artifact@v7' 
 require_text TERMUX.sh 'MAX_ATTEMPTS=12' "Termux network retry count is not 12"
 require_text TERMUX.sh 'The signing key fingerprint does not match NAV KURD' "Termux signing fingerprint gate is missing"
 
-for forbidden in android.permission.MANAGE_EXTERNAL_STORAGE android.permission.ACCESS_BACKGROUND_LOCATION \
+for forbidden in android.permission.MANAGE_EXTERNAL_STORAGE \
   android.permission.READ_CONTACTS android.permission.RECORD_AUDIO; do
   if grep -F "$forbidden" android/app/src/main/AndroidManifest.xml >/dev/null; then
     fail "unnecessary high-risk permission found: $forbidden"
   fi
 done
+
+# R3: optional widget background location is explicit, disabled by default, and OS-gated.
+require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocation.kt 'getBoolean(KEY, false)' "widget background location must default off"
+require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocation.kt 'value && granted(context)' "widget opt-in must require Android permission"
+require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocation.kt 'if (!enabled(context) || !NavKurdWidgetProvider.hasWidgets(context)) return null' "background fixes must require opt-in and an installed widget"
+require_text lib/src/permission_coordinator.dart 'Permission.locationAlways.request()' "background location must use Android permission flow"
+require_text lib/src/nav_kurd_page.dart "handlerName: 'nativeWidgetLocationOptions'" "trusted widget settings bridge is missing"
+require_text android/app/src/main/AndroidManifest.xml '<receiver android:name=".NavKurdWidgetLocationReceiver" android:exported="false" />' "widget location receiver must remain private"
+require_text android/app/src/main/AndroidManifest.xml 'android:permission="android.permission.BIND_JOB_SERVICE"' "weather job must be OS-protected"
 
 while IFS= read -r script; do bash -n "$script"; done \
   < <(find . -path './.git' -prune -o -type f -name '*.sh' -print)

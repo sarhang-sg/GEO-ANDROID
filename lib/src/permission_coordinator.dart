@@ -27,6 +27,14 @@ final class PermissionCoordinator {
     return granted;
   }
 
+  Future<bool> requestWidgetBackgroundLocation() async {
+    if (!await requestNativeLocation()) return false;
+    if (await _bridge.androidSdkInt() < 29) return true;
+    var status = await Permission.locationAlways.status;
+    if (!status.isGranted) status = await Permission.locationAlways.request();
+    return status.isGranted;
+  }
+
   Future<bool> requestNotifications() async {
     var status = await Permission.notification.status;
     if (status.isDenied) status = await Permission.notification.request();

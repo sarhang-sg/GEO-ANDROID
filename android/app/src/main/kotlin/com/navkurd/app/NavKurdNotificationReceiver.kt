@@ -28,14 +28,7 @@ class NavKurdNotificationReceiver : BroadcastReceiver() {
                 }
             }
             NavKurdNotificationScheduler.ACTION_DAILY_WEATHER -> {
-                val pending = goAsync()
-                NavKurdWidgetProvider.refreshWeather(context, force = true) {
-                    try {
-                        NavKurdNotifications.showDailyWeather(context)
-                    } finally {
-                        pending.finish()
-                    }
-                }
+                NavKurdWeatherJob.schedule(context, force = true, daily = true)
             }
             NavKurdNotificationScheduler.ACTION_UPDATE_CHECK -> {
                 val pending = goAsync()

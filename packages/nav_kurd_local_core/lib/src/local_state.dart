@@ -51,6 +51,7 @@ final class LocalState {
     'trackingEnabled',
     'notificationPreferences',
     'lastNonSensitiveState',
+    'weatherForecastCache',
   };
   void _key(String key) {
     if (!keys.contains(key)) {
