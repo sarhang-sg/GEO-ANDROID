@@ -33,7 +33,12 @@ data class InstalledCore(val packDirectory: String, val userDatabase: String, va
  */
 class CorePackInstaller(context: Context) {
     private val app = context.applicationContext
-    private val root = File(app.noBackupFilesDir, "nav_kurd_core")
+    private val root: File by lazy {
+        // Android may alias /data/user/0 to /data/data. Normalize only the
+        // OS-provided app directory before safeFile checks our own children.
+        // This resolves to the same stored data; child symlinks stay forbidden.
+        File(app.noBackupFilesDir.canonicalFile, "nav_kurd_core")
+    }
     private val assets = app.assets
     private val pauseMapsRequested = AtomicBoolean(false)
     @Volatile private var mapDownload: CompletableFuture<Map<String, Any?>>? = null

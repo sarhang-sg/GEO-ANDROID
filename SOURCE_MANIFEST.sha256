@@ -614,7 +614,7 @@ a52d07381fd8f9aa7fe057db086d8100b700590016f7a60bd49ddea870a983d5  ./android/app/
 8084073ee3ebc9e20e94742c7497306a362949da80234f2647a1512a6a181069  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt
 95882f0eee31d1d9785e43acc854192b83adc502aeef2eb6564d1386db0b2ec4  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
 5eaa31c7f8b4c168a59cdee733ea626c864e857d23fe9b2b389d69e606fbc707  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt
-43812d931030ef3b60e91f566c64f26080805fadd6c77637f0e27a0c995f55ef  ./android/app/src/main/kotlin/com/navkurd/app/localcore/CorePackInstaller.kt
+dc4a9b1d9020a6f9c35619abb47553b4b6c5580d5216ce90ca4209393a64c32f  ./android/app/src/main/kotlin/com/navkurd/app/localcore/CorePackInstaller.kt
 16d4cf2ce55e3608662ec69ecfdacf2d3a2e81f3b67b9521a5db1f293683af08  ./android/app/src/main/kotlin/com/navkurd/app/localcore/LocalCoreChannel.kt
 4832fcf3c976af1c89ea955bd86c1c80de17a359bc0d755a3a9e2d39b3babf9d  ./android/app/src/main/kotlin/com/navkurd/app/location/NativeLocationService.kt
 0df7db82a4a47f9623a0d3ae75ca8c8c3bb67c20f3fccd8c1d29399d78f81920  ./android/app/src/main/res/drawable-nodpi/widget_scene_autumn.webp
