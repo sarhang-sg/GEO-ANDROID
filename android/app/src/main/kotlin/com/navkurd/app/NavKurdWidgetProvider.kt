@@ -583,8 +583,6 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             }
             val phase = phaseFor(localMinute, sunriseMinute, sunsetMinute)
             val condition = weatherCondition(kind, isDay, language)
-            val seasonLabel = seasonLabel(season.key, copy)
-            val phaseLabel = phaseLabel(phase, copy)
             val frame = System.currentTimeMillis() / (10L * 60L * 1000L)
 
             val layout = if (language == "en") {
@@ -604,25 +602,28 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             fun label(id: Int, text: String, size: Float, width: Float, color: String) {
                 NavKurdWidgetTypography.bind(context, views, id, text, language, size, width, color)
             }
-            label(R.id.widget_temperature, temperature, 27f, 58f, "#FFFFFF")
+            label(R.id.widget_temperature, temperature, 35f, 78f, "#FFFFFF")
             label(R.id.widget_city, city, 16f, 200f, "#FFFFFF")
-            label(R.id.widget_condition, condition, 12f, 240f, "#E4F4FF")
-            label(R.id.widget_season, seasonLabel, 10f, 62f, "#BDEBFF")
-            label(R.id.widget_phase, phaseLabel, 10f, 95f, "#C5D3E9")
-            label(R.id.widget_status, status, 8f, 80f, "#D9F3FF")
-            label(R.id.widget_detail, detail, 9f, 175f, "#BBCBE0")
+            label(R.id.widget_condition, condition, 11f, 180f, "#D6E2F2")
             val age = System.currentTimeMillis() - preferences.getLong(KEY_WEATHER_AT, 0L)
             val cachedLabel = when (language) { "en" -> "Cached"; "ar" -> "محفوظ"; else -> "پاشەکەوتکراو" }
             val observed = preferences.getString(KEY_OBSERVED_AT, "")?.replace('T', ' ')?.take(16).orEmpty()
             val attribution = "Open-Meteo · DEV: SARHANG.IO"
-            label(R.id.widget_updated, if (hasWeather) "$observed · $attribution${if (age !in 0..90L * 60000L) " · $cachedLabel" else ""}" else copy.tapLocate,
-                7.5f, 300f, "#B6C9E1")
+            val staleWeather = hasWeather && age !in 0..90L * 60000L
+            val needsAttention = rawStatus.uppercase(Locale.ROOT) in setOf("ERROR", "FAILED", "PAUSED")
+            val notice = when {
+                needsAttention -> "$status · $detail"
+                staleWeather -> "$cachedLabel · $observed"
+                else -> ""
+            }
+            label(R.id.widget_detail, notice, 8f, 230f, "#E3C98D")
+            views.setViewVisibility(R.id.widget_detail, if (notice.isNotEmpty()) View.VISIBLE else View.GONE)
+            label(R.id.widget_updated, if (hasWeather) "${observed.substringAfter(' ')} · Open-Meteo" else copy.tapLocate,
+                8f, 210f, "#B6C9E1")
+            views.setContentDescription(R.id.widget_updated, if (hasWeather) "$observed · $attribution" else copy.tapLocate)
             val forecast = runCatching { JSONArray(preferences.getString(KEY_FORECAST, "[]")) }.getOrElse { JSONArray() }
             val future = (0 until forecast.length()).mapNotNull { forecast.optJSONObject(it) }
                 .filter { it.optLong("at") > System.currentTimeMillis() && it.optLong("at") <= System.currentTimeMillis() + 10L * 3600000L }
-            if (future.isNotEmpty()) label(R.id.widget_detail, when (language) {
-                "en" -> "Upcoming hours · forecast"; "ar" -> "الساعات القادمة · توقعات"; else -> "کاتژمێرەکانی داهاتوو · پێشبینی"
-            }, 9f, 210f, "#BBCBE0")
             val timeIds = intArrayOf(R.id.widget_hour_0, R.id.widget_hour_1, R.id.widget_hour_2, R.id.widget_hour_3, R.id.widget_hour_4)
             val tempIds = intArrayOf(R.id.widget_forecast_0, R.id.widget_forecast_1, R.id.widget_forecast_2, R.id.widget_forecast_3, R.id.widget_forecast_4)
             val formatter = SimpleDateFormat("HH:mm", Locale.ROOT).apply { timeZone = TimeZone.getTimeZone(timezone) }

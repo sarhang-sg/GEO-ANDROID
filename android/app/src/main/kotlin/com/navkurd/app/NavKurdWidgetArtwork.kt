@@ -49,10 +49,9 @@ object NavKurdWidgetArtwork {
         canvas.drawRoundRect(RectF(0f, 0f, SCENE_WIDTH.toFloat(), SCENE_HEIGHT.toFloat()), 34f, 34f, paint)
         paint.shader = null
 
-        if (!isDay || phase == "evening" || phase == "pre_dawn") drawStars(canvas, frame)
-        drawHorizon(canvas, season, isDay)
-        drawSeasonAccent(canvas, season, isDay, frame)
-        drawAmbientAtmosphere(canvas, kind, frame)
+        // R3.2: a calm, weather-aware gradient keeps the readings legible.
+        // The separate weather symbol carries the condition, not particles
+        // or layered scenery behind the text.
 
         paint.shader = LinearGradient(
             0f,
