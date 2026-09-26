@@ -602,9 +602,11 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             fun label(id: Int, text: String, size: Float, width: Float, color: String) {
                 NavKurdWidgetTypography.bind(context, views, id, text, language, size, width, color)
             }
-            label(R.id.widget_temperature, temperature, 35f, 78f, "#FFFFFF")
+            label(R.id.widget_temperature, temperature, 28f, 64f, "#FFFFFF")
             label(R.id.widget_city, city, 16f, 200f, "#FFFFFF")
             label(R.id.widget_condition, condition, 11f, 180f, "#D6E2F2")
+            label(R.id.widget_season, seasonLabel(season.key, copy), 9f, 65f, "#BDEBFF")
+            label(R.id.widget_phase, phaseLabel(phase, copy), 9f, 105f, "#C5D3E9")
             val age = System.currentTimeMillis() - preferences.getLong(KEY_WEATHER_AT, 0L)
             val cachedLabel = when (language) { "en" -> "Cached"; "ar" -> "محفوظ"; else -> "پاشەکەوتکراو" }
             val observed = preferences.getString(KEY_OBSERVED_AT, "")?.replace('T', ' ')?.take(16).orEmpty()

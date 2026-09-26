@@ -35,6 +35,9 @@ object NavKurdWidgetArtwork {
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(SCENE_WIDTH, SCENE_HEIGHT, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
+        canvas.clipPath(Path().apply {
+            addRoundRect(RectF(0f, 0f, SCENE_WIDTH.toFloat(), SCENE_HEIGHT.toFloat()), 34f, 34f, Path.Direction.CW)
+        })
         val palette = palette(kind, isDay, phase, season)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.shader = LinearGradient(
@@ -49,9 +52,11 @@ object NavKurdWidgetArtwork {
         canvas.drawRoundRect(RectF(0f, 0f, SCENE_WIDTH.toFloat(), SCENE_HEIGHT.toFloat()), 34f, 34f, paint)
         paint.shader = null
 
-        // R3.2: a calm, weather-aware gradient keeps the readings legible.
-        // The separate weather symbol carries the condition, not particles
-        // or layered scenery behind the text.
+        // Restore the original seasonal scene and refresh-driven frames.
+        if (!isDay) drawStars(canvas, frame)
+        drawHorizon(canvas, season, isDay)
+        drawSeasonAccent(canvas, season, isDay, frame)
+        drawAmbientAtmosphere(canvas, kind, frame)
 
         paint.shader = LinearGradient(
             0f,
