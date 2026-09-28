@@ -615,7 +615,7 @@ a52d07381fd8f9aa7fe057db086d8100b700590016f7a60bd49ddea870a983d5  ./android/app/
 6efee0d83f7028544ae6ddb9c66c51869b395797b710294afc67add1bee99682  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt
 f0a7c388b3ce645b4e1287d8f1e3857ec95470997f18fd7576d7e9d5b27d210c  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocation.kt
 8bcf7066bb4bba2eff5ea5fcfe0feb1b0702e65aa3bb6f48869ba955bc467e57  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocationReceiver.kt
-ef14a03907df8b95798a6358774313e5dab87420a3934419d137d74cc0013b88  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
+019e4e5bee65299a2eaf2c360661f55086886baed00e7bc1cbd389ff8900b688  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
 525173f5f48290ccaad7006cd75ce2370d2d6504f75baac964f49a5f61dc0bbc  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt
 1c71e863bfc2ad4c65de8ba648319c50eef28ccf04f9983391d37014947df210  ./android/app/src/main/kotlin/com/navkurd/app/localcore/CorePackInstaller.kt
 16d4cf2ce55e3608662ec69ecfdacf2d3a2e81f3b67b9521a5db1f293683af08  ./android/app/src/main/kotlin/com/navkurd/app/localcore/LocalCoreChannel.kt
