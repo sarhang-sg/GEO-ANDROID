@@ -960,7 +960,7 @@ f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/instal
 c08e2a3b6d864184546ec46771979d06663b89dbf7a9f56ebb2c9492c67d2937  ./tools/native-data/search-service-index.mjs
 206070864a13604f32b98f4cb6b9051e28554065e057339868eb4df68225e2c6  ./tools/package-source.py
 be34ef1ce0ba34be54739cc196aebd9dd68eb865d69aa6b64a267fbeb74c1f77  ./tools/update-source-manifest.py
-f4b26f2286be9f7c293b3f78a2d74184621129cef04b5c76a56481a1033a9027  ./tools/validate-source.sh
+d94e2d5abbe4d7cbfca8f9d9e94d2e030a7fe0969706f3b52c4b99ce951dd739  ./tools/validate-source.sh
 4f84eec39436ff539429ab9eea78ef3a0bfabcd7e9e6d4909c8be9f46bd9b7bf  ./tools/verify-launcher-pngs.py
 cd94d42e421078d001b16f3840dd2009157841c2182f58fee259c367ef9a541c  ./tools/verify-release-assets.py
 cc3efd003f73fd985a6f99d6b08b144c320ba1e15f3712864e570f2e325c44fd  ./tools/verify-release-signature.sh

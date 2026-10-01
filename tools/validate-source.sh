@@ -137,7 +137,7 @@ require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.k
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
   'minute < preDawnStart -> "late_night"' "seven-part local day cycle is missing"
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  '"Open-Meteo · DEV: SARHANG.IO"' "widget developer attribution is missing"
+  '"Open-Meteo · DEVLOPER: SARHANG SALAH"' "widget developer attribution is missing"
 if grep -F 'drawHeat(canvas' android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt >/dev/null; then
   fail "legacy extreme-heat wave lines remain"
 fi
