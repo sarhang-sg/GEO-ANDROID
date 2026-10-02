@@ -3,7 +3,7 @@ import 'package:geo_android/src/app_config.dart';
 
 void main() {
   test('release version and canonical HTTPS origin are stable', () {
-    expect(AppConfig.appVersion, '9.1.0');
+    expect(AppConfig.appVersion, '10.0.0');
     expect(AppConfig.appUri.scheme, 'https');
     expect(AppConfig.appUri.host, 'geo-map-kappa.vercel.app');
   });

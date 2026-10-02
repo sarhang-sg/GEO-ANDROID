@@ -12,11 +12,15 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 object NavKurdNotifications {
     const val CHANNEL_DAILY_WEATHER = "nav_kurd_daily_weather"
     const val CHANNEL_APP_UPDATES = "nav_kurd_app_updates"
     const val CHANNEL_GENERAL = "nav_kurd_general"
+    const val CHANNEL_ACCOUNT = "nav_kurd_account"
 
     private const val NOTIFICATION_DAILY = 900001
     private const val NOTIFICATION_UPDATE = 900002
@@ -57,13 +61,21 @@ object NavKurdNotifications {
                     }
                 },
                 NotificationChannel(CHANNEL_GENERAL, generalName, NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(CHANNEL_ACCOUNT, when (language) {
+                    "en" -> "Account activity"
+                    "ar" -> "نشاط الحساب"
+                    else -> "چالاکیی ئەکاونت"
+                }, NotificationManager.IMPORTANCE_DEFAULT),
             ),
         )
     }
 
-    fun showDailyWeather(context: Context) {
-        if (!canNotify(context)) return
-        val summary = NavKurdWidgetProvider.dailyWeatherSummary(context) ?: return
+    fun showDailyWeather(context: Context): Boolean {
+        if (!canNotify(context, CHANNEL_DAILY_WEATHER)) return false
+        val preferences = context.getSharedPreferences("nav_kurd_daily_notifications", Context.MODE_PRIVATE)
+        val day = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
+        if (preferences.getString("delivered_day", null) == day) return true
+        val summary = NavKurdWidgetProvider.dailyWeatherSummary(context) ?: return false
         val notification = NotificationCompat.Builder(context, CHANNEL_DAILY_WEATHER)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(summary.first)
@@ -74,11 +86,15 @@ object NavKurdNotifications {
             .setOnlyAlertOnce(false)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_DAILY, notification)
+        return try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_DAILY, notification)
+            preferences.edit().putString("delivered_day", day).apply()
+            true
+        } catch (_: SecurityException) { false }
     }
 
-    fun showUpdate(context: Context, latestVersion: String, downloadUrl: String) {
-        if (!canNotify(context)) return
+    fun showUpdate(context: Context, latestVersion: String, downloadUrl: String): Boolean {
+        if (!canNotify(context, CHANNEL_APP_UPDATES)) return false
         val language = language(context)
         val title = when (language) {
             "en" -> "NAV KURD $latestVersion is available"
@@ -108,7 +124,10 @@ object NavKurdNotifications {
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_UPDATE, notification)
+        return try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_UPDATE, notification)
+            true
+        } catch (_: SecurityException) { false }
     }
 
     private fun openAppIntent(context: Context, uri: String, requestCode: Int): PendingIntent {
@@ -125,10 +144,15 @@ object NavKurdNotifications {
         )
     }
 
-    private fun canNotify(context: Context): Boolean {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
+    fun canNotify(context: Context, channel: String = CHANNEL_GENERAL): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED) return false
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            context.getSystemService(NotificationManager::class.java).getNotificationChannel(channel)?.importance ==
+            NotificationManager.IMPORTANCE_NONE) return false
+        return true
     }
 
     private fun language(context: Context): String = context

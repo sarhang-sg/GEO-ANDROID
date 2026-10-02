@@ -92,10 +92,13 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="com.navkurd.app.DAILY_WEATHER" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="com.navkurd.app.UPDATE_CHECK" />
             </intent-filter>
         </receiver>
 
+        <service android:name=".NavKurdReleaseJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />
         <service android:name=".NavKurdWeatherJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />
         <receiver android:name=".NavKurdWidgetLocationReceiver" android:exported="false" />
 

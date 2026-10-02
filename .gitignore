@@ -11,6 +11,7 @@ android/.gradle/
 android/local.properties
 android/app/.cxx/
 android/app/build/
+android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 android/key.properties
 android/app/*.jks
 android/app/*.p12

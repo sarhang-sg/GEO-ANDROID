@@ -187,6 +187,10 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                         ),
                     )
                 }
+                "accountNotifications" -> result.success(NavKurdAccountNotifications.sync(
+                    this, call.argument<String>("userId")?.take(80) ?: "",
+                    call.argument<List<Map<*, *>>>("items")?.take(100) ?: emptyList(),
+                ))
                 "updateWidget" -> {
                     updateWidget(
                         call.argument<String>("status") ?: "ONLINE",
@@ -456,12 +460,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     }
 
     private fun showNotification(title: String, body: String): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            return false
-        }
+        if (!NavKurdNotifications.canNotify(this)) return false
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             action = Intent.ACTION_VIEW
             data = Uri.parse("navkurd://open")
@@ -482,11 +481,11 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
-        NotificationManagerCompat.from(this).notify(
-            (System.currentTimeMillis() and 0x0FFFFFFF).toInt(),
-            notification,
-        )
-        return true
+        return try {
+            NotificationManagerCompat.from(this).notify(
+                (System.currentTimeMillis() and 0x0FFFFFFF).toInt(), notification)
+            true
+        } catch (_: SecurityException) { false }
     }
 
     private fun updateWidget(status: String, detail: String) {

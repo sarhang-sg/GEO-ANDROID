@@ -11,32 +11,31 @@ object NavKurdNotificationScheduler {
     const val ACTION_UPDATE_CHECK = "com.navkurd.app.UPDATE_CHECK"
 
     private const val DAY_MILLIS = 24L * 60L * 60L * 1000L
-    private const val UPDATE_INTERVAL_MILLIS = 12L * 60L * 60L * 1000L
 
-    fun schedule(context: Context) {
+    fun schedule(context: Context, resetClock: Boolean = false) {
         NavKurdNotifications.createChannels(context)
         val manager = context.getSystemService(AlarmManager::class.java)
-        manager.setInexactRepeating(
+        val existing = PendingIntent.getBroadcast(context, 900003,
+            Intent(context, NavKurdNotificationReceiver::class.java).setAction(ACTION_DAILY_WEATHER),
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
+        if (resetClock || existing == null) manager.setInexactRepeating(
             AlarmManager.RTC_WAKEUP,
             nextDailyWeatherTime(),
             DAY_MILLIS,
             pending(context, ACTION_DAILY_WEATHER, 900003),
         )
-        manager.setInexactRepeating(
-            AlarmManager.RTC_WAKEUP,
-            System.currentTimeMillis() + 15L * 60L * 1000L,
-            UPDATE_INTERVAL_MILLIS,
-            pending(context, ACTION_UPDATE_CHECK, 900004),
-        )
+        // Remove the superseded alarm-driven HTTP path during upgrades.
+        for (code in listOf(900004, 900005)) {
+            val legacy = PendingIntent.getBroadcast(context, code,
+                Intent(context, NavKurdNotificationReceiver::class.java).setAction(ACTION_UPDATE_CHECK),
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
+            if (legacy != null) { manager.cancel(legacy); legacy.cancel() }
+        }
+        NavKurdReleaseJob.schedule(context, periodic = true)
     }
 
     fun checkForUpdateSoon(context: Context) {
-        val manager = context.getSystemService(AlarmManager::class.java)
-        manager.set(
-            AlarmManager.RTC_WAKEUP,
-            System.currentTimeMillis() + 20_000L,
-            pending(context, ACTION_UPDATE_CHECK, 900005),
-        )
+        NavKurdReleaseJob.schedule(context)
     }
 
     private fun nextDailyWeatherTime(): Long {

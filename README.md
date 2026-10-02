@@ -1,7 +1,7 @@
 # GEO ANDROID — NAV KURD
 
 <p align="center">
-  <img src="docs/images/nav-kurd-v9-cover.jpg" alt="NAV KURD 9.1.0 Android cover" width="1080" />
+  <img src="docs/images/nav-kurd-v9-cover.jpg" alt="NAV KURD 10.0.0 Android cover" width="1080" />
 </p>
 
 <p align="center">
@@ -14,11 +14,7 @@ Android 7.0+ Flutter application for the current production NAV KURD map at
 `https://geo-map-kappa.vercel.app`. This is the canonical trusted origin shared
 by the Web deployment, Android App Links and native release checks.
 
-This is a native Flutter shell around the already-tested MapLibre/PMTiles web
-runtime. Flutter owns Android lifecycle, security, permissions and system
-integration; the deployed map shares Supabase, Vercel, routing, satellite,
-language and offline-map behavior with Web while keeping Android-specific code
-inside one dedicated Dart/Flutter application.
+The Flutter shell uses the bundled MapLibre presentation and native SQLite/PMTiles core. Flutter owns lifecycle, local data, permissions and system integration. Server-dependent account, contribution, routing and satellite features retain their existing services. The web app uses the shared interface and its browser-specific data adapters.
 
 ## Included
 
@@ -29,8 +25,8 @@ inside one dedicated Dart/Flutter application.
   caching, renderer recovery and lower startup memory pressure.
 - Fine/coarse location requested only when the map asks for GPS.
 - Android DownloadManager for secure HTTPS files and MediaStore for blob files.
-- System download progress/completion, scoped storage and Android 7–16 support.
-  Offline map data stays in protected persistent WebView/IndexedDB storage;
+- System download progress/completion and scoped storage on Android API 24+.
+  Bundled SQLite/PMTiles and installed offline map data use the native local core;
   exported files use `Downloads/NAV KURD`.
 - Permission-aware notification channels, an offline-map-ready alert, a daily
   local-weather summary and a 12-hour release check. Update alerts are emitted
@@ -70,37 +66,19 @@ delivery still requires the owner's Firebase project and a real
 | --- | --- |
 | App name | NAV KURD |
 | Android application ID | `com.navkurd.app` |
-| Version | `9.1.0+90100` |
+| Version | `10.0.0+100000` |
 | Minimum Android | 7.0 / API 24 |
 | Target Android | API 37 |
 | Default origin | `https://geo-map-kappa.vercel.app` |
 | Repository name | `GEO-ANDROID` (GitHub names cannot contain spaces) |
 
-## Termux: private upload and signed build
+## Termux: coordinated V10 release
 
-Keep these files together in Android `Download`:
+Extract `NAV-KURD-10.0.0-RELEASE-KIT.zip`, then run `bash RUN-TERMUX.sh` from its directory. The kit contains both complete source archives and their checksums. It uses the existing GitHub signing secrets, builds and verifies the signed APK/AAB, publishes their verified release and then updates the existing Vercel integration.
 
-- `NAV-KURD-9.1.0-WEB-FINAL.zip` and its checksum
-- `NAV-KURD-9.1.0-ANDROID-FINAL.zip` and its checksum
-- `NAV-KURD-9.1.0-TERMUX.sh` and its checksum
-- the private `backap.zip` signing backup (`apk.zip` is also accepted)
+The installer uses normal commits and a baseline backup tag, checks for unexpected remote changes and can resume after a network interruption. Old completed runs are cleaned only after replacement verification. Optional Vercel cleanup requires the owner's `VERCEL_TOKEN` and retains active or aliased deployments. No private signing backup needs to be downloaded into the source tree.
 
-After authenticating GitHub CLI as `sarhang-sg`, run:
-
-```bash
-termux-setup-storage
-cd /storage/emulated/0/Download
-sha256sum -c NAV-KURD-9.1.0-TERMUX.sh.sha256
-chmod +x NAV-KURD-9.1.0-TERMUX.sh
-bash NAV-KURD-9.1.0-TERMUX.sh
-```
-
-The one-shot script requires an explicit destructive confirmation, verifies the
-source checksums, fingerprint-gates the established
-JKS, replaces both Git histories with one clean root commit, builds Android,
-downloads and verifies the signed APK/AAB, injects the verified APK into Web,
-then pushes Web once. `TERMUX.sh` remains the lower-level source check and signed
-build helper.
+Run `bash RUN-TERMUX.sh --verify-only` to verify local package integrity without changing a repository. Signed binaries are written into `Download/NAV-KURD-10.0.0/` by the successful CI workflow; this source ZIP is not itself an APK.
 
 ## Build settings
 
@@ -168,9 +146,7 @@ flowchart TD
     E --> G["Deep links · Weather widget · Hardware"]
 ```
 
-The service worker, IndexedDB/OPFS data and offline pack remain bound to the
-canonical HTTPS origin, so downloaded maps survive normal restarts. Android
+Android uses its native local core for bundled data and offline maps; Web uses its service worker and browser storage. Both preserve saved state during ordinary restarts. Android
 10+ intentionally does not show a broad “Storage” runtime permission: scoped
 storage protects offline data inside the app and MediaStore/DownloadManager
-handles public exports. The app never requests all-files or background-location
-access.
+handles public exports. The app never requests all-files access. Optional widget background location is disabled by default and requires explicit opt-in plus Android permission.

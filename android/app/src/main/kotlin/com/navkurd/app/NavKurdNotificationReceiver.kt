@@ -7,21 +7,21 @@ import android.os.Build
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.concurrent.Executors
 
 class NavKurdNotificationReceiver : BroadcastReceiver() {
     companion object {
         private const val RELEASE_URL = "https://geo-map-kappa.vercel.app/releases/latest.json"
         private const val RELEASE_PREFERENCES = "nav_kurd_release_notifications"
         private const val KEY_NOTIFIED_VERSION = "notified_version"
-        private val executor = Executors.newSingleThreadExecutor()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED,
-            Intent.ACTION_MY_PACKAGE_REPLACED -> {
-                NavKurdNotificationScheduler.schedule(context)
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED -> {
+                NavKurdNotificationScheduler.schedule(context, resetClock = true)
                 NavKurdWidgetProvider.scheduleRefresh(context)
                 if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
                     NavKurdNotificationScheduler.checkForUpdateSoon(context)
@@ -31,26 +31,12 @@ class NavKurdNotificationReceiver : BroadcastReceiver() {
                 NavKurdWeatherJob.schedule(context, force = true, daily = true)
             }
             NavKurdNotificationScheduler.ACTION_UPDATE_CHECK -> {
-                val pending = goAsync()
-                executor.execute {
-                    try {
-                        checkForUpdate(context.applicationContext)
-                    } catch (error: Exception) {
-                        NavKurdDiagnostics.record(
-                            context,
-                            "warning",
-                            "notification.update-check",
-                            error.message ?: "Update check failed",
-                        )
-                    } finally {
-                        pending.finish()
-                    }
-                }
+                NavKurdReleaseJob.schedule(context)
             }
         }
     }
 
-    private fun checkForUpdate(context: Context) {
+    fun checkForUpdate(context: Context) {
         val connection = URL(RELEASE_URL).openConnection() as HttpURLConnection
         connection.connectTimeout = 10_000
         connection.readTimeout = 10_000
@@ -61,22 +47,39 @@ class NavKurdNotificationReceiver : BroadcastReceiver() {
             require(connection.responseCode in 200..299) {
                 "Release service returned HTTP ${connection.responseCode}"
             }
-            val release = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            val text = connection.inputStream.bufferedReader().use { reader ->
+                val buffer = CharArray(65537)
+                var count = 0
+                while (count < buffer.size) {
+                    val n = reader.read(buffer, count, buffer.size - count)
+                    if (n < 0) break
+                    count += n
+                }
+                require(count <= 65536) { "Release response exceeds size limit" }
+                String(buffer, 0, count)
+            }
+            val release = JSONObject(text)
             if (release.optString("packageName") != context.packageName) return
             val latestVersion = release.optString("version").trim()
             val latestCode = release.optLong("versionCode", -1L)
-            if (latestVersion.isBlank() || latestCode <= currentVersionCode(context)) return
+            if (!latestVersion.matches(Regex("\\d+\\.\\d+\\.\\d+")) || latestCode <= currentVersionCode(context)) return
+            // A web version announcement is not proof that its APK exists.
+            if (!release.optBoolean("directApkAvailable")) return
 
             val preferences = context.getSharedPreferences(RELEASE_PREFERENCES, Context.MODE_PRIVATE)
             if (preferences.getString(KEY_NOTIFIED_VERSION, null) == latestVersion) return
-            val rawUrl = release.optString("directApkUrl")
-            val downloadUrl = if (rawUrl.startsWith("https://")) {
-                rawUrl
-            } else {
-                "https://geo-map-kappa.vercel.app/${rawUrl.trimStart('/')}"
+            val rawUrl = release.optString("directApkUrl").trim()
+            val fileName = "NAV-KURD-$latestVersion.apk"
+            val githubUrl = "https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v$latestVersion/$fileName"
+            val appUrl = "https://geo-map-kappa.vercel.app/downloads/$fileName"
+            val downloadUrl = when (rawUrl) {
+                githubUrl, appUrl -> rawUrl
+                "/downloads/$fileName" -> appUrl
+                else -> return
             }
-            NavKurdNotifications.showUpdate(context, latestVersion, downloadUrl)
-            preferences.edit().putString(KEY_NOTIFIED_VERSION, latestVersion).apply()
+            if (NavKurdNotifications.showUpdate(context, latestVersion, downloadUrl)) {
+                preferences.edit().putString(KEY_NOTIFIED_VERSION, latestVersion).apply()
+            }
         } finally {
             connection.disconnect()
         }

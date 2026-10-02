@@ -275,7 +275,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
     if (raw?.scheme.toLowerCase() == 'navkurd' &&
         (raw?.host.toLowerCase() == 'open' ||
             raw?.host.toLowerCase() == 'locate')) {
-      final action = raw?.host.toLowerCase() ?? 'open';
+      final action = raw?.queryParameters['action'] == 'account'
+          ? 'account' : raw?.host.toLowerCase() ?? 'open';
       unawaited(
         controller?.evaluateJavascript(
           source:
@@ -528,6 +529,15 @@ final class _NavKurdPageState extends State<NavKurdPage>
         final language = rawLanguage is String ? rawLanguage : 'ku';
         await _bridge.setLanguage(language);
         return true;
+      },
+    );
+    controller.addJavaScriptHandler(
+      handlerName: 'nativeAccountNotifications',
+      callback: (arguments) async {
+        if (!await _isCurrentOriginTrusted() || arguments.isEmpty) return false;
+        final payload = arguments.first;
+        if (payload is! Map<Object?, Object?>) return false;
+        return _bridge.accountNotifications(_stringKeyedPayload(payload));
       },
     );
   }

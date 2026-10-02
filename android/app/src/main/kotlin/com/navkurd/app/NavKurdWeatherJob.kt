@@ -7,18 +7,31 @@ import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
 import android.os.PersistableBundle
+import android.os.Handler
+import android.os.Looper
 import java.util.concurrent.ConcurrentHashMap
 
 /** Weather networking belongs to an OS-managed job, never a long broadcast callback. */
 class NavKurdWeatherJob : JobService() {
     private val active = ConcurrentHashMap<Int, JobParameters>()
+    private val main = Handler(Looper.getMainLooper())
 
     override fun onStartJob(params: JobParameters): Boolean {
         active[params.jobId] = params
         NavKurdWidgetProvider.refreshWeather(applicationContext, force = params.extras.getBoolean("force")) {
-            if (active.remove(params.jobId, params)) {
-                if (params.extras.getBoolean("daily")) NavKurdNotifications.showDailyWeather(applicationContext)
-                jobFinished(params, false)
+            main.post {
+                if (active.remove(params.jobId, params)) {
+                    var retry = false
+                    if (params.extras.getBoolean("daily")) {
+                        val posted = NavKurdNotifications.showDailyWeather(applicationContext)
+                        val prefs = getSharedPreferences(NavKurdWidgetProvider.PREFERENCES, MODE_PRIVATE)
+                        val age = System.currentTimeMillis() - params.extras.getLong("requested_at")
+                        retry = !posted && age in 0 until 6L * 60L * 60L * 1000L &&
+                            prefs.contains(NavKurdWidgetProvider.KEY_LATITUDE) &&
+                            NavKurdNotifications.canNotify(this, NavKurdNotifications.CHANNEL_DAILY_WEATHER)
+                    }
+                    jobFinished(params, retry)
+                }
             }
         }
         return true
@@ -38,7 +51,10 @@ class NavKurdWeatherJob : JobService() {
             val scheduler = context.getSystemService(JobScheduler::class.java)
             val id = if (daily) DAILY else if (periodic) PERIODIC else IMMEDIATE
             if (scheduler.getPendingJob(id) != null) return
-            val extras = PersistableBundle().apply { putBoolean("force", force); putBoolean("daily", daily) }
+            val extras = PersistableBundle().apply {
+                putBoolean("force", force); putBoolean("daily", daily)
+                putLong("requested_at", System.currentTimeMillis())
+            }
             val builder = JobInfo.Builder(id, ComponentName(context, NavKurdWeatherJob::class.java))
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setBackoffCriteria(60_000L, JobInfo.BACKOFF_POLICY_EXPONENTIAL)

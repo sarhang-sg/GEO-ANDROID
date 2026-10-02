@@ -211,6 +211,14 @@ final class NativeBridge {
     }
   }
 
+  Future<bool> accountNotifications(Map<String, Object?> payload) async {
+    try {
+      return await _methods.invokeMethod<bool>('accountNotifications', payload) ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   Future<void> updateWidget({
     required String status,
     required String detail,

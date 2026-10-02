@@ -22,7 +22,7 @@ function save(path,data){mkdirSync(dirname(join(stage,path)),{recursive:true});w
 function copy(path,target){const b=read(path);mkdirSync(dirname(join(stage,target)),{recursive:true});writeFileSync(join(stage,target),b);owned.add(target);}
 function walk(root){return readdirSync(root,{withFileTypes:true}).sort((a,b)=>a.name<b.name?-1:1).flatMap(e=>e.isDirectory()?walk(join(root,e.name)):[join(root,e.name)]);}
 const release=json('release.config.json');
-if(release.releaseId!=='2026-09-06-nav-kurd-v9.1.0')throw Error('Expected verified R16 input.');
+if(release.releaseId!=='2026-10-02-nav-kurd-v10.0.0')throw Error('Expected verified R16 input.');
 for(const name of ['atlas-taxonomy','static-search','compact-search-payload','search.worker','poi-source','poi-taxonomy-classification','map-style','i18n','tutorial-controller','app-shell','dialog-close-icon'])read(name==='search.worker'?'src/workers/search.worker.ts':`src/lib/${name}.ts`);
 const oracle=loadOracle(web),db=new DatabaseSync(join(stage,'catalog.sqlite'));
 db.exec(readFileSync(join(here,'schema.sql'),'utf8'));db.exec('BEGIN');

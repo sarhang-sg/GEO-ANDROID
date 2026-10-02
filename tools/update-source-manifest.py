@@ -24,6 +24,9 @@ EXCLUDED_DIRECTORIES = {
     "node_modules",
 }
 EXCLUDED_NAMES = {
+    ".flutter-plugins",
+    ".flutter-plugins-dependencies",
+    ".packages",
     ".DS_Store",
     "Thumbs.db",
     MANIFEST.name,
@@ -69,6 +72,8 @@ def included_files() -> list[Path]:
         if not path.is_file():
             continue
         if path.name in EXCLUDED_NAMES or path.suffix.lower() in EXCLUDED_SUFFIXES:
+            continue
+        if relative.as_posix() == 'android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java':
             continue
         if PRIVATE_FILE.search(relative.as_posix()):
             raise SystemExit(f"Private file must not be packaged: {relative.as_posix()}")

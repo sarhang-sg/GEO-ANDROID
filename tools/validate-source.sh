@@ -7,9 +7,9 @@ cd "$project_root"
 fail() { printf 'SOURCE CHECK FAILED: %s\n' "$*" >&2; exit 1; }
 require_text() { grep -F -- "$2" "$1" >/dev/null || fail "$3"; }
 
-test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "9.1.0+90100" \
-  || fail "pubspec version is not 9.1.0+90100"
-require_text lib/src/app_config.dart "defaultValue: '9.1.0'" "Dart app version is not 9.1.0"
+test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "10.0.0+100000" \
+  || fail "pubspec version is not 10.0.0+100000"
+require_text lib/src/app_config.dart "defaultValue: '10.0.0'" "Dart app version is not 10.0.0"
 require_text android/app/build.gradle.kts 'compileSdk = 37' "compileSdk must be 37"
 require_text android/app/build.gradle.kts 'buildToolsVersion = "37.0.0"' \
   "the app must use Android build-tools 37.0.0"
@@ -29,7 +29,9 @@ if grep -R -E 'id[[:space:]]*\(["'']org\.jetbrains\.kotlin\.android["'']\)|id[[:
 fi
 require_text android/gradle.properties 'android.newDsl=false' \
   "Flutter 3.47.1 requires the supported legacy Android DSL bridge"
-if grep -E '^(android\.builtInKotlin|android\.r8\.proguardAndroidTxt\.disallowed)=' \
+require_text android/gradle.properties 'android.builtInKotlin=true' \
+  "AGP Kotlin ownership must survive Flutter compatibility migration"
+if grep -E '^android\.builtInKotlin=false|^android\.r8\.proguardAndroidTxt\.disallowed=' \
     android/gradle.properties >/dev/null; then
   fail "unsupported AGP 9 compatibility flags remain"
 fi
@@ -252,8 +254,8 @@ require_text .github/workflows/android-release.yml 'storeFile=nav-kurd-release.p
   "Gradle release signing is not using the temporary PKCS12 store"
 require_text .github/workflows/android-release.yml 'actions/upload-artifact@v7' \
   "Android release evidence uploader is stale"
-require_text TERMUX.sh 'MAX_ATTEMPTS=12' "Termux network retry count is not 12"
-require_text TERMUX.sh 'The signing key fingerprint does not match NAV KURD' "Termux signing fingerprint gate is missing"
+require_text TERMUX.sh 'NAV-KURD-10.0.0-RELEASE-KIT.zip' "coordinated Termux release entry is missing"
+require_text .github/workflows/android-release.yml 'test "$apk_digest" = "$expected_digest"' "CI signing fingerprint gate is missing"
 
 for forbidden in android.permission.MANAGE_EXTERNAL_STORAGE \
   android.permission.READ_CONTACTS android.permission.RECORD_AUDIO; do
@@ -281,4 +283,4 @@ if command -v node >/dev/null 2>&1; then
     | sed '1d;$d' | node --check -
 fi
 
-printf '%s\n' 'NAV KURD 9.1.0 (90100) source checks passed.'
+printf '%s\n' 'NAV KURD 10.0.0 (100000) source checks passed.'
