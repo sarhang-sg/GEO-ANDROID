@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_MANIFEST = ROOT / "SOURCE_MANIFEST.sha256"
-VERSION = "10.0.0"
+VERSION = "10.0.1"
 ARCHIVE_ROOT = f"NAV-KURD-{VERSION}-ANDROID"
 RELEASE_DATE = (2026, 10, 2, 0, 0, 0)
 MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  \./(.+)$")

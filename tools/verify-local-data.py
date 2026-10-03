@@ -6,7 +6,9 @@ import sqlite3
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '10.0.0'
+# This UI-only patch retains the verified V10 offline database unchanged.
+DATA_VERSION = '10.0.0'
+APP_VERSION = '10.0.1'
 
 
 def verify_pack(folder):
@@ -33,7 +35,7 @@ def main():
     core = ROOT / 'android/app/src/main/assets/nav_kurd_core'
     pack = verify_pack(core)
     ui = verify_pack(ROOT / 'assets/r16')
-    if pack['versions']['appVersion'] != VERSION or ui['appVersion'] != VERSION:
+    if pack['versions']['appVersion'] != DATA_VERSION or ui['appVersion'] != APP_VERSION:
         raise SystemExit('Local data / presentation version mismatch')
     with sqlite3.connect((core / 'catalog.sqlite').as_uri() + '?mode=ro&immutable=1', uri=True) as db:
         if db.execute('PRAGMA integrity_check').fetchall() != [('ok',)] or db.execute('PRAGMA foreign_key_check').fetchall():
@@ -42,7 +44,7 @@ def main():
             if db.execute('SELECT COUNT(*) FROM ' + table).fetchone()[0] != pack['records'][key]:
                 raise SystemExit('Offline record count mismatch: ' + table)
         version = db.execute("SELECT value FROM metadata WHERE key='appVersion'").fetchone()
-        if version is None or json.loads(version[0]) != VERSION:
+        if version is None or json.loads(version[0]) != DATA_VERSION:
             raise SystemExit('Offline database version mismatch')
     print('PASS local assets: complete manifests, SQLite integrity, language index and V10 presentation')
 

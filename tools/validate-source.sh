@@ -7,9 +7,9 @@ cd "$project_root"
 fail() { printf 'SOURCE CHECK FAILED: %s\n' "$*" >&2; exit 1; }
 require_text() { grep -F -- "$2" "$1" >/dev/null || fail "$3"; }
 
-test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "10.0.0+100000" \
-  || fail "pubspec version is not 10.0.0+100000"
-require_text lib/src/app_config.dart "defaultValue: '10.0.0'" "Dart app version is not 10.0.0"
+test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "10.0.1+100001" \
+  || fail "pubspec version is not 10.0.1+100001"
+require_text lib/src/app_config.dart "defaultValue: '10.0.1'" "Dart app version is not 10.0.1"
 require_text android/app/build.gradle.kts 'compileSdk = 37' "compileSdk must be 37"
 require_text android/app/build.gradle.kts 'buildToolsVersion = "37.0.0"' \
   "the app must use Android build-tools 37.0.0"
@@ -283,4 +283,4 @@ if command -v node >/dev/null 2>&1; then
     | sed '1d;$d' | node --check -
 fi
 
-printf '%s\n' 'NAV KURD 10.0.0 (100000) source checks passed.'
+printf '%s\n' 'NAV KURD 10.0.1 (100001) source checks passed.'

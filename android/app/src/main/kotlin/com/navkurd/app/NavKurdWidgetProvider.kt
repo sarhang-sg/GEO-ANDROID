@@ -826,9 +826,9 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
                     "tornado" to "تحذير إعصار", "unavailable" to "الطقس غير متاح",
                 )
                 else -> mapOf(
-                    "clear_day" to "خۆرەتاو و ئاسمان سافە", "clear_night" to "شەوێکی ڕوون",
-                    "partly_day" to "ڕۆژ و نیمچە هەوراوی", "partly_night" to "شەو و نیمچە هەوراوی",
-                    "cloudy_day" to "ڕۆژی هەوراوی", "cloudy_night" to "شەوی هەوراوی",
+                    "clear_day" to "ئاسمانێکی ڕوون", "clear_night" to "شەوێکی ڕوون",
+                    "partly_day" to "ئاسمانێکی نیمچە هەوراو", "partly_night" to "شەوێکی نیمچە هەوراو",
+                    "cloudy_day" to "کەشێکی هەوراو", "cloudy_night" to "شەوێکی هەوراو",
                     "fog" to "تەماوی", "drizzle" to "نمەباران", "rain" to "باراناوی",
                     "freezing_rain" to "بارانی بەستوو", "snow" to "بەفراوی",
                     "showers" to "بارانی پچڕپچڕ", "storm" to "هەورەگرمە و بروسکە",

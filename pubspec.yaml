@@ -1,7 +1,7 @@
 name: geo_android
 description: NAV KURD standalone Flutter shell for Android.
 publish_to: "none"
-version: 10.0.0+100000
+version: 10.0.1+100001
 
 environment:
   sdk: ">=3.10.0 <4.0.0"

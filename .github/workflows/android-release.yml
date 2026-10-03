@@ -34,8 +34,8 @@ jobs:
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       NAV_KURD_PACKAGE: com.navkurd.app
-      NAV_KURD_VERSION: 10.0.0
-      NAV_KURD_VERSION_CODE: 100000
+      NAV_KURD_VERSION: 10.0.1
+      NAV_KURD_VERSION_CODE: 100001
       BUNDLETOOL_VERSION: 1.18.3
       BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
     steps:
@@ -348,7 +348,7 @@ jobs:
       - name: Upload signed Android release
         uses: actions/upload-artifact@v7
         with:
-          name: NAV-KURD-10.0.0-signed-release
+          name: NAV-KURD-10.0.1-signed-release
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
