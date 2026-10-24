@@ -1,0 +1,382 @@
+name: NAV KURD Android release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "assets/**"
+      - "lib/**"
+      - "packages/**"
+      - "test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "analysis_options.yaml"
+      - "tools/**"
+      - "SOURCE_MANIFEST.sha256"
+      - ".github/workflows/android-release.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nav-kurd-android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CI: "true"
+      FLUTTER_SUPPRESS_ANALYTICS: "true"
+      NAV_KURD_PACKAGE: com.navkurd.app
+      NAV_KURD_VERSION: 10.4.4
+      NAV_KURD_VERSION_CODE: 100404
+      BUNDLETOOL_VERSION: 1.18.3
+      BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
+    steps:
+      - name: Checkout exact release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          lfs: true
+          persist-credentials: false
+
+      - name: Hydrate and verify Git LFS release assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          readonly catalog='android/app/src/main/assets/nav_kurd_core/catalog.sqlite'
+          git lfs install --local
+          git lfs pull --include="$catalog" --exclude=''
+          git lfs checkout "$catalog"
+          test -f "$catalog"
+          test "$(stat -c '%s' "$catalog")" -eq 422789120
+          grep -F "  ./$catalog" SOURCE_MANIFEST.sha256 | sha256sum --check --strict
+          python3 tools/test-verify-local-data.py
+          python3 tools/verify-local-data.py
+
+      - name: Verify exact source manifest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 tools/update-source-manifest.py --check
+          manifest_sha256="$(sha256sum SOURCE_MANIFEST.sha256 | awk '{print $1}')"
+          test "${#manifest_sha256}" -eq 64
+          printf 'NAV_KURD_SOURCE_MANIFEST_SHA256=%s\n' "$manifest_sha256" >> "$GITHUB_ENV"
+
+      - name: Use Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Use Flutter 3.47.7
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: 3.47.7
+          channel: stable
+          cache: true
+
+      - name: Install Android 17 SDK
+        run: bash tools/install-android-sdk.sh
+
+      - name: Resolve exact packages
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for attempt in $(seq 1 12); do
+            if flutter pub get --enforce-lockfile > "$RUNNER_TEMP/nav-kurd-pub.log" 2>&1; then
+              cat "$RUNNER_TEMP/nav-kurd-pub.log"
+              git diff --exit-code -- pubspec.lock pubspec.yaml
+              exit 0
+            fi
+            cat "$RUNNER_TEMP/nav-kurd-pub.log"
+            if grep -E "Unable to satisfy|version solving failed|--enforce-lockfile|requires SDK version" "$RUNNER_TEMP/nav-kurd-pub.log" >/dev/null; then
+              echo 'Dependency contract failed; a deterministic source error will not be retried as a network failure.' >&2
+              exit 1
+            fi
+            if [ "$attempt" -eq 12 ]; then
+              exit 1
+            fi
+            sleep $((attempt < 6 ? attempt * 3 : 18))
+          done
+
+      - name: Validate source and unified version
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash tools/validate-source.sh
+          manifest_version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)"
+          test "$manifest_version" = "$NAV_KURD_VERSION+$NAV_KURD_VERSION_CODE"
+          grep -F "defaultValue: '$NAV_KURD_VERSION'" lib/src/app_config.dart >/dev/null
+          grep -F "applicationId = \"$NAV_KURD_PACKAGE\"" android/app/build.gradle.kts >/dev/null
+          grep -F 'compileSdk = 37' android/app/build.gradle.kts >/dev/null
+          grep -F 'targetSdk = 37' android/app/build.gradle.kts >/dev/null
+          grep -F 'buildToolsVersion = "37.0.0"' android/app/build.gradle.kts >/dev/null
+
+      - name: Analyze and test
+        run: |
+          flutter analyze --no-pub --fatal-infos lib test
+          flutter test --no-pub --machine > "$RUNNER_TEMP/nav-kurd-flutter-tests.jsonl"
+          python3 tools/verify-machine-tests.py "$RUNNER_TEMP/nav-kurd-flutter-tests.jsonl" --minimum 16
+
+      - name: Verify native preferences and real offline data
+        working-directory: packages/nav_kurd_local_core
+        run: |
+          dart pub get --enforce-lockfile
+          dart analyze lib test
+          dart test --reporter=json > "$RUNNER_TEMP/nav-kurd-core-tests.jsonl"
+          python3 ../../tools/verify-machine-tests.py "$RUNNER_TEMP/nav-kurd-core-tests.jsonl" --minimum 6
+          dart run bin/check_core.dart ../../android/app/src/main/assets/nav_kurd_core --application-release ../../assets/application-release.json
+
+      - name: Configure established release signing identity
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/nav-kurd-release.jks
+          keytool -importkeystore \
+            -srckeystore android/app/nav-kurd-release.jks \
+            -srcstoretype JKS \
+            -srcstorepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -srckeypass "$ANDROID_KEY_PASSWORD" \
+            -srcalias "$ANDROID_KEY_ALIAS" \
+            -destkeystore android/app/nav-kurd-release.p12 \
+            -deststoretype PKCS12 \
+            -deststorepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -destkeypass "$ANDROID_KEYSTORE_PASSWORD" \
+            -destalias "$ANDROID_KEY_ALIAS" \
+            -noprompt
+          {
+            printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+            printf 'keyPassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'storeFile=nav-kurd-release.p12\n'
+          } > android/key.properties
+          chmod 600 android/app/nav-kurd-release.jks android/app/nav-kurd-release.p12 android/key.properties
+          expected_digest="$(tr -d '[:space:]:' < ANDROID_APP_LINK_SHA256.txt | tr '[:lower:]' '[:upper:]')"
+          keystore_digest="$(keytool -list -v \
+            -keystore android/app/nav-kurd-release.p12 \
+            -storetype PKCS12 \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" | \
+            sed -n 's/^[[:space:]]*SHA256: //p' | \
+            head -n 1 | tr -d '[:space:]:' | tr '[:lower:]' '[:upper:]')"
+          echo "Expected signing SHA-256: $expected_digest"
+          echo "Keystore signing SHA-256: $keystore_digest"
+          test "${#expected_digest}" -eq 64
+          test "${#keystore_digest}" -eq 64
+          test "$keystore_digest" = "$expected_digest"
+
+      - name: Build signed universal APK
+        run: |
+          flutter build apk --release --no-pub \
+            --dart-define=NAV_KURD_APP_URL=https://geo-map-kappa.vercel.app \
+            --dart-define=NAV_KURD_VERSION="$NAV_KURD_VERSION"
+
+      - name: Build signed Android App Bundle
+        run: |
+          flutter build appbundle --release --no-pub \
+            --dart-define=NAV_KURD_APP_URL=https://geo-map-kappa.vercel.app \
+            --dart-define=NAV_KURD_VERSION="$NAV_KURD_VERSION"
+
+      - name: Verify release identity, assets, signatures and checksums
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          readonly apk_name="NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk"
+          readonly aab_name="NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.aab"
+          readonly sums_name="NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL-SHA256SUMS.txt"
+          rm -rf release
+          mkdir -p release
+          install -m 0644 build/app/outputs/flutter-apk/app-release.apk "release/$apk_name"
+          install -m 0644 build/app/outputs/bundle/release/app-release.aab "release/$aab_name"
+          test "$(stat -c '%s' "release/$apk_name")" -gt 1048576
+          test "$(stat -c '%s' "release/$aab_name")" -gt 1048576
+          unzip -tqq "release/$apk_name"
+          unzip -tqq "release/$aab_name"
+
+          readonly build_tools="$ANDROID_HOME/build-tools/37.0.0"
+          readonly apksigner="$build_tools/apksigner"
+          readonly apkanalyzer="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+          test -x "$apksigner"
+          test -x "$apkanalyzer"
+          "$apksigner" verify --verbose --print-certs "release/$apk_name" | tee release/SIGNATURES.txt
+
+          expected_digest="$(tr -d '[:space:]:' < ANDROID_APP_LINK_SHA256.txt | tr '[:lower:]' '[:upper:]')"
+          apk_digest="$("$apksigner" verify --verbose --print-certs "release/$apk_name" | \
+            awk '/certificate SHA-256 digest:/ { print $NF; exit }' | \
+            tr -d '[:space:]:' | tr '[:lower:]' '[:upper:]')"
+          echo "Expected APK SHA-256: $expected_digest"
+          echo "Actual APK SHA-256:   $apk_digest"
+          test "${#expected_digest}" -eq 64
+          test "${#apk_digest}" -eq 64
+          test "$apk_digest" = "$expected_digest"
+
+          test "$("$apkanalyzer" manifest application-id "release/$apk_name")" = "$NAV_KURD_PACKAGE"
+          test "$("$apkanalyzer" manifest version-name "release/$apk_name")" = "$NAV_KURD_VERSION"
+          test "$("$apkanalyzer" manifest version-code "release/$apk_name")" = "$NAV_KURD_VERSION_CODE"
+          test "$("$apkanalyzer" manifest debuggable "release/$apk_name")" != "true"
+          "$apkanalyzer" manifest print "release/$apk_name" > release/APK-MANIFEST.xml
+
+          readonly bundletool="$RUNNER_TEMP/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          curl --fail --location --retry 6 --retry-all-errors \
+            --connect-timeout 20 --max-time 300 \
+            --output "$bundletool" \
+            "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          printf '%s  %s\n' "$BUNDLETOOL_SHA256" "$bundletool" | sha256sum --check --strict
+          java -jar "$bundletool" validate --bundle="release/$aab_name"
+          java -jar "$bundletool" dump manifest \
+            --bundle="release/$aab_name" --module=base > release/AAB-MANIFEST.xml
+          jarsigner -verify -certs "release/$aab_name" | tee -a release/SIGNATURES.txt
+          aab_digest="$(keytool -printcert -jarfile "release/$aab_name" | \
+            sed -n 's/^[[:space:]]*SHA256: //p' | head -n 1 | \
+            tr -d '[:space:]:' | tr '[:lower:]' '[:upper:]')"
+          test "${#aab_digest}" -eq 64
+          test "$aab_digest" = "$expected_digest"
+
+          APK_BYTES="$(stat -c '%s' "release/$apk_name")"
+          AAB_BYTES="$(stat -c '%s' "release/$aab_name")"
+          APK_DIGEST="$apk_digest"
+          AAB_DIGEST="$aab_digest"
+          export APK_BYTES AAB_BYTES APK_DIGEST AAB_DIGEST
+          python3 - <<'PY'
+          import json
+          import os
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          android = "{http://schemas.android.com/apk/res/android}"
+          root = ET.parse("release/AAB-MANIFEST.xml").getroot()
+          actual = {
+              "packageId": root.attrib.get("package"),
+              "versionCode": root.attrib.get(android + "versionCode"),
+              "versionName": root.attrib.get(android + "versionName"),
+          }
+          expected = {
+              "packageId": os.environ["NAV_KURD_PACKAGE"],
+              "versionCode": os.environ["NAV_KURD_VERSION_CODE"],
+              "versionName": os.environ["NAV_KURD_VERSION"],
+          }
+          if actual != expected:
+              raise SystemExit(f"AAB manifest mismatch: {actual!r}")
+          application = root.find("application")
+          if application is None:
+              raise SystemExit("AAB base manifest has no application element")
+          if application.attrib.get(android + "debuggable", "false").lower() == "true":
+              raise SystemExit("AAB is debuggable")
+
+          metadata = {
+              "schema": 1,
+              "product": "NAV KURD",
+              "packageId": expected["packageId"],
+              "versionName": expected["versionName"],
+              "versionCode": int(expected["versionCode"]),
+              "buildType": "release",
+              "debuggable": False,
+              "flutter": "3.47.7",
+              "java": 17,
+              "compileSdk": 37,
+              "targetSdk": 37,
+              "buildTools": "37.0.0",
+              "androidGradlePlugin": "9.2.1",
+              "gradle": "9.4.1",
+              "sourceManifestSha256": os.environ["NAV_KURD_SOURCE_MANIFEST_SHA256"],
+              "gitCommit": os.environ["GITHUB_SHA"],
+              "workflowRunId": os.environ["GITHUB_RUN_ID"],
+              "signingCertificateSha256": os.environ["APK_DIGEST"],
+              "files": {
+                  "apk": {
+                      "name": f"NAV-KURD-{expected['versionName']}-ANDROID-FINAL.apk",
+                      "bytes": int(os.environ["APK_BYTES"]),
+                      "certificateSha256": os.environ["APK_DIGEST"],
+                  },
+                  "aab": {
+                      "name": f"NAV-KURD-{expected['versionName']}-ANDROID-FINAL.aab",
+                      "bytes": int(os.environ["AAB_BYTES"]),
+                      "certificateSha256": os.environ["AAB_DIGEST"],
+                  },
+              },
+          }
+          Path("release/RELEASE-METADATA.json").write_text(
+              json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+
+          for required in \
+            assets/nav_kurd_core/catalog.sqlite \
+            assets/nav_kurd_core/maps/kri-base.pmtiles \
+            assets/nav_kurd_core/maps/kri-roads.pmtiles \
+            assets/flutter_assets/assets/r16/index.html \
+            assets/flutter_assets/assets/application-release.json \
+            assets/flutter_assets/assets/images/nav-kurd-logo.png; do
+            unzip -Z1 "release/$apk_name" | grep -Fx "$required" >/dev/null
+            unzip -Z1 "release/$aab_name" | grep -Fx "base/$required" >/dev/null
+          done
+          unzip -Z1 "release/$apk_name" | grep -Fx 'lib/arm64-v8a/libapp.so' >/dev/null
+          if unzip -Z1 "release/$apk_name" | grep -E '(^|/)kernel_blob\.bin$|(^|/)staging(/|$)|(^|/)debug(/|$)' >/dev/null; then
+            echo "Debug or staging content exists in the release APK" >&2
+            exit 1
+          fi
+          if unzip -Z1 "release/$aab_name" | grep -E '(^|/)kernel_blob\.bin$|(^|/)staging(/|$)|(^|/)debug(/|$)' >/dev/null; then
+            echo "Debug or staging content exists in the release AAB" >&2
+            exit 1
+          fi
+
+          python3 tools/verify-release-assets.py \
+            --apk "release/$apk_name" --aab "release/$aab_name"
+
+          printf '%s\n' "$apk_digest" > release/CERTIFICATE_SHA256.txt
+          cp ANDROID_APP_LINK_SHA256.txt release/
+          cp SOURCE_MANIFEST.sha256 release/
+          printf 'NAV KURD %s (%s)\nPackage: %s\nCommit: %s\n' \
+            "$NAV_KURD_VERSION" "$NAV_KURD_VERSION_CODE" "$NAV_KURD_PACKAGE" "$GITHUB_SHA" \
+            > release/VERSION.txt
+          (
+            cd release
+            sha256sum \
+              "$apk_name" \
+              "$aab_name" \
+              AAB-MANIFEST.xml \
+              ANDROID_APP_LINK_SHA256.txt \
+              APK-MANIFEST.xml \
+              CERTIFICATE_SHA256.txt \
+              RELEASE-METADATA.json \
+              SIGNATURES.txt \
+              SOURCE_MANIFEST.sha256 \
+              VERSION.txt > "$sums_name"
+            sha256sum --check --strict "$sums_name"
+          )
+          test "$(find release -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 11
+
+      - name: Upload signed Android release
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: NAV-KURD-10.4.4-signed-release
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+          path: release/
+
+      - name: Stage verified APK and AAB for coordinated publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/test-publish-verified-release.py
+          python3 tools/publish-verified-release.py
+
+      - name: Remove temporary signing material
+        if: always()
+        run: rm -f android/app/nav-kurd-release.jks android/app/nav-kurd-release.p12 android/key.properties
