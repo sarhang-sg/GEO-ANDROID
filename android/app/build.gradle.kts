@@ -1,0 +1,109 @@
+import java.util.Properties
+
+plugins {
+    id("com.android.application")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keyProperties = Properties()
+val keyPropertiesFile = rootProject.file("key.properties")
+val hasReleaseKey = keyPropertiesFile.exists()
+if (hasReleaseKey) {
+    keyPropertiesFile.inputStream().use { keyProperties.load(it) }
+}
+
+val releaseRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+if (releaseRequested) {
+    check(hasReleaseKey) { "Release signing configuration is required." }
+    for (property in listOf("keyAlias", "keyPassword", "storeFile", "storePassword")) {
+        check(!keyProperties.getProperty(property).isNullOrBlank()) {
+            "Release signing property is missing: $property"
+        }
+    }
+    check(file(keyProperties.getProperty("storeFile")).isFile) {
+        "The established release keystore is unavailable."
+    }
+}
+
+android {
+    namespace = "com.navkurd.app"
+    compileSdk = 37
+    buildToolsVersion = "37.0.0"
+    ndkVersion = flutter.ndkVersion
+
+    androidResources {
+        // PMTiles stays random-access inside the signed APK, including after
+        // the user removes the installed offline-map copy.
+        noCompress += "pmtiles"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        applicationId = "com.navkurd.app"
+        minSdk = 24
+        targetSdk = 37
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+        release {
+            signingConfig = signingConfigs.findByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+            )
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+flutter {
+    source = "../.."
+}

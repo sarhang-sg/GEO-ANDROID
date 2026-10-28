@@ -1,0 +1,57 @@
+name: NAV KURD Android checks
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: "true"
+      FLUTTER_SUPPRESS_ANALYTICS: "true"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          lfs: true
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Verify complete source and native assets
+        run: |
+          python3 tools/update-source-manifest.py --check
+          python3 tools/verify-local-data.py
+          bash tools/validate-source.sh
+      - name: Resolve, analyze and test application
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter analyze --no-pub --fatal-infos lib test
+          flutter test --no-pub --machine > "$RUNNER_TEMP/nav-kurd-flutter-tests.jsonl"
+          python3 tools/verify-machine-tests.py "$RUNNER_TEMP/nav-kurd-flutter-tests.jsonl" --minimum 16
+      - name: Verify native preferences and real offline data
+        working-directory: packages/nav_kurd_local_core
+        run: |
+          dart pub get --enforce-lockfile
+          dart analyze lib test
+          dart test --reporter=json > "$RUNNER_TEMP/nav-kurd-core-tests.jsonl"
+          python3 ../../tools/verify-machine-tests.py "$RUNNER_TEMP/nav-kurd-core-tests.jsonl" --minimum 6
+          dart run bin/check_core.dart ../../android/app/src/main/assets/nav_kurd_core --application-release ../../assets/application-release.json
+      - name: Compile Android without release signing
+        run: |
+          bash tools/install-android-sdk.sh
+          flutter build apk --debug --no-pub
+

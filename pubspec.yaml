@@ -1,0 +1,52 @@
+name: geo_android
+description: NAV KURD standalone Flutter shell for Android.
+publish_to: "none"
+version: 10.4.4+100404
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+
+dependencies:
+  crypto: 3.0.7
+  nav_kurd_local_core:
+    path: packages/nav_kurd_local_core
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  connectivity_plus: 7.3.2
+  flutter_inappwebview: 6.1.5
+  permission_handler: 13.0.2
+  permission_handler_android: 14.1.0
+  url_launcher: 6.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
+
+dependency_overrides:
+  flutter_inappwebview_android:
+    path: packages/flutter_inappwebview_android
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/application-release.json
+    - assets/r16/
+    - assets/r16/assets/
+    - assets/r16/legal/
+    - assets/images/nav-kurd-logo.png
+  fonts:
+    - family: NAVKurdArabic
+      fonts:
+        - asset: android/app/src/main/res/font/uniqaidar_money_heist_002.ttf
+          weight: 400
+        - asset: android/app/src/main/res/font/uniqaidar_money_heist_002.ttf
+          weight: 700
+    - family: NAVKurdLatin
+      fonts:
+        - asset: android/app/src/main/res/font/red_hat_display_variable.ttf
+          weight: 400
+        - asset: android/app/src/main/res/font/red_hat_display_variable.ttf
+          weight: 700

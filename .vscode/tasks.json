@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "NAV KURD check local data",
+      "type": "process",
+      "command": "python3",
+      "windows": {"command": "python"},
+      "args": ["tools/development-doctor.py"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "NAV KURD restore locked packages",
+      "type": "shell",
+      "command": "flutter pub get --enforce-lockfile",
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "NAV KURD prepare Android",
+      "dependsOrder": "sequence",
+      "dependsOn": ["NAV KURD check local data", "NAV KURD restore locked packages"],
+      "problemMatcher": []
+    }
+  ]
+}
