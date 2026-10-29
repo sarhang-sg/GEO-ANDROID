@@ -5,6 +5,7 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_root"
 
 python3 tools/test-source-manifest.py
+node tools/test-location-presentation.mjs
 
 fail() { printf 'SOURCE CHECK FAILED: %s\n' "$*" >&2; exit 1; }
 require_text() { grep -F -- "$2" "$1" >/dev/null || fail "$3"; }

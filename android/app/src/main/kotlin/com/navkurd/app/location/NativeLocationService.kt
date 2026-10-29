@@ -17,8 +17,8 @@ import io.flutter.plugin.common.MethodChannel
 import kotlin.math.hypot
 import kotlin.math.cos
 
-/** One foreground device location owner. GPS with precise permission works
- * without network; approximate permission uses the device's coarse provider.
+/** One foreground device location owner. Precise permission permits GPS and
+ * network fixes; approximate permission permits only the coarse provider.
  * Provider/permission failures are explicit, not fabricated coordinates. */
 class NativeLocationService(context: Context, messenger: BinaryMessenger) : LocationListener, EventChannel.StreamHandler {
     private val app = context.applicationContext
@@ -29,7 +29,7 @@ class NativeLocationService(context: Context, messenger: BinaryMessenger) : Loca
     private var wanted = false
     private var foreground = false
     private var registered = false
-    private var selectedProvider: String? = null
+    private var selectedProviders: Set<String> = emptySet()
     private var recent: Location? = null
     private var widgetFix: Location? = null
     private var widgetAt = 0L
@@ -61,10 +61,20 @@ class NativeLocationService(context: Context, messenger: BinaryMessenger) : Loca
         ContextCompat.checkSelfPermission(app, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED -> "approximate"
         else -> "denied"
     }
-    private fun provider(): String? {
-        val candidate = if (permission() == "precise") LocationManager.GPS_PROVIDER else LocationManager.NETWORK_PROVIDER
-        return candidate.takeIf { manager.allProviders.contains(it) }
+    private fun providers(): Set<String> {
+        val candidates = when (permission()) {
+            "precise" -> listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+            "approximate" -> listOf(LocationManager.NETWORK_PROVIDER)
+            else -> emptyList()
+        }
+        return candidates.filter { manager.allProviders.contains(it) }.toSet()
     }
+    private fun valid(location: Location): Boolean =
+        location.latitude.isFinite() && location.longitude.isFinite() &&
+        location.latitude in -90.0..90.0 && location.longitude in -180.0..180.0 &&
+        location.hasAccuracy() && location.accuracy.isFinite() && location.accuracy > 0f &&
+        location.time > 0 && location.time <= System.currentTimeMillis() + 5_000 &&
+        SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos in 0..30_000_000_000L
     private fun snapshot(location: Location): Map<String, Any?> = mapOf(
         "latitude" to location.latitude, "longitude" to location.longitude, "accuracy" to location.accuracy.toDouble(),
         "heading" to if (location.hasBearing()) location.bearing.toDouble() else null,
@@ -74,41 +84,51 @@ class NativeLocationService(context: Context, messenger: BinaryMessenger) : Loca
         "provider" to location.provider, "permission" to permission())
     private fun cached(): Location? {
         if (permission() == "denied") return null
-        val selected = provider()
-        val local = recent?.takeIf { it.provider == selected } ?: selected?.let { manager.getLastKnownLocation(it) }
-        return local?.takeIf { SystemClock.elapsedRealtimeNanos() - it.elapsedRealtimeNanos in 0..300_000_000_000L }
+        val selected = providers()
+        val candidates = selected.mapNotNull {
+            try { manager.getLastKnownLocation(it) }
+            catch (_: IllegalArgumentException) { null } // A provider can disappear independently.
+        } + listOfNotNull(recent)
+        val fresh = candidates.filter { it.provider in selected && valid(it) }
+        return fresh.filter { SystemClock.elapsedRealtimeNanos() - it.elapsedRealtimeNanos <= 2_000_000_000L }
+            .minByOrNull { it.accuracy } ?: fresh.maxByOrNull { it.elapsedRealtimeNanos }
     }
     private fun status(): Map<String, Any?> {
-        val selected = provider()
-        return mapOf("permission" to permission(), "provider" to selected,
-            "enabled" to (selected != null && manager.isProviderEnabled(selected)), "watching" to registered,
-            "foreground" to foreground, "recent" to cached()?.let(::snapshot))
+        val selected = providers()
+        return mapOf("permission" to permission(), "provider" to (recent?.provider ?: selected.firstOrNull()),
+            "providers" to selected.toList(), "enabled" to selected.any { manager.isProviderEnabled(it) },
+            "watching" to registered, "foreground" to foreground, "recent" to cached()?.let(::snapshot))
     }
     private fun reconcile() {
         if (!wanted || !foreground || sink == null) { unregister(); return }
         if (permission() == "denied") { unregister(); emitError("permission_denied", "Location permission is not granted."); return }
-        val selected = provider()
-        if (selected == null) { unregister(); emitError("provider_unavailable", "No permitted location provider is available."); return }
-        if (registered && selectedProvider == selected) return
+        val selected = providers()
+        if (selected.isEmpty()) { unregister(); emitError("provider_unavailable", "No permitted location provider is available."); return }
+        if (registered && selectedProviders == selected) return
         unregister()
         try {
-            selectedProvider = selected
-            manager.requestLocationUpdates(selected, 1000L, 0f, this, Looper.getMainLooper())
-            registered = true; cached()?.let(::emitPosition)
-            if (!manager.isProviderEnabled(selected)) emitError("location_disabled", "Device location is disabled.")
+            val accepted = mutableSetOf<String>()
+            for (provider in selected) {
+                try {
+                    manager.requestLocationUpdates(provider, 1000L, 0f, this, Looper.getMainLooper())
+                    accepted.add(provider); selectedProviders = accepted.toSet(); registered = true
+                } catch (_: IllegalArgumentException) {
+                    // One absent provider must not discard a working one.
+                }
+            }
+            if (!registered) { emitError("provider_unavailable", "No permitted location provider is available."); return }
+            cached()?.let(::emitPosition)
+            if (selectedProviders.none { manager.isProviderEnabled(it) }) emitError("location_disabled", "Device location is disabled.")
         } catch (error: SecurityException) { unregister(); emitError("permission_denied", error.message ?: "Location permission was revoked.") }
         catch (error: IllegalArgumentException) { unregister(); emitError("provider_unavailable", error.message ?: "Location provider is unavailable.") }
     }
-    private fun unregister() { if (registered) manager.removeUpdates(this); registered = false; selectedProvider = null }
+    private fun unregister() { if (registered) manager.removeUpdates(this); registered = false; selectedProviders = emptySet() }
     private fun emitError(code: String, message: String) { sink?.success(mapOf("type" to "error", "code" to code, "message" to message)) }
     private fun emitPosition(location: Location) { sink?.success(mapOf("type" to "position", "position" to snapshot(location))) }
     override fun onLocationChanged(location: Location) {
         if (!registered || !foreground || !wanted) return
-        if (permission() == "denied" || provider() != selectedProvider) { reconcile(); return }
-        if (location.latitude !in -90.0..90.0 || location.longitude !in -180.0..180.0 ||
-            !location.hasAccuracy() || !location.accuracy.isFinite() || location.accuracy < 0f) {
-            emitError("invalid_fix", "Android delivered an invalid location fix."); return
-        }
+        if (permission() == "denied" || !providers().containsAll(selectedProviders)) { reconcile(); return }
+        if (location.provider !in selectedProviders || !valid(location)) return
         recent = Location(location); emitPosition(location)
         val now = SystemClock.elapsedRealtime()
         val moved = widgetFix?.let { hypot(location.latitude - it.latitude, (location.longitude - it.longitude) * cos(location.latitude * Math.PI / 180)) >= 0.008 } ?: true
@@ -117,9 +137,9 @@ class NativeLocationService(context: Context, messenger: BinaryMessenger) : Loca
             NavKurdWidgetProvider.storeLocationAndRefresh(app, location.latitude, location.longitude, location.accuracy.toDouble())
         }
     }
-    override fun onProviderDisabled(provider: String) { if (provider == selectedProvider) emitError("location_disabled", "Device location is disabled.") }
+    override fun onProviderDisabled(provider: String) { if (provider in selectedProviders && selectedProviders.none { manager.isProviderEnabled(it) }) emitError("location_disabled", "Device location is disabled.") }
     override fun onProviderEnabled(provider: String) {
-        if (provider != selectedProvider) return
+        if (provider !in selectedProviders) return
         try { sink?.success(mapOf("type" to "status", "status" to status())) }
         catch (error: SecurityException) { unregister(); emitError("permission_denied", error.message ?: "Location permission was revoked.") }
     }

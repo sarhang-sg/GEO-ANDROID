@@ -24,6 +24,15 @@ const nativeLocationPresentationScript = r'''
         {operation: subscribers.size ? 'start' : 'stop'});
       if (!reply?.ok) throw failure(reply?.error?.code === 'permission_denied' ? 1 : 2,
         reply?.error?.message || 'Native location failed.');
+      for (const [id, entry] of subscribers) {
+        if (entry.armed) continue;
+        entry.armed = true;
+        if (Number.isFinite(entry.delay)) entry.timeout = setTimeout(() => {
+          if (!subscribers.has(id)) return;
+          if (entry.once) clearWatch(id);
+          deliverError(entry, failure(3, 'Location request timed out.'));
+        }, Math.min(entry.delay, 2147483647));
+      }
     }).catch(error => {
       const message = error?.code ? error : failure(2, String(error));
       for (const [id, entry] of [...subscribers]) {
@@ -43,13 +52,8 @@ const nativeLocationPresentationScript = r'''
     const id = ++sequence;
     const maximumAge = Math.max(0, Number(options?.maximumAge) || 0);
     const timeout = options?.timeout === undefined ? Infinity : Math.max(0, Number(options.timeout) || 0);
-    const entry = {success, error, once, maximumAge, started: Date.now(), timeout: null};
+    const entry = {success, error, once, maximumAge, started: Date.now(), timeout: null, delay: timeout, armed: false};
     subscribers.set(id, entry);
-    if (Number.isFinite(timeout)) entry.timeout = setTimeout(() => {
-      if (!subscribers.has(id)) return;
-      if (once) clearWatch(id);
-      deliverError(entry, failure(3, 'Location request timed out.'));
-    }, Math.min(timeout, 2147483647));
     synchronize(); return id;
   }
   window.addEventListener('nav-kurd:native-location', event => {
@@ -60,7 +64,7 @@ const nativeLocationPresentationScript = r'''
         accuracy: p.accuracy, heading: p.heading, speed: p.speed, altitude: p.altitude, altitudeAccuracy: null}};
       for (const [id, entry] of [...subscribers]) {
         if (p.timestamp < entry.started - entry.maximumAge) continue;
-        clearTimeout(entry.timeout);
+        entry.armed = true; clearTimeout(entry.timeout);
         if (entry.once) clearWatch(id);
         queueMicrotask(() => entry.success(position));
       }
