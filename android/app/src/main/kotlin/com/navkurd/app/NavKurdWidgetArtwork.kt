@@ -60,9 +60,8 @@ object NavKurdWidgetArtwork {
         canvas.drawRect(0f, 0f, SCENE_WIDTH.toFloat(), SCENE_HEIGHT.toFloat(), paint)
         paint.shader = null
 
-        drawHorizon(canvas, season, isDay)
+        drawHorizon(canvas, kind, season, isDay)
         // Keep every weather palette readable behind the native white captions.
-        if (isDay || phase == "pre_dawn" || phase == "evening") canvas.drawColor(Color.argb(112, 3, 8, 24))
         // Keep the centre quiet for text. Seasonal motion remains visible at
         // the edges, without snow, dust or leaves crossing the forecast rows.
         canvas.save()
@@ -80,7 +79,7 @@ object NavKurdWidgetArtwork {
             0f,
             0f,
             SCENE_HEIGHT.toFloat(),
-            intArrayOf(Color.argb(16, 255, 255, 255), Color.argb(36, 3, 8, 24), Color.argb(110, 3, 8, 24)),
+            intArrayOf(Color.argb(0, 3, 8, 24), Color.argb(12, 3, 8, 24), Color.argb(48, 3, 8, 24)),
             floatArrayOf(0f, 0.45f, 1f),
             Shader.TileMode.CLAMP,
         )
@@ -144,24 +143,18 @@ object NavKurdWidgetArtwork {
     }
 
     private fun palette(kind: String, isDay: Boolean, phase: String, season: String): Pair<Int, Int> {
-        if (kind in setOf("THUNDERSTORM", "HAIL", "TORNADO")) {
-            return Color.rgb(20, 28, 58) to Color.rgb(48, 22, 69)
-        }
-        if (kind in setOf("DUST", "DUST_RAIN", "STRONG_WIND")) {
-            return Color.rgb(103, 69, 55) to Color.rgb(35, 48, 70)
-        }
-        if (kind == "SNOW" || kind == "FREEZING_RAIN" || kind == "COLD") {
-            return Color.rgb(55, 99, 139) to Color.rgb(25, 45, 78)
-        }
+        val night = !isDay || phase == "night" || phase == "late_night"
         return when {
-            !isDay || phase == "night" || phase == "late_night" -> Color.rgb(9, 18, 50) to Color.rgb(34, 22, 72)
-            phase == "pre_dawn" -> Color.rgb(70, 76, 135) to Color.rgb(222, 126, 101)
-            phase == "evening" -> Color.rgb(49, 53, 109) to Color.rgb(213, 89, 92)
-            kind == "HOT" || season == "summer" -> Color.rgb(21, 119, 187) to Color.rgb(238, 135, 67)
-            kind in setOf("RAIN", "SHOWERS", "DRIZZLE", "FOG", "CLOUDY") -> Color.rgb(42, 74, 107) to Color.rgb(31, 49, 75)
-            season == "spring" -> Color.rgb(21, 132, 153) to Color.rgb(58, 84, 129)
-            season == "autumn" -> Color.rgb(71, 82, 122) to Color.rgb(169, 89, 61)
-            else -> Color.rgb(17, 116, 184) to Color.rgb(40, 70, 128)
+            kind in setOf("THUNDERSTORM", "HAIL", "TORNADO") -> if (night) Color.rgb(24, 33, 83) to Color.rgb(57, 35, 91) else Color.rgb(48, 67, 126) to Color.rgb(79, 49, 118)
+            kind in setOf("SNOW", "FREEZING_RAIN", "COLD") -> if (night) Color.rgb(27, 52, 98) to Color.rgb(48, 47, 99) else Color.rgb(40, 91, 144) to Color.rgb(66, 87, 143)
+            kind in setOf("RAIN", "SHOWERS", "DRIZZLE", "DUST_RAIN") -> if (night) Color.rgb(21, 47, 90) to Color.rgb(24, 66, 88) else Color.rgb(34, 89, 143) to Color.rgb(35, 97, 123)
+            kind in setOf("CLOUDY", "FOG") -> if (night) Color.rgb(31, 44, 89) to Color.rgb(55, 42, 96) else Color.rgb(51, 86, 135) to Color.rgb(75, 80, 137)
+            kind in setOf("DUST", "STRONG_WIND") -> if (night) Color.rgb(42, 42, 83) to Color.rgb(61, 44, 86) else Color.rgb(67, 76, 125) to Color.rgb(102, 65, 120)
+            night -> Color.rgb(18, 29, 76) to Color.rgb(54, 32, 94)
+            phase == "pre_dawn" || phase == "evening" -> Color.rgb(53, 52, 111) to Color.rgb(120, 58, 101)
+            season == "spring" -> Color.rgb(28, 90, 128) to Color.rgb(52, 83, 129)
+            season == "autumn" -> Color.rgb(54, 72, 127) to Color.rgb(103, 61, 113)
+            else -> Color.rgb(29, 87, 144) to Color.rgb(61, 76, 133)
         }
     }
 
@@ -177,7 +170,7 @@ object NavKurdWidgetArtwork {
         }
     }
 
-    private fun drawHorizon(canvas: Canvas, season: String, isDay: Boolean) {
+    private fun drawHorizon(canvas: Canvas, kind: String, season: String, isDay: Boolean) {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         val path = Path().apply {
             moveTo(0f, 158f)
@@ -187,13 +180,15 @@ object NavKurdWidgetArtwork {
             lineTo(0f, 220f)
             close()
         }
-        val base = when (season) {
-            "spring" -> Color.rgb(24, 91, 80)
-            "summer" -> Color.rgb(37, 91, 80)
-            "autumn" -> Color.rgb(94, 65, 57)
+        val base = when {
+            kind in setOf("RAIN", "SHOWERS", "DRIZZLE", "DUST_RAIN", "FREEZING_RAIN") -> Color.rgb(20, 65, 100)
+            kind in setOf("SNOW", "COLD", "CLOUDY", "FOG") -> Color.rgb(37, 50, 97)
+            season == "spring" -> Color.rgb(24, 91, 80)
+            season == "summer" -> Color.rgb(37, 91, 80)
+            season == "autumn" -> Color.rgb(64, 49, 100)
             else -> Color.rgb(59, 76, 99)
         }
-        paint.color = if (isDay) Color.argb(175, Color.red(base), Color.green(base), Color.blue(base)) else Color.argb(190, 10, 25, 46)
+        paint.color = if (isDay) Color.argb(145, Color.red(base), Color.green(base), Color.blue(base)) else Color.argb(150, 13, 30, 62)
         canvas.drawPath(path, paint)
     }
 

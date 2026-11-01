@@ -144,7 +144,7 @@ require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.k
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
   'if (minute < sunriseMinute) return if (minute >= sunriseMinute - 75) "pre_dawn" else "late_night"' "seven-part local day cycle is missing"
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  '"Open-Meteo · DEVELOPER: SARHANG SALAH"' "widget developer attribution is missing"
+  '"Open-Meteo · Developer: Sarhang Salah"' "widget developer attribution is missing"
 if grep -F 'drawHeat(canvas' android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt >/dev/null; then
   fail "legacy extreme-heat wave lines remain"
 fi

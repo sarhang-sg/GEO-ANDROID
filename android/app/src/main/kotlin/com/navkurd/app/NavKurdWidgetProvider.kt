@@ -623,7 +623,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             label(R.id.widget_phase, phaseLabel(phase, copy), 9f, 105f, "#C5D3E9")
             val cachedLabel = when (language) { "en" -> "Cached"; "ar" -> "محفوظ"; else -> "پاشەکەوتکراو" }
             val observed = preferences.getString(KEY_OBSERVED_AT, "")?.replace('T', ' ')?.take(16).orEmpty()
-            val attribution = "Open-Meteo · DEVELOPER: SARHANG SALAH"
+            val attribution = "Open-Meteo · Developer: Sarhang Salah"
             val staleWeather = hasWeather && age !in 0..90L * 60000L
             val needsAttention = rawStatus.uppercase(Locale.ROOT) in setOf("ERROR", "FAILED", "PAUSED")
             val notice = when {
@@ -635,7 +635,7 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             views.setViewVisibility(R.id.widget_detail, if (notice.isNotEmpty()) View.VISIBLE else View.GONE)
             label(R.id.widget_updated, if (hasWeather) "${observed.substringAfter(' ')} · Open-Meteo" else copy.tapLocate,
                 9f, 230f, "#D6E2F2")
-            label(R.id.widget_credit, "DEVELOPER: SARHANG SALAH", 7.5f, 230f, "#C5D3E9")
+            label(R.id.widget_credit, "Developer: Sarhang Salah", 7.5f, 230f, "#C5D3E9")
             views.setContentDescription(R.id.widget_updated, if (hasWeather) "$observed · $attribution" else copy.tapLocate)
             val forecast = runCatching { JSONArray(preferences.getString(KEY_FORECAST, "[]")) }.getOrElse { JSONArray() }
             val future = (0 until forecast.length()).mapNotNull { forecast.optJSONObject(it) }
