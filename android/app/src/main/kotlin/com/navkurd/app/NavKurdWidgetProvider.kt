@@ -596,7 +596,12 @@ class NavKurdWidgetProvider : AppWidgetProvider() {
             val condition = NavKurdWeatherDescriptions.label(context, weatherCode, isDay, language) ?: weatherCondition(kind, isDay, language)
             val gusts = preferences.getFloat(KEY_WIND_GUSTS, Float.NaN).toDouble().takeIf { it.isFinite() && it >= 0 }
             val contextLabel = NavKurdWeatherDescriptions.contextLabels(context, temperatureValue, windSpeed, gusts, language)
-            val artworkKind = if (weatherCode == 0 && isDay && temperatureValue != null && temperatureValue >= 32) "HOT" else kind.name
+            val artworkKind = when {
+                // Cold clear weather stays clear: never manufacture snow.
+                weatherCode == 0 && temperatureValue != null && age in 0..90L * 60000L && temperatureValue <= 0 -> "COLD"
+                weatherCode == 0 && isDay && temperatureValue != null && age in 0..90L * 60000L && temperatureValue >= 32 -> "HOT"
+                else -> kind.name
+            }
             val frame = System.currentTimeMillis() / (10L * 60L * 1000L)
 
             val layout = if (language == "en") {

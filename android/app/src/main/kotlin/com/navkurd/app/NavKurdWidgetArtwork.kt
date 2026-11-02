@@ -101,7 +101,6 @@ object NavKurdWidgetArtwork {
             "CLEAR", "HOT", "COLD" -> {
                 if (isDay) drawSun(canvas, 62f, 61f, if (kind == "HOT") 31f else 27f, paint)
                 else drawMoon(canvas, 63f, 58f, 30f, paint)
-                if (kind == "COLD") drawSnow(canvas, frame, 7, paint)
             }
             "PARTLY_CLOUDY" -> {
                 if (isDay) drawSun(canvas, 38f, 37f, 17f, paint) else drawMoon(canvas, 37f, 35f, 18f, paint)
@@ -147,11 +146,15 @@ object NavKurdWidgetArtwork {
         return when {
             kind in setOf("THUNDERSTORM", "HAIL", "TORNADO") -> if (night) Color.rgb(24, 33, 83) to Color.rgb(57, 35, 91) else Color.rgb(48, 67, 126) to Color.rgb(79, 49, 118)
             kind in setOf("SNOW", "FREEZING_RAIN", "COLD") -> if (night) Color.rgb(27, 52, 98) to Color.rgb(48, 47, 99) else Color.rgb(40, 91, 144) to Color.rgb(66, 87, 143)
-            kind in setOf("RAIN", "SHOWERS", "DRIZZLE", "DUST_RAIN") -> if (night) Color.rgb(21, 47, 90) to Color.rgb(24, 66, 88) else Color.rgb(34, 89, 143) to Color.rgb(35, 97, 123)
-            kind in setOf("CLOUDY", "FOG") -> if (night) Color.rgb(31, 44, 89) to Color.rgb(55, 42, 96) else Color.rgb(51, 86, 135) to Color.rgb(75, 80, 137)
+            kind in setOf("RAIN", "SHOWERS", "DRIZZLE", "DUST_RAIN") -> if (night) Color.rgb(21, 47, 90) to Color.rgb(24, 66, 88) else Color.rgb(29, 93, 150) to Color.rgb(22, 98, 123)
+            kind in setOf("CLOUDY", "FOG") -> if (night) Color.rgb(31, 44, 89) to Color.rgb(55, 42, 96) else Color.rgb(47, 90, 142) to Color.rgb(79, 77, 145)
             kind in setOf("DUST", "STRONG_WIND") -> if (night) Color.rgb(42, 42, 83) to Color.rgb(61, 44, 86) else Color.rgb(67, 76, 125) to Color.rgb(102, 65, 120)
+            // Keep actual local twilight even when the sun is below the horizon.
+            phase == "pre_dawn" -> Color.rgb(38, 52, 110) to Color.rgb(92, 62, 126)
+            phase == "evening" -> Color.rgb(53, 52, 111) to Color.rgb(120, 58, 101)
             night -> Color.rgb(18, 29, 76) to Color.rgb(54, 32, 94)
-            phase == "pre_dawn" || phase == "evening" -> Color.rgb(53, 52, 111) to Color.rgb(120, 58, 101)
+            kind == "HOT" -> Color.rgb(69, 68, 132) to Color.rgb(112, 57, 111)
+            season == "winter" -> Color.rgb(29, 88, 141) to Color.rgb(42, 80, 137)
             season == "spring" -> Color.rgb(28, 90, 128) to Color.rgb(52, 83, 129)
             season == "autumn" -> Color.rgb(54, 72, 127) to Color.rgb(103, 61, 113)
             else -> Color.rgb(29, 87, 144) to Color.rgb(61, 76, 133)
@@ -247,7 +250,7 @@ object NavKurdWidgetArtwork {
                 drawSceneRain(canvas, frame, true, paint)
                 drawSceneDust(canvas, frame, paint)
             }
-            "SNOW", "COLD" -> drawSceneSnow(canvas, frame, paint)
+            "SNOW" -> drawSceneSnow(canvas, frame, paint)
             "THUNDERSTORM", "HAIL" -> {
                 drawSceneRain(canvas, frame, false, paint)
                 paint.color = Color.argb(if (frame % 4L == 0L) 95 else 24, 219, 232, 255)
