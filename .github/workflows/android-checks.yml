@@ -40,7 +40,8 @@ jobs:
         run: |
           flutter pub get --enforce-lockfile
           flutter analyze --no-pub --fatal-infos lib test
-          flutter test --no-pub --machine > "$RUNNER_TEMP/nav-kurd-flutter-tests.jsonl"
+          set -o pipefail
+          flutter test --no-pub --machine | tee "$RUNNER_TEMP/nav-kurd-flutter-tests.jsonl"
           python3 tools/verify-machine-tests.py "$RUNNER_TEMP/nav-kurd-flutter-tests.jsonl" --minimum 16
       - name: Verify native preferences and real offline data
         working-directory: packages/nav_kurd_local_core
