@@ -362,7 +362,14 @@ jobs:
           test "$(find release -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 11
 
       - name: Launch the verified signed APK and exercise the home-screen widget
-        run: bash tools/launcher-smoke/run.sh "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" com.navkurd.app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/731024626" > "$RUNNER_TEMP/nav-kurd-weather-1044.apk"; then
+            export PREVIOUS_SIGNED_APK="$RUNNER_TEMP/nav-kurd-weather-1044.apk"
+          fi
+          unset GH_TOKEN
+          bash tools/launcher-smoke/run.sh "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" com.navkurd.app
 
       - name: Upload signed Android release
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

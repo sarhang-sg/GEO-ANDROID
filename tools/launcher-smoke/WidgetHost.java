@@ -7,6 +7,7 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -35,16 +36,27 @@ public final class WidgetHost extends Activity {
         ComponentName component = new ComponentName(target, "com.navkurd.app.NavKurdWidgetProvider");
         AppWidgetManager manager = AppWidgetManager.getInstance(this);
         host = new AppWidgetHost(this, 41);
-        int id = host.allocateAppWidgetId();
+        SharedPreferences records = getSharedPreferences("widgets", MODE_PRIVATE);
+        boolean reuse = getIntent().getBooleanExtra("reuse", false);
+        int id = reuse ? records.getInt(target, -1) : host.allocateAppWidgetId();
         Bundle options = new Bundle();
         options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 300);
         options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 300);
         options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 160);
         options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 160);
-        if (!manager.bindAppWidgetIdIfAllowed(id, component, options)) {
+        if (!reuse && !manager.bindAppWidgetIdIfAllowed(id, component, options)) {
             throw new IllegalStateException("Launcher did not bind the target widget");
         }
         AppWidgetProviderInfo info = manager.getAppWidgetInfo(id);
+        if (info == null || !component.equals(info.provider)) {
+            throw new IllegalStateException("Lost launcher widget on update");
+        }
+        if (getIntent().getBooleanExtra("initial", false)) {
+            if (!records.edit().putInt(target, id).commit()) throw new IllegalStateException("Cannot retain widget ID");
+            setContentView(host.createView(this, id, info));
+            Log.i("NavKurdSmoke", "previous-widget-bound " + id);
+            return;
+        }
         try {
             Context remote = createPackageContext(target, 0);
             Resources resources = remote.getResources();
