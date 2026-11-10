@@ -1,10 +1,10 @@
-# NAV KURD Android 10.4.5
+# NAV KURD Android 10.4.6
 
 Weather update: native launcher widgets, dedicated weather screen, deep links, cached forecasts, background refresh and localized presentation. This replaces the previous Android build; data catalogue content remains independently versioned.
 
-Now updated — NAV KURD 10.4.5 · Reviewed 10 November 2026.
+Now updated — NAV KURD 10.4.6 · Reviewed 10 November 2026.
 
-Version **10.4.5+100405** uses the matching web presentation and verified
+Version **10.4.6+100406** uses the matching web presentation and verified
 immutable offline catalog. Catalog data identity is independent of app version.
 
 - Back cancels the top dialog/panel before leaving the app and preserves drafts.
@@ -26,9 +26,13 @@ publishes with the established certificate.
 A source archive is not a signed APK. Physical GPS/camera, launcher widgets and
 authenticated operations still need device/account QA.
 
+## Android 10.4.6 fixes
+
+The map now checks the installed package version and the bundled web presentation independently. The first launch shows progress while installing the offline catalog. Kurdish and Central Kurdish Android locales have framework delegates and right-to-left text. The weather widget immediately displays working city and forecast actions and can show cached readings while its Flutter bitmap is rendering. Its renderer no longer requires a display view. The release workflow installs the signed APK on an Android emulator and checks the map, widget bitmap, forecast tap and Back before publication.
+
 ## Source and documentation refresh
 
-- Current 10.4.5 README, deployment instructions and disclosure contacts.
+- Current 10.4.6 README, deployment instructions and disclosure contacts.
 - Consistent policy version/date on Android and Web; existing legal terms and
   third-party rights remain in force.
 - Android local-core instructions describe the integrated runtime and locked SQLite 3.7.0 package.

@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/weather_root" android:layout_width="match_parent" android:layout_height="match_parent" android:layoutDirection="ltr" android:background="@drawable/widget_night">
- <ImageView android:id="@+id/weather_bitmap" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitXY" android:contentDescription="Open-Meteo · Developer: Sarhang Salah"/>
- <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:weightSum="100">
-  <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="29" android:orientation="horizontal"><TextView android:id="@+id/weather_city" android:layout_width="match_parent" android:layout_height="match_parent" android:contentDescription="شار هەڵبژێرە" android:focusable="true" /></LinearLayout>
-  <TextView android:id="@+id/weather_forecast" android:layout_width="match_parent" android:layout_height="0dp" android:contentDescription="پێشبینیی ٢٤ کاتژمێر" android:focusable="true" android:layout_weight="71"/>
-
- </LinearLayout>
-
+    <ImageView android:id="@+id/weather_bitmap" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitXY" android:contentDescription="Open-Meteo · Developer: Sarhang Salah" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:weightSum="100">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="29" android:orientation="horizontal">
+            <TextView android:id="@+id/weather_city" android:layout_width="match_parent" android:layout_height="match_parent" android:contentDescription="شار هەڵبژێرە" android:focusable="true" android:text="@string/weather_pick_city" android:textColor="#FFFFFF" android:gravity="center" android:ellipsize="end" android:maxLines="1" android:textSize="13sp" android:textStyle="bold" android:shadowColor="#F5142137" android:shadowRadius="3" android:shadowDy="1" android:paddingStart="3dp" android:paddingEnd="3dp" />
+        </LinearLayout>
+        <TextView android:id="@+id/weather_forecast" android:layout_width="match_parent" android:layout_height="0dp" android:contentDescription="پێشبینیی ٢٤ کاتژمێر" android:focusable="true" android:layout_weight="71" android:text="@string/weather_open_forecast" android:textColor="#FFFFFF" android:gravity="center" android:ellipsize="end" android:maxLines="2" android:textSize="13sp" android:textStyle="bold" android:shadowColor="#F5142137" android:shadowRadius="3" android:shadowDy="1" android:paddingStart="3dp" android:paddingEnd="3dp" />
+    </LinearLayout>
 </FrameLayout>

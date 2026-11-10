@@ -285,17 +285,10 @@ Future<Uint8List> weatherBitmap(
   final focus = FocusManager();
   final builds = BuildOwner(focusManager: focus);
   final pipeline = PipelineOwner();
-  final view = RendererBinding.instance.platformDispatcher.views.first;
-  final root = RenderView(
-    view: view,
-    configuration: ViewConfiguration(
-      logicalConstraints: BoxConstraints.tight(size),
-      physicalConstraints: BoxConstraints.tight(size),
-      devicePixelRatio: 1,
-    ),
-  );
+  final root = RenderRepaintBoundary();
   pipeline.rootNode = root;
-  root.prepareInitialFrame();
+  final layer = OffsetLayer()..attach(root);
+  root.scheduleInitialPaint(layer);
   final widget = MediaQuery(
     data: MediaQueryData(
       size: size,
@@ -313,17 +306,17 @@ Future<Uint8List> weatherBitmap(
   );
   final tree = RenderObjectToWidgetAdapter<RenderBox>(
     container: root,
-    child: RepaintBoundary(child: widget),
+    child: widget,
   ).attachToRenderTree(builds);
   ui.Image? image;
   try {
     builds.buildScope(tree);
     builds.finalizeTree();
+    root.layout(BoxConstraints.tight(size));
     pipeline.flushLayout();
     pipeline.flushCompositingBits();
     pipeline.flushPaint();
-    final boundary = root.child! as RenderRepaintBoundary;
-    image = await boundary.toImage(pixelRatio: ratio);
+    image = await root.toImage(pixelRatio: ratio);
     final data = await image.toByteData(format: ui.ImageByteFormat.png);
     if (data == null) throw StateError('PNG encoding failed');
     return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
@@ -332,13 +325,16 @@ Future<Uint8List> weatherBitmap(
     final scheduler = SchedulerBinding.instance;
     final settled = scheduler.endOfFrame;
     scheduler.scheduleWarmUpFrame();
-    await settled;
-    pipeline.rootNode = null;
+    // A headless Android engine can be paused without a display vsync.
+    await settled.timeout(const Duration(milliseconds: 250), onTimeout: () {});
+
     RenderObjectToWidgetAdapter<RenderBox>(
       container: root,
     ).attachToRenderTree(builds, tree);
     builds.buildScope(tree);
     builds.finalizeTree();
+    pipeline.rootNode = null;
+    layer.detach();
     root.dispose();
     pipeline.dispose();
     focus.dispose();

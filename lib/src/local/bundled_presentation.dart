@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
-import 'package:geo_android/src/app_config.dart';
 import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
 
 /// One immutable, release-bound R16 presentation shipped in the application.
@@ -12,9 +11,9 @@ final class BundledPresentation {
   final _cache = <String, Uint8List>{};
   int _cacheBytes = 0;
   static const _maximumCacheBytes = 8 * 1024 * 1024;
-  static Future<BundledPresentation> open() async {
+  static Future<BundledPresentation> open(String expectedVersion) async {
     final manifest=jsonDecode(await rootBundle.loadString('assets/r16/manifest.json')) as Map;
-    if(manifest['schema']!=1||manifest['appVersion']!=AppConfig.appVersion||manifest['files'] is! List)throw const CoreFailure('presentation_manifest','Bundled presentation identity is invalid.');
+    if(manifest['schema']!=1||manifest['appVersion']!=expectedVersion||manifest['files'] is! List)throw const CoreFailure('presentation_manifest','Bundled presentation identity is invalid.');
     final files=<String,Map<String,Object?>>{};
     for(final raw in manifest['files'] as List){
       final row=Map<String,Object?>.from(raw as Map),path=row['path'],bytes=row['bytes'],hash=row['sha256'];

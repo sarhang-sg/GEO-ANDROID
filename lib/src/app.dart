@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:geo_android/src/app_config.dart';
+import 'package:geo_android/src/kurdish_localizations.dart';
 import 'package:geo_android/src/nav_kurd_page.dart';
 
 final class NavKurdApp extends StatelessWidget {
@@ -14,16 +14,8 @@ final class NavKurdApp extends StatelessWidget {
     return MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
-      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const <Locale>[
-        Locale('ku'),
-        Locale('en'),
-        Locale('ar'),
-      ],
+      localizationsDelegates: navKurdDelegates,
+      supportedLocales: navKurdLocales,
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
         brightness: Brightness.dark,

@@ -13,13 +13,24 @@ import java.util.TimeZone
 import kotlin.math.abs
 
 class NavKurdWidgetProvider:AppWidgetProvider() {
-    override fun onUpdate(context:Context,manager:AppWidgetManager,ids:IntArray){scheduleRefresh(context);WeatherWork.paint(context);NavKurdWeatherJob.schedule(context)}
-    override fun onAppWidgetOptionsChanged(context:Context,manager:AppWidgetManager,id:Int,options:Bundle){WeatherWork.paint(context)}
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        WeatherBitmaps.showFallback(context, manager, ids)
+        scheduleRefresh(context)
+        WeatherWork.paint(context)
+        NavKurdWeatherJob.schedule(context)
+    }
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) {
+        WeatherBitmaps.showFallback(context, manager, intArrayOf(id))
+        WeatherWork.paint(context)
+    }
     override fun onEnabled(context:Context){scheduleRefresh(context);NavKurdWeatherJob.schedule(context)}
     override fun onDisabled(context:Context){NavKurdWeatherJob.cancelWidget(context);context.getSystemService(AlarmManager::class.java).cancel(phaseIntent(context));NavKurdWidgetLocation.configure(context)}
     override fun onReceive(context:Context,intent:Intent){
         super.onReceive(context,intent)
         if(intent.action in listOf(Intent.ACTION_BOOT_COMPLETED,Intent.ACTION_MY_PACKAGE_REPLACED,Intent.ACTION_TIME_CHANGED,Intent.ACTION_TIMEZONE_CHANGED) && hasWidgets(context)){
+            val manager = AppWidgetManager.getInstance(context)
+            WeatherBitmaps.showFallback(context, manager, manager.getAppWidgetIds(ComponentName(context, NavKurdWidgetProvider::class.java)))
             scheduleRefresh(context);WeatherWork.paint(context)
         }
     }

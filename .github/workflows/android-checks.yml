@@ -55,3 +55,5 @@ jobs:
           bash tools/install-android-sdk.sh
           flutter build apk --debug --no-pub
 
+      - name: Launch the APK and exercise the home-screen widget
+        run: bash tools/launcher-smoke/run.sh build/app/outputs/flutter-apk/app-debug.apk com.navkurd.app.debug

@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.navkurd.smoke">
+    <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="34" />
+    <uses-permission android:name="android.permission.BIND_APPWIDGET" />
+    <queries>
+        <package android:name="com.navkurd.app" />
+        <package android:name="com.navkurd.app.debug" />
+    </queries>
+    <application android:label="NAV KURD widget test host" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity android:name=".WidgetHost" android:exported="true" />
+    </application>
+</manifest>

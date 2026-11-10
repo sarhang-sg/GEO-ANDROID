@@ -20,9 +20,9 @@ def main():
     root=Path(__file__).resolve().parents[1]
     web=args.web.resolve()
     release=json.loads((web/'release.config.json').read_text())
-    version=(root/'pubspec.yaml').read_text().split('version:',1)[1].splitlines()[0].strip()
-    if version!=f'{release["appVersion"]}+{release["androidVersionCode"]}':
-        raise SystemExit('Android and web version identities differ.')
+    application=json.loads((root/'assets/application-release.json').read_text())
+    if application.get('presentationVersion') != release['appVersion']:
+        raise SystemExit('The web build differs from the presentation version declared by Android.')
     config=args.public_config.read_text()
     for line in config.splitlines():
         if line.strip() and not line.startswith('#') and not line.startswith('VITE_'):

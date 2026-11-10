@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geo_android/src/kurdish_localizations.dart';
 import 'package:geo_android/weather/weather_art.dart';
 import 'package:geo_android/weather/weather_model.dart';
 import 'package:geo_android/weather/weather_widget.dart';
@@ -107,6 +108,8 @@ class _WeatherApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
+    localizationsDelegates: navKurdDelegates,
+    supportedLocales: navKurdLocales,
     themeMode: ThemeMode.dark,
     theme: ThemeData(
       brightness: Brightness.dark,
