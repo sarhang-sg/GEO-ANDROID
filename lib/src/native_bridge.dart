@@ -42,16 +42,7 @@ final class NativeBridge {
     }
   }
 
-  Future<bool> clearTransientCache() async {
-    try {
-      final value = await _methods.invokeMapMethod<String, dynamic>(
-        'clearTransientCache',
-      );
-      return value?['cleared'] == true;
-    } on PlatformException {
-      return false;
-    }
-  }
+
 
   Future<bool> shareText({
     required String title,

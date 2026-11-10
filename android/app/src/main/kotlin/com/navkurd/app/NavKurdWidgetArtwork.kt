@@ -46,20 +46,7 @@ object NavKurdWidgetArtwork {
         val canvas = Canvas(bitmap)
         // Full-bleed artwork. The RemoteViews background is the only rounded
         // outline; a second bitmap radius stretches into dark corner wedges.
-        val palette = palette(kind, isDay, phase, season)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.shader = LinearGradient(
-            0f,
-            0f,
-            SCENE_WIDTH.toFloat(),
-            SCENE_HEIGHT.toFloat(),
-            palette.first,
-            palette.second,
-            Shader.TileMode.CLAMP,
-        )
-        canvas.drawRect(0f, 0f, SCENE_WIDTH.toFloat(), SCENE_HEIGHT.toFloat(), paint)
-        paint.shader = null
-
         drawHorizon(canvas, kind, season, isDay)
         // Keep every weather palette readable behind the native white captions.
         // Keep the centre quiet for text. Seasonal motion remains visible at
@@ -69,7 +56,7 @@ object NavKurdWidgetArtwork {
             addRect(0f, 0f, 24f, SCENE_HEIGHT.toFloat(), Path.Direction.CW)
             addRect(SCENE_WIDTH - 24f, 0f, SCENE_WIDTH.toFloat(), SCENE_HEIGHT.toFloat(), Path.Direction.CW)
         })
-        if (!isDay) drawStars(canvas, frame % 60L)
+        if (phase == "night") drawStars(canvas, frame % 60L)
         drawSeasonAccent(canvas, season, isDay, frame)
         drawAmbientAtmosphere(canvas, kind, frame)
         canvas.restore()
@@ -79,7 +66,7 @@ object NavKurdWidgetArtwork {
             0f,
             0f,
             SCENE_HEIGHT.toFloat(),
-            intArrayOf(Color.argb(0, 3, 8, 24), Color.argb(12, 3, 8, 24), Color.argb(48, 3, 8, 24)),
+            intArrayOf(Color.argb(121, 10, 24, 44), Color.argb(145, 10, 24, 44), Color.argb(150, 10, 24, 44)),
             floatArrayOf(0f, 0.45f, 1f),
             Shader.TileMode.CLAMP,
         )
@@ -139,26 +126,6 @@ object NavKurdWidgetArtwork {
         }
         icons.put(key, bitmap)
         return bitmap
-    }
-
-    private fun palette(kind: String, isDay: Boolean, phase: String, season: String): Pair<Int, Int> {
-        val night = !isDay || phase == "night" || phase == "late_night"
-        return when {
-            kind in setOf("THUNDERSTORM", "HAIL", "TORNADO") -> if (night) Color.rgb(24, 33, 83) to Color.rgb(57, 35, 91) else Color.rgb(48, 67, 126) to Color.rgb(79, 49, 118)
-            kind in setOf("SNOW", "FREEZING_RAIN", "COLD") -> if (night) Color.rgb(27, 52, 98) to Color.rgb(48, 47, 99) else Color.rgb(40, 91, 144) to Color.rgb(66, 87, 143)
-            kind in setOf("RAIN", "SHOWERS", "DRIZZLE", "DUST_RAIN") -> if (night) Color.rgb(21, 47, 90) to Color.rgb(24, 66, 88) else Color.rgb(29, 93, 150) to Color.rgb(22, 98, 123)
-            kind in setOf("CLOUDY", "FOG") -> if (night) Color.rgb(31, 44, 89) to Color.rgb(55, 42, 96) else Color.rgb(47, 90, 142) to Color.rgb(79, 77, 145)
-            kind in setOf("DUST", "STRONG_WIND") -> if (night) Color.rgb(42, 42, 83) to Color.rgb(61, 44, 86) else Color.rgb(67, 76, 125) to Color.rgb(102, 65, 120)
-            // Keep actual local twilight even when the sun is below the horizon.
-            phase == "pre_dawn" -> Color.rgb(38, 52, 110) to Color.rgb(92, 62, 126)
-            phase == "evening" -> Color.rgb(53, 52, 111) to Color.rgb(120, 58, 101)
-            night -> Color.rgb(18, 29, 76) to Color.rgb(54, 32, 94)
-            kind == "HOT" -> Color.rgb(69, 68, 132) to Color.rgb(112, 57, 111)
-            season == "winter" -> Color.rgb(29, 88, 141) to Color.rgb(42, 80, 137)
-            season == "spring" -> Color.rgb(28, 90, 128) to Color.rgb(52, 83, 129)
-            season == "autumn" -> Color.rgb(54, 72, 127) to Color.rgb(103, 61, 113)
-            else -> Color.rgb(29, 87, 144) to Color.rgb(61, 76, 133)
-        }
     }
 
     private fun drawStars(canvas: Canvas, frame: Long) {

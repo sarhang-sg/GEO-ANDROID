@@ -5,6 +5,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+if (file("google-services.json").isFile) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
+}
 val keyProperties = Properties()
 val keyPropertiesFile = rootProject.file("key.properties")
 val hasReleaseKey = keyPropertiesFile.exists()
@@ -106,4 +110,10 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("androidx.work:work-runtime-ktx:2.10.5")
 }

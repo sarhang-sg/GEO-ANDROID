@@ -5,6 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geo_android/src/app.dart';
 import 'package:geo_android/src/native_bridge.dart';
+import 'package:geo_android/weather/weather_screen.dart';
+import 'package:geo_android/weather/weather_widget.dart';
+
+@pragma('vm:entry-point')
+Future<void> weatherMain() => startWeatherScreen();
+
+@pragma('vm:entry-point')
+Future<void> weatherBitmapMain() => startWeatherRenderer();
 
 void main() {
   runZonedGuarded(

@@ -25,6 +25,7 @@ EXCLUDED_DIRECTORIES = {
     "node_modules",
 }
 EXCLUDED_NAMES = {
+    "google-services.json",
     ".flutter-plugins",
     ".flutter-plugins-dependencies",
     ".packages",

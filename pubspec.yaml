@@ -7,6 +7,7 @@ environment:
   sdk: ">=3.11.0 <4.0.0"
 
 dependencies:
+  lottie: ^3.3.2
   crypto: 3.0.7
   nav_kurd_local_core:
     path: packages/nav_kurd_local_core
@@ -32,6 +33,7 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
+    - assets/weather/
     - assets/application-release.json
     - assets/r16/
     - assets/r16/assets/

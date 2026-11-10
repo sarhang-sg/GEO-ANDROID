@@ -71,9 +71,12 @@ object NavKurdWidgetLocation {
     }
 
     // Called only on the weather worker, with explicit background-location consent.
-    fun current(context: Context): Location? {
+    fun current(context: Context, foregroundRequest: Boolean = false): Location? {
         latest(context)?.let { return it }
-        if (!enabled(context) || !NavKurdWidgetProvider.hasWidgets(context)) return null
+        val visibleRequest = foregroundRequest && foreground &&
+            (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+        if (!visibleRequest && (!enabled(context) || !NavKurdWidgetProvider.hasWidgets(context))) return null
         val manager = context.getSystemService(LocationManager::class.java)
         val providers = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER)
             .filter { runCatching { manager.isProviderEnabled(it) }.getOrDefault(false) }

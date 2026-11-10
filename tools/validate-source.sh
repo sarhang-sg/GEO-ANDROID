@@ -123,42 +123,12 @@ if grep -R -F 'share_plus' pubspec.yaml lib test >/dev/null 2>&1; then
 fi
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdDiagnostics.kt \
   '[META] Native Android diagnostics' "native diagnostics are missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  'api.open-meteo.com' "widget weather source is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  'air-quality-api.open-meteo.com' "widget air-quality source is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  'NavKurdWidgetArtwork.scene' "state-driven widget artwork is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  'NavKurdWidgetTypography.bind' "launcher-independent widget text is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt \
-  'ResourcesCompat.getFont' "bundled widget font loading is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt \
-  'StaticLayout.Builder' "Kurdish/Arabic shaped text rendering is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt \
-  'views.setContentDescription(viewId, text)' "widget text accessibility is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  '&daily=sunrise,sunset&forecast_days=2' "solar day-length weather data is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  'in Calendar.JUNE..Calendar.AUGUST -> "summer"' "meteorological season boundaries are missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  'if (minute < sunriseMinute) return if (minute >= sunriseMinute - 75) "pre_dawn" else "late_night"' "seven-part local day cycle is missing"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  '"Open-Meteo · Developer: Sarhang Salah"' "widget developer attribution is missing"
-if grep -F 'drawHeat(canvas' android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt >/dev/null; then
-  fail "legacy extreme-heat wave lines remain"
-fi
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  'R.layout.nav_kurd_widget_en' "English widget layout is not canonical"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt \
-  'R.layout.nav_kurd_widget' "Kurdish/Arabic widget layout is not canonical"
-if find android/app/src/main -type f -name '*_v9_font*' -print -quit | grep -q .; then
-  fail "temporary widget wrapper layout remains"
-fi
-require_text android/app/src/main/res/layout/nav_kurd_widget.xml \
-  '@font/uniqaidar_money_heist_002' "Kurdish/Arabic widget font is incorrect"
-require_text android/app/src/main/res/layout/nav_kurd_widget_en.xml \
-  '@font/red_hat_display_variable' "English widget font is incorrect"
+require_text android/app/src/main/kotlin/com/navkurd/app/WeatherStore.kt 'https://geo-map-kappa.vercel.app/api/weather' "weather proxy is missing"
+require_text lib/weather/weather_widget.dart 'RenderRepaintBoundary' "Flutter bitmap renderer is missing"
+require_text lib/weather/weather_widget.dart "Locale('ckb')" "headless Kurdish locale is missing"
+require_text lib/weather/weather_widget.dart 'Open-Meteo' "weather attribution is missing"
+require_text android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt 'setOnClickPendingIntent' "weather widget touch zones are missing"
+require_text android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt 'setContentDescription' "widget accessibility is missing"
 test -s android/app/src/main/res/font/uniqaidar_money_heist_002.ttf \
   || fail "UniQAIDAR font asset is missing"
 test -s android/app/src/main/res/font/red_hat_display_variable.ttf \
@@ -170,20 +140,6 @@ test ! -e android/app/src/main/res/font/nav_kurd_latin.ttf \
 if grep -F '<stroke' android/app/src/main/res/drawable/widget_background.xml >/dev/null; then
   fail "widget background must not have an outer border"
 fi
-if grep -F 'RectF(1f, 1f' android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetArtwork.kt >/dev/null; then
-  fail "widget artwork outer stroke remains"
-fi
-
-for layout in android/app/src/main/res/layout/nav_kurd_widget.xml android/app/src/main/res/layout/nav_kurd_widget_en.xml; do
-  test "$(grep -c '@+id/widget_weather_icon' "$layout")" = "1" \
-    || fail "$layout must contain one primary weather symbol"
-done
-test "$(grep -Ec '<Text(View|Clock)' android/app/src/main/res/layout/nav_kurd_widget.xml)" = \
-  "$(grep -Fc '@font/uniqaidar_money_heist_002' android/app/src/main/res/layout/nav_kurd_widget.xml)" \
-  || fail "every Kurdish/Arabic widget text node must use UniQAIDAR"
-test "$(grep -Ec '<Text(View|Clock)' android/app/src/main/res/layout/nav_kurd_widget_en.xml)" = \
-  "$(grep -Fc '@font/red_hat_display_variable' android/app/src/main/res/layout/nav_kurd_widget_en.xml)" \
-  || fail "every English widget text node must use Red Hat Display"
 # Portable Unicode emoji scan: works in GNU/Linux CI and Termux grep builds.
 python3 - <<'PY_EMOJI'
 from pathlib import Path
@@ -273,7 +229,7 @@ done
 # R3: optional widget background location is explicit, disabled by default, and OS-gated.
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocation.kt 'getBoolean(KEY, false)' "widget background location must default off"
 require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocation.kt 'value && granted(context)' "widget opt-in must require Android permission"
-require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocation.kt 'if (!enabled(context) || !NavKurdWidgetProvider.hasWidgets(context)) return null' "background fixes must require opt-in and an installed widget"
+require_text android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetLocation.kt 'if (!visibleRequest && (!enabled(context) || !NavKurdWidgetProvider.hasWidgets(context))) return null' "background fixes must require opt-in and an installed widget"
 require_text lib/src/permission_coordinator.dart 'Permission.locationAlways.request()' "background location must use Android permission flow"
 require_text lib/src/nav_kurd_page.dart "handlerName: 'nativeWidgetLocationOptions'" "trusted widget settings bridge is missing"
 require_text android/app/src/main/AndroidManifest.xml '<receiver android:name=".NavKurdWidgetLocationReceiver" android:exported="false" />' "widget location receiver must remain private"

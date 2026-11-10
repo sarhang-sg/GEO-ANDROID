@@ -28,6 +28,7 @@ internal object NavKurdWeatherDescriptions {
         if (temperature != null && temperature.isFinite()) {
             when {
                 temperature <= thresholds.optDouble("extremeColdC", -10.0) -> keys.add("extremeCold")
+                temperature <= 0 -> keys.add("freezing")
                 temperature <= thresholds.optDouble("coldC", 5.0) -> keys.add("cold")
                 temperature < thresholds.optDouble("coolC", 16.0) -> keys.add("cool")
                 temperature >= thresholds.optDouble("extremeHeatC", 40.0) -> keys.add("extremeHeat")
