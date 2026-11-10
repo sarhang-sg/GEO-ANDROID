@@ -1,6 +1,6 @@
-# GEO ANDROID — NAV KURD — 10.4.4
+# GEO ANDROID — NAV KURD — 10.4.5
 
-NAV KURD Android 10.4.4 bundles the same presentation as the web app.
+NAV KURD Android 10.4.5 bundles the same presentation as the web app.
 Current maintenance fixes zoom-time GPS marker scaling, long-route turn
 instructions, administrator photo staging and retry, and theme-aware forms.
 The compact native weather widget and offline catalog are retained.
@@ -59,7 +59,7 @@ delivery still requires the owner's Firebase project and a real
 | --- | --- |
 | App name | NAV KURD |
 | Android application ID | `com.navkurd.app` |
-| Version | `10.4.4+100404` |
+| Version | `10.4.5+100405` |
 | Minimum Android | 7.0 / API 24 |
 | Target Android | API 37 |
 | Default origin | `https://geo-map-kappa.vercel.app` |
