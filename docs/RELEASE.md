@@ -1,8 +1,10 @@
-# NAV KURD Android 10.4.4
+# NAV KURD Android 10.4.5
 
-Now updated — NAV KURD 10.4.4 · Reviewed 14 October 2026.
+Weather update: native launcher widgets, dedicated weather screen, deep links, cached forecasts, background refresh and localized presentation. This replaces the previous Android build; data catalogue content remains independently versioned.
 
-Version **10.4.4+100404** uses the matching web presentation and verified
+Now updated — NAV KURD 10.4.5 · Reviewed 10 November 2026.
+
+Version **10.4.5+100405** uses the matching web presentation and verified
 immutable offline catalog. Catalog data identity is independent of app version.
 
 - Back cancels the top dialog/panel before leaving the app and preserves drafts.
@@ -26,7 +28,7 @@ authenticated operations still need device/account QA.
 
 ## Source and documentation refresh
 
-- Current 10.4.4 README, deployment instructions and disclosure contacts.
+- Current 10.4.5 README, deployment instructions and disclosure contacts.
 - Consistent policy version/date on Android and Web; existing legal terms and
   third-party rights remain in force.
 - Android local-core instructions describe the integrated runtime and locked SQLite 3.7.0 package.
