@@ -15,6 +15,7 @@ import 'package:geo_android/src/local/location_presentation_bridge.dart';
 import 'package:geo_android/src/native_bridge.dart';
 import 'package:geo_android/src/permission_coordinator.dart';
 import 'package:geo_android/src/url_policy.dart';
+import 'package:geo_android/weather/weather_screen.dart';
 import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -507,6 +508,14 @@ final class _NavKurdPageState extends State<NavKurdPage>
         return _bridge.runtimeInfo(includeStorage: request['includeStorage'] == true);
       },
     );
+    for (final entry in const {'nativeWeatherDetails':'openWeatherDetails','nativeWeatherJourney':'setWeatherJourney'}.entries) {
+      controller.addJavaScriptHandler(handlerName:entry.key,callback:(arguments) async {
+        if (!await _isCurrentOriginTrusted()) return false;
+        final value=arguments.isEmpty ? null : arguments.first;
+        if(value!=null && value is! Map) return false;
+        return const MethodChannel('navkurd/native').invokeMethod<bool>(entry.value,value==null?null:jsonEncode(value));
+      });
+    }
     controller.addJavaScriptHandler(
       handlerName: 'nativeWidgetLocationOptions',
       callback: (arguments) async {
@@ -520,12 +529,26 @@ final class _NavKurdPageState extends State<NavKurdPage>
       },
     );
     controller.addJavaScriptHandler(
+      handlerName: 'navKurdHaptic',
+      callback: (arguments) async {
+        if (arguments.isEmpty || arguments.first is! Map || !await _isCurrentOriginTrusted()) return false;
+        final kind = (arguments.first as Map)['kind'];
+        if (kind == 'scroll') {
+          await HapticFeedback.selectionClick();
+        } else if (kind == 'tap' || kind == 'search') {
+          await HapticFeedback.lightImpact();
+        } else {
+          return false;
+        }
+        return true;
+      },
+    );
+    controller.addJavaScriptHandler(
       handlerName: 'nativeClearTransientCache',
       callback: (_) async {
         if (!await _isCurrentOriginTrusted()) return <String, bool>{'cleared': false};
         await InAppWebViewController.clearAllCache();
-        final cleared = await _bridge.clearTransientCache();
-        return <String, bool>{'cleared': cleared};
+        return <String, bool>{'cleared': true};
       },
     );
     controller.addJavaScriptHandler(
@@ -580,9 +603,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<void> _requestNotificationsAfterLoad() async {
     await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
-    if (await _permissions.requestNotifications()) {
-      await _bridge.scheduleNotifications();
-    }
+    await weatherPrompts(context, const MethodChannel('navkurd/native'));
+    await _bridge.scheduleNotifications();
   }
 
   Future<NavigationActionPolicy> _handleNavigation(

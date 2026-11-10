@@ -68,6 +68,9 @@ abstract final class UrlPolicy {
 
     final host = parsed.host.toLowerCase();
     final path = parsed.path.toLowerCase();
+    if (host == 'open' && parsed.queryParameters['weatherReturn']=='1') {
+      return base.replace(queryParameters:{...base.queryParameters,'weatherReturn':'1'});
+    }
     if (host == 'auth' && (path.isEmpty || path == '/callback')) {
       final query = <String, String>{};
       for (final entry in parsed.queryParameters.entries) {

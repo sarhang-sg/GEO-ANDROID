@@ -19,6 +19,8 @@ pluginManagement {
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "9.2.1" apply false
+    id("com.google.gms.google-services") version "4.4.4" apply false
+    id("com.google.firebase.crashlytics") version "3.0.6" apply false
     id("com.android.library") version "9.2.1" apply false
     // Flutter validates a current KGP coordinate even though AGP 9 supplies
     // built-in Kotlin. Keep it on the classpath only; do not apply it.

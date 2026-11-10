@@ -109,6 +109,7 @@ object NavKurdWidgetTypography {
         ) ?: Typeface.DEFAULT
         val paint = TextPaint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
             this.color = color
+            setShadowLayer(1.8f * density, 0f, density, Color.argb(235, 12, 18, 32))
             textSize = sizeSp * density
             typeface = Typeface.create(baseTypeface, if (bold) Typeface.BOLD else Typeface.NORMAL)
         }

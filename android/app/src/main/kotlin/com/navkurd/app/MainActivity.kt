@@ -130,6 +130,21 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         try {
             when (call.method) {
                 "getInitialDeepLink" -> result.success(intent?.dataString)
+                "prompts" -> result.success(WeatherPrompts.take(this))
+                "settings" -> result.success(WeatherPrompts.settings(this))
+                "openWeatherDetails" -> {
+                    (call.arguments as? String)?.let { raw ->
+                        val selected=WeatherPlace.from(org.json.JSONObject(raw))
+                        if (selected!=null) WeatherStore.select(this,selected)
+                    }
+                    startActivity(Intent(this,WeatherActivity::class.java).putExtra("weather_route","details"))
+                    result.success(true)
+                }
+                "setWeatherJourney" -> {
+                    val raw=call.arguments as? String
+                    WeatherWork.journey(this, raw)
+                    result.success(true)
+                }
                 "getSdkInt" -> result.success(Build.VERSION.SDK_INT)
                 "getRuntimeInfo" -> {
                     val snapshot = NavKurdRuntimeInfo.collect(this)
@@ -139,7 +154,6 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                         result.success(snapshot)
                     }
                 }
-                "clearTransientCache" -> runDeviceTask(result) { clearTransientCache() }
                 "shareText" -> result.success(shareText(call))
                 "setLanguage" -> {
                     NavKurdWidgetProvider.setLanguage(
@@ -438,14 +452,6 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
             cleaned = cleaned.take(120 - extension.length) + extension
         }
         return cleaned
-    }
-
-    private fun clearTransientCache(): Map<String, Boolean> {
-        var cleared = true
-        cacheDir.listFiles()?.forEach { entry ->
-            if (!entry.deleteRecursively()) cleared = false
-        }
-        return mapOf("cleared" to cleared)
     }
 
     private fun showNotificationOnce(key: String, title: String, body: String): Boolean {

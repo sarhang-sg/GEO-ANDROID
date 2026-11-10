@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -395,25 +396,7 @@ final class CoreResourceHandler {
       }
       after = next;
     }
-    return {
-      for (final entry in features.entries)
-        entry.key: _encodeLayer(entry.value),
-    };
-  }
-
-  Uint8List _encodeLayer(List<Object?> features) {
-    final bytes = Uint8List.fromList(
-      utf8.encode(
-        jsonEncode({'type': 'FeatureCollection', 'features': features}),
-      ),
-    );
-    if (bytes.length > 8 * 1024 * 1024) {
-      throw const CoreFailure(
-        'layer_size',
-        'Static map layer exceeds 8 MiB.',
-      );
-    }
-    return bytes;
+    return _encodeCoverage(features);
   }
 
   Future<Uint8List> _buildLayer(String dataset) async {
@@ -442,6 +425,25 @@ final class CoreResourceHandler {
       }
       after = next;
     }
-    return _encodeLayer(features);
+    return _encodeOffThread(features);
   }
 }
+
+Uint8List _encodeLayer(List<Object?> features) {
+  final bytes = Uint8List.fromList(
+    utf8.encode(
+      jsonEncode({'type': 'FeatureCollection', 'features': features}),
+    ),
+  );
+  if (bytes.length > 8 * 1024 * 1024) {
+    throw const CoreFailure(
+      'layer_size',
+      'Static map layer exceeds 8 MiB.',
+    );
+  }
+  return bytes;
+}
+
+Future<Uint8List> _encodeOffThread(List<Object?> features) => Isolate.run(() => _encodeLayer(features));
+Future<Map<String, Uint8List>> _encodeCoverage(Map<String, List<Object?>> features) =>
+    Isolate.run(() => {for (final entry in features.entries) entry.key: _encodeLayer(entry.value)});

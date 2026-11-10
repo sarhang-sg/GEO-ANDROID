@@ -43,3 +43,5 @@ __pycache__/
 *.py[cod]
 
 /android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+
+/android/app/google-services.json
