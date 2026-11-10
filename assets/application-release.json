@@ -1,10 +1,10 @@
 {
-  "appVersion": "10.4.4",
-  "androidVersionCode": 100404,
-  "releaseId": "2026-10-13-nav-kurd-v10.4.4",
-  "releaseDate": "2026-10-13",
+  "appVersion": "10.4.5",
+  "androidVersionCode": 100405,
+  "releaseId": "2026-11-10-nav-kurd-v10.4.5",
+  "releaseDate": "2026-11-10",
   "serviceWorkerRelease": "10.4.4",
-  "releaseLabel": "NAV KURD 10.4.4 \u2014 reliable account, offline and Android lifecycle recovery",
+  "releaseLabel": "NAV KURD 10.4.5 — weather widget and background synchronization",
   "hardeningDate": "2026-10-13",
   "hardeningRelease": "10.4.4"
 }
