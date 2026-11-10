@@ -58,3 +58,12 @@ jobs:
 
       - name: Launch the APK and exercise the home-screen widget
         run: bash tools/launcher-smoke/run.sh build/app/outputs/flutter-apk/app-debug.apk com.navkurd.app.debug
+
+      - name: Retain Android launcher screenshots and crash log
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: nav-kurd-launcher-check
+          path: ${{ runner.temp }}/nav-kurd-launcher-check/
+          if-no-files-found: ignore
+          retention-days: 7

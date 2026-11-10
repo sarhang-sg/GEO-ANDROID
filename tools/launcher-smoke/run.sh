@@ -9,10 +9,13 @@ tools="$sdk/build-tools/37.0.0"
 platform="$sdk/platforms/android-36/android.jar"
 export PATH="$sdk/platform-tools:$sdk/emulator:$sdk/cmdline-tools/latest/bin:$PATH"
 work=$(mktemp -d)
+evidence="${RUNNER_TEMP:-/tmp}/nav-kurd-launcher-check"
+mkdir -p "$evidence"
 emulator_pid=
 finish() {
     code=$?
     if ((code)); then
+        adb exec-out screencap -p > "$evidence/failure.png" || true
         tail -30 "$work/emulator.log" || true
         adb logcat -b crash -d -t 160 || true
         adb logcat -d -s NavKurdSmoke:I NavKurdWidget:W flutter:I AndroidRuntime:E | tail -150 || true
@@ -21,6 +24,7 @@ finish() {
         timeout 15 adb shell uiautomator dump /sdcard/nav-kurd-failure.xml >/dev/null 2>&1 &&
             adb shell cat /sdcard/nav-kurd-failure.xml | head -c 8000 || true
     fi
+    adb logcat -b crash -d > "$evidence/crash.txt" || true
     if [[ -n "$emulator_pid" ]]; then adb emu kill >/dev/null 2>&1 || true; fi
     rm -rf "$work"
     exit "$code"
@@ -91,11 +95,29 @@ for attempt in $(seq 1 45); do
 done
 if [[ $ready != true ]]; then echo 'Map did not reach Android WebView'; exit 1; fi
 echo 'PASS launcher opened the bundled map'
+adb exec-out screencap -p > "$evidence/map.png"
 adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse "$reuse_widget"
-timeout 145 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F widget-bitmap-and-tap >/dev/null; do sleep 2; done'
+timeout 145 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F widget-bitmap-ready >/dev/null; do sleep 2; done'
+adb exec-out screencap -p > "$evidence/widget.png"
+timeout 15 adb shell uiautomator dump /sdcard/nav-kurd-widget.xml >/dev/null
+adb shell cat /sdcard/nav-kurd-widget.xml > "$evidence/widget.xml"
+read -r tap_x tap_y < <(python3 - "$evidence/widget.xml" <<'PY'
+import re
+import sys
+import xml.etree.ElementTree as ET
+root = ET.parse(sys.argv[1]).getroot()
+node = next(n for n in root.iter("node") if n.get("resource-id", "").endswith(":id/weather_forecast"))
+x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.attrib["bounds"]))
+assert x2 > x1 and y2 > y1 and node.get("clickable") == "true"
+print((x1 + x2) // 2, (y1 + y2) // 2)
+PY
+)
+adb shell input tap "$tap_x" "$tap_y"
 top_is() { adb shell dumpsys activity activities | grep -E '(topResumedActivity|mResumedActivity).*'"$target"'/([^ ]*\.)?'"$1"'[ }]'>/dev/null; }
 for _ in $(seq 1 15); do if top_is WeatherActivity; then break; fi; sleep 1; done
 top_is WeatherActivity
+sleep 2
+adb exec-out screencap -p > "$evidence/weather.png"
 for _ in $(seq 1 3); do adb shell input keyevent 4; sleep 2; if top_is MainActivity; then break; fi; done
 top_is MainActivity
 if adb logcat -b crash -d | grep -F "Process: $target," >/dev/null; then echo 'Application crashed during smoke test'; exit 1; fi
