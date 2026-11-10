@@ -289,6 +289,9 @@ Future<Uint8List> weatherBitmap(
   pipeline.rootNode = root;
   final layer = OffsetLayer()..attach(root);
   root.scheduleInitialPaint(layer);
+  // Establish constraints on the empty root. Adding the widget then schedules
+  // its LayoutBuilder for the pipeline owner's layout phase.
+  root.layout(BoxConstraints.tight(size));
   final widget = MediaQuery(
     data: MediaQueryData(
       size: size,
@@ -312,7 +315,6 @@ Future<Uint8List> weatherBitmap(
   try {
     builds.buildScope(tree);
     builds.finalizeTree();
-    root.layout(BoxConstraints.tight(size));
     pipeline.flushLayout();
     pipeline.flushCompositingBits();
     pipeline.flushPaint();

@@ -15,8 +15,11 @@ finish() {
     if ((code)); then
         tail -30 "$work/emulator.log" || true
         adb logcat -b crash -d -t 160 || true
-        adb logcat -d -s NavKurdSmoke:I flutter:E AndroidRuntime:E | tail -100 || true
+        adb logcat -d -s NavKurdSmoke:I NavKurdWidget:W flutter:I AndroidRuntime:E | tail -150 || true
         adb shell dumpsys activity activities | grep -m1 'mResumedActivity\|topResumedActivity' || true
+        adb shell dumpsys activity exit-info "$target" | head -60 || true
+        timeout 15 adb shell uiautomator dump /sdcard/nav-kurd-failure.xml >/dev/null 2>&1 &&
+            adb shell cat /sdcard/nav-kurd-failure.xml | head -c 8000 || true
     fi
     if [[ -n "$emulator_pid" ]]; then adb emu kill >/dev/null 2>&1 || true; fi
     rm -rf "$work"
@@ -36,19 +39,36 @@ timeout 120 adb wait-for-device
 timeout 240 bash -c 'until [[ "$(adb shell getprop sys.boot_completed | tr -d "\r")" == 1 ]]; do sleep 2; done'
 adb shell input keyevent 82
 adb shell settings put system screen_off_timeout 600000
+if [[ "$target" == com.navkurd.app ]]; then
+    # Exercise the signed, in-place update from the version reported by the user.
+    curl -fsSL --retry 3 --connect-timeout 15 --max-time 180 \
+        https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v10.4.4/NAV-KURD-10.4.4.apk \
+        -o "$work/previous.apk"
+    printf '%s  %s\n' abfa0f8bcc08b4893fe81d6a6da7e73f59db6d6c088510107e8dfc71166777d0 "$work/previous.apk" | sha256sum -c --strict
+    adb install --no-streaming "$work/previous.apk"
+    adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
+    adb shell am force-stop "$target"
+    adb logcat -b crash -c
+fi
 adb install -r --no-streaming "$apk"
 # One device installation exercises the public launcher, then an actual bound widget.
 adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
 ready=false
 for attempt in $(seq 1 45); do
-    if adb shell uiautomator dump /sdcard/nav-kurd-smoke.xml >/dev/null 2>&1 &&
-       adb shell cat /sdcard/nav-kurd-smoke.xml | grep -F 'class="android.webkit.WebView"' >/dev/null; then ready=true; break; fi
+    if timeout 10 adb shell uiautomator dump /sdcard/nav-kurd-smoke.xml >/dev/null 2>&1; then
+        adb shell cat /sdcard/nav-kurd-smoke.xml > "$work/window.xml"
+        if grep -E 'ئێستا نا|Not now|ليس الآن' "$work/window.xml" >/dev/null; then
+            adb shell input keyevent 4
+        elif grep -F 'class="android.webkit.WebView"' "$work/window.xml" >/dev/null; then
+            ready=true; break
+        fi
+    fi
     sleep 1
 done
 if [[ $ready != true ]]; then echo 'Map did not reach Android WebView'; exit 1; fi
 echo 'PASS launcher opened the bundled map'
 javac --release 8 -classpath "$platform" -d "$work/classes" "$here/WidgetHost.java"
-"$tools/d8" --lib "$platform" --output "$work/dex" "$work/classes/com/navkurd/smoke/WidgetHost.class"
+"$tools/d8" --min-api 28 --lib "$platform" --output "$work/dex" "$work/classes/com/navkurd/smoke/WidgetHost.class"
 "$tools/aapt2" link -I "$platform" --manifest "$here/AndroidManifest.xml" -o "$work/host.apk"
 (cd "$work/dex" && zip -q "$work/host.apk" classes.dex)
 "$tools/zipalign" -f 4 "$work/host.apk" "$work/aligned.apk"
@@ -56,7 +76,6 @@ keytool -genkeypair -alias smoke -keystore "$work/emulator-only.jks" -storepass 
 "$tools/apksigner" sign --ks "$work/emulator-only.jks" --ks-pass pass:android --out "$work/test.apk" "$work/aligned.apk"
 adb install --no-streaming "$work/test.apk"
 adb shell appwidget grantbind --package com.navkurd.smoke
-adb shell pm grant "$target" android.permission.POST_NOTIFICATIONS
 adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target"
 timeout 145 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F widget-bitmap-and-tap >/dev/null; do sleep 2; done'
 top_is() { adb shell dumpsys activity activities | grep -E '(topResumedActivity|mResumedActivity).*'"$target"'/([^ ]*\.)?'"$1"'[ }]'>/dev/null; }

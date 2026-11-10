@@ -167,6 +167,7 @@ internal object WeatherBitmaps {
             }
             p.edit().putLong("last_render_at",System.currentTimeMillis()).remove("last_render_error").apply()
         }catch(e:CancellationException){throw e}catch(e:Exception){
+            android.util.Log.w("NavKurdWidget", "Weather bitmap unavailable", e)
             p.edit().putString("last_render_error",e.javaClass.simpleName).apply();WeatherStore.report(c,"bitmap",e)
             showFallback(c, m, ids, data)
             throw e
