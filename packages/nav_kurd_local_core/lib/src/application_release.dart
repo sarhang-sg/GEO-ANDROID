@@ -6,6 +6,7 @@ const _applicationFields = {
   'releaseId',
   'releaseDate',
   'serviceWorkerRelease',
+  'presentationVersion',
   'releaseLabel',
   'hardeningDate',
   'hardeningRelease',

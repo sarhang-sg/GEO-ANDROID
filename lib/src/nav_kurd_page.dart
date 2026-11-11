@@ -139,10 +139,9 @@ final class _NavKurdPageState extends State<NavKurdPage>
 
   Future<AndroidLocalRuntime> _openLocal() async {
     try {
-      final runtimeFuture = AndroidLocalRuntime.open();
-      final runtimeInfoFuture = _bridge.runtimeInfo();
-      final runtime = await runtimeFuture;
-      _runtimeInfo = await runtimeInfoFuture;
+      final package = await _bridge.runtimeInfo();
+      final runtime = await AndroidLocalRuntime.open(package);
+      _runtimeInfo = package;
       if (!mounted) { await runtime.close(); throw StateError('Page disposed during local installation.'); }
       _local = runtime;
       _mapSubscription = runtime.mapEvents.listen((snapshot)=>unawaited(_deliverMapSnapshot(snapshot)),onError:(Object error,StackTrace stack){
@@ -300,7 +299,15 @@ final class _NavKurdPageState extends State<NavKurdPage>
           body: _OfflinePanel(isOnline: true, localDataFailure: true,
             onRetry: () => setState(() => _localOpening = _openLocal()), onSettings: _bridge.openAppSettings));
       }
-      if (!snapshot.hasData) return const Scaffold(backgroundColor: _background);
+      if (!snapshot.hasData) {
+        return const Scaffold(
+          backgroundColor: _background,
+          body: Center(child: CircularProgressIndicator(
+            semanticsLabel: 'نەخشەکە ئامادە دەکرێت',
+            strokeWidth: 2,
+          )),
+        );
+      }
       return _buildReady(context, snapshot.requireData);
     },
   );

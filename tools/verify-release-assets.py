@@ -52,8 +52,12 @@ def expected_assets(root: Path) -> dict[str, tuple[int, str]]:
     expected["assets/flutter_assets/assets/images/nav-kurd-logo.png"] = (logo.stat().st_size, file_hash(logo))
     release = root / "assets/application-release.json"
     identity = json.loads(release.read_text())
-    if identity.get('appVersion') != '10.4.5' or identity.get('androidVersionCode') != 100405:
-        raise SystemExit('Bundled runtime application identity does not match APK/About 10.4.5.')
+    spec = re.search(r'^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$', (root / 'pubspec.yaml').read_text(), re.M)
+    if not spec or (identity.get('appVersion'), identity.get('androidVersionCode')) != (spec[1], int(spec[2])):
+        raise SystemExit('Bundled application identity does not match the Flutter package.')
+    presentation = json.loads((root / 'assets/r16/manifest.json').read_text())
+    if not identity.get('presentationVersion') or identity['presentationVersion'] != presentation.get('appVersion'):
+        raise SystemExit('Bundled map presentation does not match the Android release declaration.')
     expected['assets/flutter_assets/assets/application-release.json'] = (release.stat().st_size, file_hash(release))
     return expected
 

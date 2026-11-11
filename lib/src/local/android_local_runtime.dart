@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:geo_android/src/app_config.dart';
 import 'package:geo_android/src/local/bundled_presentation.dart';
@@ -45,16 +46,43 @@ final class AndroidLocalRuntime {
   final String initialDocument;
   Map<String, dynamic>? _initialMapSnapshot;
   bool _closed = false;
-  static Future<AndroidLocalRuntime> open() => _opening ??= _installAndOpen();
-  static Future<AndroidLocalRuntime> _installAndOpen() async {
+  static Future<AndroidLocalRuntime> open(Map<String, dynamic> package) =>
+      _opening ??= _installAndOpen(package);
+
+  static Future<AndroidLocalRuntime> _installAndOpen(
+    Map<String, dynamic> package,
+  ) async {
     LocalDataClient? data;
     try {
-      final installation = _channel.invokeMapMethod<String, dynamic>('install');
-      final presentation = await BundledPresentation.open();
-      final initialDocument = utf8.decode(
-        await presentation.read("/index.html"),
+      final applicationRelease = validateApplicationRelease(
+        Map<String, Object?>.from(
+          jsonDecode(
+            await rootBundle.loadString('assets/application-release.json'),
+          ) as Map,
+        ),
       );
-      final installed = await installation;
+      final name = AppConfig.appVersion;
+      final validName =
+          package['version'] == name ||
+          (kDebugMode && package['version'] == '$name-debug');
+      final uiVersion = applicationRelease['presentationVersion'];
+      if (!validName ||
+          applicationRelease['appVersion'] != name ||
+          applicationRelease['androidVersionCode'] != package['versionCode'] ||
+          uiVersion is! String ||
+          uiVersion.isEmpty) {
+        throw const CoreFailure(
+          'application_release',
+          'Installed Android package and bundled release identities disagree.',
+        );
+      }
+      final presentation = await BundledPresentation.open(uiVersion);
+      final initialDocument = utf8.decode(
+        await presentation.read('/index.html'),
+      );
+      final installed = await _channel.invokeMapMethod<String, dynamic>(
+        'install',
+      );
       final packDirectory = installed?['packDirectory'];
       final userDatabase = installed?['userDatabase'];
       final packId = installed?['packId'];
@@ -66,18 +94,6 @@ final class AndroidLocalRuntime {
         throw const CoreFailure(
           'install_protocol',
           'Android returned an invalid local pack descriptor.',
-        );
-      }
-      final applicationRelease = Map<String, Object?>.from(
-        jsonDecode(
-          await rootBundle.loadString('assets/application-release.json'),
-        ) as Map,
-      );
-      if (applicationRelease['appVersion'] != AppConfig.appVersion ||
-          applicationRelease['androidVersionCode'] != 100404) {
-        throw const CoreFailure(
-          'application_release',
-          'Application and bundled release identities disagree.',
         );
       }
       data = await LocalDataClient.open(

@@ -23,6 +23,8 @@ class LauncherContract(unittest.TestCase):
             for key in expected:
                 self.assertTrue(ids[key].get(A + "contentDescription"))
             self.assertEqual(ids["weather_bitmap"].get(A + "scaleType"), "fitXY")
+            for key in expected:
+                self.assertTrue(ids[key].get(A + "text"), f"{key} is blank during first bind or offline recovery")
 
 if __name__ == "__main__":
     unittest.main()

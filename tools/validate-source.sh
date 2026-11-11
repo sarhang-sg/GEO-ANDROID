@@ -10,11 +10,11 @@ node tools/test-location-presentation.mjs
 fail() { printf 'SOURCE CHECK FAILED: %s\n' "$*" >&2; exit 1; }
 require_text() { grep -F -- "$2" "$1" >/dev/null || fail "$3"; }
 
-test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "10.4.5+100405" \
-  || fail "pubspec version is not 10.4.5+100405"
-require_text lib/src/app_config.dart "defaultValue: '10.4.5'" "Dart app version is not 10.4.5"
-require_text test/app_config_test.dart "expect(AppConfig.appVersion, '10.4.5');" \
-  "Dart release regression test is not synchronized with version 10.4.5"
+test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "10.4.6+100406" \
+  || fail "pubspec version is not 10.4.6+100406"
+require_text lib/src/app_config.dart "defaultValue: '10.4.6'" "Dart app version is not 10.4.6"
+require_text test/app_config_test.dart "expect(AppConfig.appVersion, '10.4.6');" \
+  "Dart release regression test is not synchronized with version 10.4.6"
 require_text android/app/build.gradle.kts 'compileSdk = 37' "compileSdk must be 37"
 require_text android/app/build.gradle.kts 'buildToolsVersion = "37.0.0"' \
   "the app must use Android build-tools 37.0.0"
@@ -247,4 +247,4 @@ fi
 
 python3 tools/test-widget-layout.py
 
-printf '%s\n' 'NAV KURD 10.4.5 (100405) source checks passed.'
+printf '%s\n' 'NAV KURD 10.4.6 (100406) source checks passed.'

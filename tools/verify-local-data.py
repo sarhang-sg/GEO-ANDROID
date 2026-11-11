@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 # This UI-only patch retains the verified V10 offline database unchanged.
 DATA_VERSION = '10.0.0'
-APP_VERSION = '10.4.4'
+APP_VERSION = json.loads((ROOT / 'assets/application-release.json').read_text())['presentationVersion']
 
 
 def verify_pack(folder, update_identity=False):

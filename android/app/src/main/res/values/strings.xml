@@ -34,4 +34,7 @@
     <string name="season_summer">هاوین</string>
     <string name="season_autumn">پاییز</string>
     <string name="season_winter">زستان</string>
+    <string name="weather_pick_city">شار هەڵبژێرە</string>
+    <string name="weather_open_forecast">پێشبینیی کەشوهەوا</string>
+    <string name="weather_last_reading">دوایین نوێکردنەوە لە %1$s</string>
 </resources>
