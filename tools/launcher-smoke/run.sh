@@ -83,17 +83,17 @@ adb install -r --no-streaming "$apk"
 adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
 ready=false
 for attempt in $(seq 1 45); do
-    if timeout 10 adb shell uiautomator dump /sdcard/nav-kurd-smoke.xml >/dev/null 2>&1; then
+    if timeout 18 adb shell uiautomator dump /sdcard/nav-kurd-smoke.xml >/dev/null 2>&1; then
         adb shell cat /sdcard/nav-kurd-smoke.xml > "$work/window.xml"
-        if grep -E 'ئێستا نا|Not now|ليس الآن' "$work/window.xml" >/dev/null; then
-            adb shell input keyevent 4
-        elif grep -F 'class="android.webkit.WebView"' "$work/window.xml" >/dev/null; then
-            ready=true; break
-        fi
+        read -r action x y < <(python3 "$here/map-window.py" "$work/window.xml")
+        case "$action" in
+            tap) adb shell input tap "$x" "$y" ;;
+            ready) ready=true; break ;;
+        esac
     fi
     sleep 1
 done
-if [[ $ready != true ]]; then echo 'Map did not reach Android WebView'; exit 1; fi
+if [[ $ready != true ]]; then echo 'Map did not finish loading'; exit 1; fi
 echo 'PASS launcher opened the bundled map'
 adb exec-out screencap -p > "$evidence/map.png"
 adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse "$reuse_widget"

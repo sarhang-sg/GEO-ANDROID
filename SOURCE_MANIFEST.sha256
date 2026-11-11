@@ -1881,7 +1881,8 @@ a3ab21c82013f6333e375f1104a8b6329c99d2916f44b8fb9cf920bf0299f9f5  ./tools/develo
 f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/install-android-sdk.sh
 8f3919006af93d38a36242f16941d0efae7f827375d9a35fa47f8830d6144de7  ./tools/launcher-smoke/AndroidManifest.xml
 20d3eac1244d51374ebc28b6af8ddf1d479f6bff2f1481bb2fc7bcd8bd4f1cef  ./tools/launcher-smoke/WidgetHost.java
-c5e0a675a353ff7b7d600e26c0e401c08d3f2c6b93e307dc3f1b881414358075  ./tools/launcher-smoke/run.sh
+37a05cfa93142ce8d51c7d4c687a8b8b925bd1d908a116477da87ff165718a70  ./tools/launcher-smoke/map-window.py
+df92ea06195c06dd1b0f36588605bfb1e995be8bb44ac7ee7d683a8927c152fb  ./tools/launcher-smoke/run.sh
 e2bedb36a6dd9e58351728092ae28eb1b55e6ef0dd04628a698fcbd3c11a7029  ./tools/native-data/build_core.mjs
 21588489dd463ca2cfe4c785f77fa8ed643989903238e82850b61bfa88f4f5d7  ./tools/native-data/r16.mjs
 1b738e7dcde18c570d70fec964b46d871395ff6f98430cc7927a130c51e577fc  ./tools/native-data/schema.sql
