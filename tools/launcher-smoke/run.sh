@@ -120,5 +120,7 @@ sleep 2
 adb exec-out screencap -p > "$evidence/weather.png"
 for _ in $(seq 1 3); do adb shell input keyevent 4; sleep 2; if top_is MainActivity; then break; fi; done
 top_is MainActivity
-if adb logcat -b crash -d | grep -F "Process: $target," >/dev/null; then echo 'Application crashed during smoke test'; exit 1; fi
+if adb logcat -b crash -d | grep -E "(Process|Cmdline): ${target//./\\.}(:weather_render)?(,|[[:space:]]|$)" >/dev/null; then
+    echo 'Application or weather renderer crashed during smoke test'; exit 1
+fi
 echo 'PASS launcher bitmap, real widget tap and Back to map'

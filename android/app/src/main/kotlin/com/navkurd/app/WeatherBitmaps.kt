@@ -7,12 +7,17 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.PixelFormat
+import android.media.ImageReader
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.SizeF
 import android.widget.RemoteViews
 import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
@@ -38,13 +43,21 @@ internal object WeatherBitmaps {
         val minH=dim(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,110);val maxH=dim(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,minH.toInt())
         return listOf(Extent(minW,maxH),Extent(maxW,minH)).distinct()
     }
-    private class Renderer(val engine:FlutterEngine,val channel:MethodChannel){
+    private class Renderer(val engine: FlutterEngine, val channel: MethodChannel, val surface: ImageReader) {
+        fun close() {
+            channel.setMethodCallHandler(null)
+            try {
+                engine.renderer.stopRenderingToSurface()
+            } finally {
+                try { engine.destroy() } finally { surface.close() }
+            }
+        }
         suspend fun png(size:Extent,scale:Double,data:Map<String,Any?>):ByteArray {
             val outcome=CompletableDeferred<ByteArray>()
             return withContext(Dispatchers.Main.immediate){
                 channel.invokeMethod("render",mapOf("width" to size.w.toDouble(),"height" to size.h.toDouble(),"ratio" to scale,"weather" to data),object:MethodChannel.Result{
                     override fun success(result:Any?) {if(result is ByteArray)outcome.complete(result) else outcome.completeExceptionally(IllegalStateException("invalid bitmap"))}
-                    override fun error(code:String,message:String?,details:Any?){outcome.completeExceptionally(IllegalStateException("bitmap: $code"))}
+                    override fun error(code:String,message:String?,details:Any?){outcome.completeExceptionally(IllegalStateException("bitmap: $code ${message.orEmpty().take(160)}"))}
                     override fun notImplemented(){outcome.completeExceptionally(IllegalStateException("missing bitmap renderer"))}
                 })
                 withTimeoutOrNull(15000) { outcome.await() } ?: throw java.io.IOException("Widget bitmap timed out")
@@ -53,15 +66,30 @@ internal object WeatherBitmaps {
     }
     private suspend fun start(c:Context):Renderer = withContext(Dispatchers.Main.immediate){
         val loader=FlutterInjector.instance().flutterLoader()
-        loader.startInitialization(c);loader.ensureInitializationComplete(c,null)
-        val engine=FlutterEngine(c,null,false)
+        // Engine flags apply to the process. The worker binds the dedicated
+        // weather process so the map can keep its hardware renderer.
+        val args = arrayOf(FlutterShellArgs.ARG_ENABLE_SOFTWARE_RENDERING, FlutterShellArgs.ARG_DISABLE_IMPELLER)
+        loader.startInitialization(c)
+        loader.ensureInitializationComplete(c, args)
+        val engine = FlutterEngine(c, args, false)
+        val surface = try {
+            ImageReader.newInstance(8, 8, PixelFormat.RGBA_8888, 2)
+        } catch (e: Throwable) {
+            engine.destroy()
+            throw e
+        }
+        val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "navkurd/weather_bitmap")
+        val renderer = Renderer(engine, channel, surface)
         try{
-            val channel=MethodChannel(engine.dartExecutor.binaryMessenger,"navkurd/weather_bitmap");val ready=CompletableDeferred<Unit>()
+            surface.setOnImageAvailableListener({ it.acquireLatestImage()?.close() }, Handler(Looper.getMainLooper()))
+            engine.renderer.startRenderingToSurface(surface.surface, false)
+            engine.renderer.surfaceChanged(8, 8)
+            val ready=CompletableDeferred<Unit>()
             channel.setMethodCallHandler { call,result -> if(call.method=="ready"){result.success(null);ready.complete(Unit)}else result.notImplemented() }
             engine.dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint(loader.findAppBundlePath(),"weatherBitmapMain"))
             withTimeoutOrNull(25000) { ready.await() } ?: throw java.io.IOException("Widget engine did not become ready")
-            Renderer(engine,channel)
-        }catch(e:Throwable){engine.destroy();throw e}
+            renderer
+        }catch(e:Throwable){renderer.close();throw e}
     }
     private fun bridge(value:Any?):Any?=when(value){
         null,JSONObject.NULL->null
@@ -84,7 +112,7 @@ internal object WeatherBitmaps {
         val last = if (stamp > 0L && temp != null) c.getString(R.string.weather_last_reading, clock.format(java.util.Date(stamp * 1000L))) else ""
         val forecast = if (temp == null) c.getString(R.string.weather_open_forecast)
             else listOf("${temp}°C", last).filter { it.isNotEmpty() }.joinToString(if (small) " · " else "\n")
-        if (bitmap != null) v.setImageViewBitmap(R.id.weather_bitmap, bitmap)
+        v.setImageViewBitmap(R.id.weather_bitmap, bitmap)
         if (bitmap == null) {
             val now = java.util.Calendar.getInstance(clock.timeZone)
             val background = when (now.get(java.util.Calendar.HOUR_OF_DAY)) {
@@ -148,8 +176,27 @@ internal object WeatherBitmaps {
         val place=WeatherStore.place(c)
         val data=place?.let { WeatherStore.cached(c,it,"widget") ?: WeatherStore.cached(c,it,"detail") ?: JSONObject().put("place",it.json()) } ?: JSONObject()
         if(WeatherStore.prefs(c).getBoolean("weather_offline",false))data.put("stale",true)
-        val args=data.keys().asSequence().associateWith { bridge(data.opt(it)) }
-        val p=WeatherStore.prefs(c);val d=c.resources.displayMetrics
+        val p = WeatherStore.prefs(c)
+        try {
+            WeatherRenderService.publish(c, data)
+            p.edit().putLong("last_render_at", System.currentTimeMillis()).remove("last_render_error").apply()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            p.edit().putString("last_render_error", e.javaClass.simpleName).apply()
+            WeatherStore.report(c, "bitmap", e)
+            showFallback(c, m, ids, data)
+            throw e
+        }
+    }
+
+    // Runs in :weather_render. Only the owning app process reads or writes preferences.
+    suspend fun publishBitmaps(c: Context, data: JSONObject) = rendering.withLock {
+        val m = AppWidgetManager.getInstance(c)
+        val ids = m.getAppWidgetIds(ComponentName(c, NavKurdWidgetProvider::class.java))
+        if (ids.isEmpty()) return@withLock
+        val args = data.keys().asSequence().associateWith { bridge(data.opt(it)) }
+        val d = c.resources.displayMetrics
         var renderer:Renderer?=null
         try{
             val active=start(c);renderer=active
@@ -165,12 +212,8 @@ internal object WeatherBitmaps {
                 }
                 m.updateAppWidget(id, forLauncher(rendered))
             }
-            p.edit().putLong("last_render_at",System.currentTimeMillis()).remove("last_render_error").apply()
-        }catch(e:CancellationException){throw e}catch(e:Exception){
-            android.util.Log.w("NavKurdWidget", "Weather bitmap unavailable", e)
-            p.edit().putString("last_render_error",e.javaClass.simpleName).apply();WeatherStore.report(c,"bitmap",e)
-            showFallback(c, m, ids, data)
-            throw e
-        }finally{renderer?.let{r->withContext(NonCancellable+Dispatchers.Main.immediate){r.channel.setMethodCallHandler(null);r.engine.destroy()}}}
+        } finally {
+            renderer?.let { r -> withContext(NonCancellable + Dispatchers.Main.immediate) { r.close() } }
+        }
     }
 }

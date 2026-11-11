@@ -12,7 +12,7 @@ fb936c475d36fa551a08113887463c5eabe3a4006e26554530c1730cd3cfc700  ./analysis_opt
 c84d77df413b2e93272e6bffca7f7e2b24dd983af1b69b45e2d2c5bb157835c2  ./android/app/build.gradle.kts
 62e3c5cced1f6469a3a038f6bb0085f0751ca71028fdd62eacd7c957286062d1  ./android/app/proguard-rules.pro
 678647a824ef7ab16066708585790ab265135d32fdf84bcd918a4b050f8891b9  ./android/app/src/debug/AndroidManifest.xml
-b17754d9f2f0b4e6246d4de78f2cf0e6117114e1a8ac9b72cd600ac9831df687  ./android/app/src/main/AndroidManifest.xml
+567c1642a09895fce3c1f434627035d9ca30f7d98d6d029777bf5f43aed3b39d  ./android/app/src/main/AndroidManifest.xml
 6832fe78c83086762c445d9b68f071161590193fc3712a3c06785355cbfc1b17  ./android/app/src/main/assets/nav_kurd_core/catalog.sqlite
 feff6fefc426cd3d584fe50aca0f229f7589e01d2e382f88c4fb16492069c4a6  ./android/app/src/main/assets/nav_kurd_core/content/approved-shell-markup.json
 b9cb44ad25eed37c4bd818a5e5ed777e73302c053060002da9594190645e535a  ./android/app/src/main/assets/nav_kurd_core/content/asset-map.json
@@ -623,7 +623,8 @@ a6f8fab419a86a004a59611aa3090bcd2c1ad7147abc45a62f534afdb01acfcc  ./android/app/
 abe617b96b836e1e81d1dea6691cd281486c0fcc840dcd1f9f5ccf00620b6ff4  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
 360c037349c9e5337c2ee9b2072c52a2788831bbd78fe82b280b7d7c05eb6fee  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt
 49b9866364ecb9e19ae00baa35ffaff2effa5b486273b01c88e35117521a222b  ./android/app/src/main/kotlin/com/navkurd/app/WeatherActivity.kt
-4d519abaa43749376283fb92b2d155b8dfac5f6352b0da4a58261e30ce59fdc5  ./android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt
+f521a01a0a065da0071955ca1fa7aa965bd813decb4d22b31ae74412781fc5af  ./android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt
+503f86aa11d838ce7913bc8781301c367e21488f038c92f65c87dbbe536e6e3e  ./android/app/src/main/kotlin/com/navkurd/app/WeatherRenderService.kt
 7fc9b8edccf6a80444722ba244cb4dada5055b6d1d284af8902cc46dbde74e43  ./android/app/src/main/kotlin/com/navkurd/app/WeatherStore.kt
 383f09f455d0c10e68564bc1181fda16030a7c44c080abbf13827fdf90db06d8  ./android/app/src/main/kotlin/com/navkurd/app/WeatherWork.kt
 1c71e863bfc2ad4c65de8ba648319c50eef28ccf04f9983391d37014947df210  ./android/app/src/main/kotlin/com/navkurd/app/localcore/CorePackInstaller.kt
@@ -1880,7 +1881,7 @@ a3ab21c82013f6333e375f1104a8b6329c99d2916f44b8fb9cf920bf0299f9f5  ./tools/develo
 f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/install-android-sdk.sh
 8f3919006af93d38a36242f16941d0efae7f827375d9a35fa47f8830d6144de7  ./tools/launcher-smoke/AndroidManifest.xml
 20d3eac1244d51374ebc28b6af8ddf1d479f6bff2f1481bb2fc7bcd8bd4f1cef  ./tools/launcher-smoke/WidgetHost.java
-76a252d440254dc5cc5eec91a818247701c72c920f42b00947d7a722af5add96  ./tools/launcher-smoke/run.sh
+c5e0a675a353ff7b7d600e26c0e401c08d3f2c6b93e307dc3f1b881414358075  ./tools/launcher-smoke/run.sh
 e2bedb36a6dd9e58351728092ae28eb1b55e6ef0dd04628a698fcbd3c11a7029  ./tools/native-data/build_core.mjs
 21588489dd463ca2cfe4c785f77fa8ed643989903238e82850b61bfa88f4f5d7  ./tools/native-data/r16.mjs
 1b738e7dcde18c570d70fec964b46d871395ff6f98430cc7927a130c51e577fc  ./tools/native-data/schema.sql
