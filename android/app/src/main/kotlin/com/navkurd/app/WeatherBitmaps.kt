@@ -8,6 +8,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
+import android.hardware.HardwareBuffer
 import android.media.ImageReader
 import android.os.Build
 import android.os.Bundle
@@ -46,6 +47,7 @@ internal object WeatherBitmaps {
     private class Renderer(val engine: FlutterEngine, val channel: MethodChannel, val surface: ImageReader) {
         fun close() {
             channel.setMethodCallHandler(null)
+            surface.setOnImageAvailableListener(null, null)
             try {
                 engine.renderer.stopRenderingToSurface()
             } finally {
@@ -68,12 +70,19 @@ internal object WeatherBitmaps {
         val loader=FlutterInjector.instance().flutterLoader()
         // Engine flags apply to the process. The worker binds the dedicated
         // weather process so the map can keep its hardware renderer.
-        val args = arrayOf(FlutterShellArgs.ARG_ENABLE_SOFTWARE_RENDERING, FlutterShellArgs.ARG_DISABLE_IMPELLER)
+        val args = arrayOf(FlutterShellArgs.ARG_DISABLE_IMPELLER)
         loader.startInitialization(c)
         loader.ensureInitializationComplete(c, args)
         val engine = FlutterEngine(c, args, false)
         val surface = try {
-            ImageReader.newInstance(8, 8, PixelFormat.RGBA_8888, 2)
+            if (Build.VERSION.SDK_INT >= 29) {
+                ImageReader.newInstance(
+                    8, 8, PixelFormat.RGBA_8888, 3,
+                    HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT,
+                )
+            } else {
+                ImageReader.newInstance(8, 8, PixelFormat.RGBA_8888, 3)
+            }
         } catch (e: Throwable) {
             engine.destroy()
             throw e

@@ -623,7 +623,7 @@ a6f8fab419a86a004a59611aa3090bcd2c1ad7147abc45a62f534afdb01acfcc  ./android/app/
 abe617b96b836e1e81d1dea6691cd281486c0fcc840dcd1f9f5ccf00620b6ff4  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
 360c037349c9e5337c2ee9b2072c52a2788831bbd78fe82b280b7d7c05eb6fee  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetTypography.kt
 49b9866364ecb9e19ae00baa35ffaff2effa5b486273b01c88e35117521a222b  ./android/app/src/main/kotlin/com/navkurd/app/WeatherActivity.kt
-f521a01a0a065da0071955ca1fa7aa965bd813decb4d22b31ae74412781fc5af  ./android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt
+6ab0badad090a98c7689b2ec39b7a8d879f56ef67495f8d902eb8f4bbddc3733  ./android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt
 503f86aa11d838ce7913bc8781301c367e21488f038c92f65c87dbbe536e6e3e  ./android/app/src/main/kotlin/com/navkurd/app/WeatherRenderService.kt
 7fc9b8edccf6a80444722ba244cb4dada5055b6d1d284af8902cc46dbde74e43  ./android/app/src/main/kotlin/com/navkurd/app/WeatherStore.kt
 383f09f455d0c10e68564bc1181fda16030a7c44c080abbf13827fdf90db06d8  ./android/app/src/main/kotlin/com/navkurd/app/WeatherWork.kt
@@ -1617,7 +1617,7 @@ c1926947cde3480d3bfca7c09044e5eb14d7033273c5727e63fc063845ed4d8c  ./assets/widge
 ced8454b4fcf41238028cfda721668de0de26261fac90ff6c4f9d17260600512  ./assets/widget-scenes/winter.svg
 48bb3fa9ae0103b41517b4e2be3f37af7e2bf0dcf42e0362523a74d9c671520c  ./docs/APKPURE.md
 d5f7fe6b4402c740f7b6d79e62d43fb61cb841af7b3f5b7fb9d0c0c8909c2db2  ./docs/COORDINATED-10.4.4.md
-1f8afa66386f30b0df362fb75deefe5693717bdced603abd22a4a5d643fce8f8  ./docs/RELEASE.md
+58285861c5bab42169d858f0bdfc518ace42e0bc6b46f8bdd66b8de35d29efd6  ./docs/RELEASE.md
 4b812aff257abd1d3aa9a5083a08a5e4ee99920cfb268c95929336bc044bd904  ./docs/images/nav-kurd-cover.jpg
 68a630638a0c3f89387a058bca6f346a154ab5040dd27b0a27732eb68db95c74  ./docs/images/nav-kurd-screen-1.jpg
 d3dbe049ad6a1fa39eb19d38853b378ae034f4f0be058bfdbd685096a2ec16be  ./docs/images/nav-kurd-screen-2.jpg
