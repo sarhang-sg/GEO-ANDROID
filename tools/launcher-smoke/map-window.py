@@ -1,4 +1,4 @@
-"""Recognize the visible map and handle first-launch dialogs on the test device."""
+"""Recognize the visible map or forecast and handle first-launch dialogs on the test device."""
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -21,6 +21,12 @@ for node, label in labels:
             if x2 > x1 and y2 > y1:
                 print("tap", (x1 + x2) // 2, (y1 + y2) // 2)
                 sys.exit(0)
+
+if sys.argv[2] == "weather":
+    has_forecast = any(title in label for _, label in labels
+                       for title in ("پێشبینیی ٢٤ کاتژمێر", "توقعات ٢٤ ساعة", "24-hour forecast"))
+    print("ready" if has_forecast else "wait")
+    sys.exit(0)
 
 has_web = any(n.get("class") == "android.webkit.WebView" for n in nodes)
 has_ready = any(ready in label for _, label in labels

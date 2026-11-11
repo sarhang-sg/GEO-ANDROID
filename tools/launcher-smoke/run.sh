@@ -81,19 +81,23 @@ fi
 adb install -r --no-streaming "$apk"
 # One device installation exercises the public launcher, then an actual bound widget.
 adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
-ready=false
-for attempt in $(seq 1 45); do
-    if timeout 18 adb shell uiautomator dump /sdcard/nav-kurd-smoke.xml >/dev/null 2>&1; then
-        adb shell cat /sdcard/nav-kurd-smoke.xml > "$work/window.xml"
-        read -r action x y < <(python3 "$here/map-window.py" "$work/window.xml")
-        case "$action" in
-            tap) adb shell input tap "$x" "$y" ;;
-            ready) ready=true; break ;;
-        esac
-    fi
-    sleep 1
-done
-if [[ $ready != true ]]; then echo 'Map did not finish loading'; exit 1; fi
+wait_screen() {
+    local kind=$1 action x y
+    for _ in $(seq 1 30); do
+        if timeout 18 adb shell uiautomator dump /sdcard/nav-kurd-smoke.xml >/dev/null 2>&1; then
+            adb shell cat /sdcard/nav-kurd-smoke.xml > "$work/window.xml"
+            read -r action x y < <(python3 "$here/map-window.py" "$work/window.xml" "$kind")
+            case "$action" in
+                tap) adb shell input tap "$x" "$y" ;;
+                ready) cp "$work/window.xml" "$evidence/$kind.xml"; return 0 ;;
+            esac
+        fi
+        sleep 1
+    done
+    echo "$kind screen did not finish loading" >&2
+    return 1
+}
+wait_screen map
 echo 'PASS launcher opened the bundled map'
 adb exec-out screencap -p > "$evidence/map.png"
 adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse "$reuse_widget"
@@ -116,7 +120,7 @@ adb shell input tap "$tap_x" "$tap_y"
 top_is() { adb shell dumpsys activity activities | grep -E '(topResumedActivity|mResumedActivity).*'"$target"'/([^ ]*\.)?'"$1"'[ }]'>/dev/null; }
 for _ in $(seq 1 15); do if top_is WeatherActivity; then break; fi; sleep 1; done
 top_is WeatherActivity
-sleep 2
+wait_screen weather
 adb exec-out screencap -p > "$evidence/weather.png"
 for _ in $(seq 1 3); do adb shell input keyevent 4; sleep 2; if top_is MainActivity; then break; fi; done
 top_is MainActivity
