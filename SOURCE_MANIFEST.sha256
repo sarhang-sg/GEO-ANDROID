@@ -10,7 +10,7 @@ ebd9ce314659409b0bec74f03dd363bc372e0c18ccfc172bb02d5d59706817c1  ./SECURITY.md
 c17e145abf54b5e4da0f8b706463b945b2adba3a5db7fa375f619380bf35937d  ./TERMUX.sh
 fb936c475d36fa551a08113887463c5eabe3a4006e26554530c1730cd3cfc700  ./analysis_options.yaml
 c84d77df413b2e93272e6bffca7f7e2b24dd983af1b69b45e2d2c5bb157835c2  ./android/app/build.gradle.kts
-62e3c5cced1f6469a3a038f6bb0085f0751ca71028fdd62eacd7c957286062d1  ./android/app/proguard-rules.pro
+5de1805e3ef88051dc05b6f8d82fc7bd27d0c76f0af2023a14f8def3c4af9cf8  ./android/app/proguard-rules.pro
 678647a824ef7ab16066708585790ab265135d32fdf84bcd918a4b050f8891b9  ./android/app/src/debug/AndroidManifest.xml
 567c1642a09895fce3c1f434627035d9ca30f7d98d6d029777bf5f43aed3b39d  ./android/app/src/main/AndroidManifest.xml
 6832fe78c83086762c445d9b68f071161590193fc3712a3c06785355cbfc1b17  ./android/app/src/main/assets/nav_kurd_core/catalog.sqlite
@@ -1617,7 +1617,7 @@ c1926947cde3480d3bfca7c09044e5eb14d7033273c5727e63fc063845ed4d8c  ./assets/widge
 ced8454b4fcf41238028cfda721668de0de26261fac90ff6c4f9d17260600512  ./assets/widget-scenes/winter.svg
 48bb3fa9ae0103b41517b4e2be3f37af7e2bf0dcf42e0362523a74d9c671520c  ./docs/APKPURE.md
 d5f7fe6b4402c740f7b6d79e62d43fb61cb841af7b3f5b7fb9d0c0c8909c2db2  ./docs/COORDINATED-10.4.4.md
-58285861c5bab42169d858f0bdfc518ace42e0bc6b46f8bdd66b8de35d29efd6  ./docs/RELEASE.md
+ee5e2db12d776bb4109fdb32e21d693e3fec0510cdd33f1e892661c2ca77f5a1  ./docs/RELEASE.md
 4b812aff257abd1d3aa9a5083a08a5e4ee99920cfb268c95929336bc044bd904  ./docs/images/nav-kurd-cover.jpg
 68a630638a0c3f89387a058bca6f346a154ab5040dd27b0a27732eb68db95c74  ./docs/images/nav-kurd-screen-1.jpg
 d3dbe049ad6a1fa39eb19d38853b378ae034f4f0be058bfdbd685096a2ec16be  ./docs/images/nav-kurd-screen-2.jpg

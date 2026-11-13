@@ -28,6 +28,8 @@ authenticated operations still need device/account QA.
 
 ## Android 10.4.6 fixes
 
+The signed 10.4.4 weather build crashed during AndroidX Startup because R8 removed the Room constructor used by WorkManager. The signed APK now retains the database implementation's constructor and the constructor used to restore weather jobs after an update.
+
 Rendering the home-screen weather widget could terminate the Android app in Flutter's background raster thread. The launcher renderer now runs in a private Android process with its own off-screen graphics surface. The signed update test installs the previous 10.4.4 weather APK, binds its widget, updates the package in place, and taps the same widget to open the forecast.
 
 The map now checks the installed package version and the bundled web presentation independently. The first launch shows progress while installing the offline catalog. Kurdish and Central Kurdish Android locales have framework delegates and right-to-left text. The weather widget immediately displays working city and forecast actions and can show cached readings while its Flutter bitmap is rendering. Its renderer no longer requires a display view. The release workflow installs the signed APK on an Android emulator and checks the map, widget bitmap, forecast tap and Back before publication.
