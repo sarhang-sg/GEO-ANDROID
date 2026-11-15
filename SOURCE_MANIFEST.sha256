@@ -686,13 +686,13 @@ e137e9f44b7879dc77e08d735c8392796c75a628a2087bdeda0688bb9b3e9692  ./assets/appli
 bbf847a9a280b385dd7f1c64172413977471dbeeeefc598e30e567a500906870  ./assets/images/nav-kurd-logo.png
 453a53c704fbaa239881406bab7472eecba7f9746003dd39c1e36c38ee388565  ./assets/r16/assets/app-url-CKyBgAKA.js
 1901a0bca24c1ec99c5edd215956adafdf5593db37610e82b78754f137db6bb0  ./assets/r16/assets/appearance-state-Cnd_AK95.js
-56c38790320eb32b5677a80a72313936c12ecaa76c821c9722d6225fff9344b3  ./assets/r16/assets/cities-CuDcN223.js
+c77767e3373a18f65d83021d0323a9231ebfb40f0eb51c215a6d158e52df706d  ./assets/r16/assets/cities-B7mBk_0S.js
 00b9f11cfe18038b6395f7b1c47e480e81f86307579f77f74e21d17ba3062770  ./assets/r16/assets/clipboard-mu55EQoE.js
 f3d8bce7853d3599987e16bddca9f8a64b814d1c4020d410224e2a52fa0a199a  ./assets/r16/assets/dialog-close-icon-BOOke_OB.js
 a594db22c941a17c79e18922e6b6d3ec6bfa399457554e75481ae9b71ec815bf  ./assets/r16/assets/dom-CCMEPdhX.js
 969c6236c41018be8c75a187d62a3f5d6c2d7a4c27a2556210e46668c4d9d8f8  ./assets/r16/assets/feedback-studio-Bz3Bizi5.js
 6658edb38fc278aeacacaf82478315a0ced3fed6f63458b57ee8421b30d4d5b3  ./assets/r16/assets/geo-format-8OEz8TGd.js
-f5741a46d6084a957824d4118b3b05ffc9b57c7344aa63529c4a190b741326cd  ./assets/r16/assets/index-Bv9V93ID.js
+ec841c861fbf67cdb2eeb78298c4aaf6136dea952968745d5f4fbfbe18637a18  ./assets/r16/assets/index-CHfalGg6.js
 5fc1b1c6f247acb93e47f9a120b09a73698750b1fa4a5a18ac16f0caa1e275f5  ./assets/r16/assets/local-provider-CFsuKCna.js
 7d3f09722456f0e7e1e6c6b4f57fb79e224f210e82a7b5366534377f2a9f2bf6  ./assets/r16/assets/main-ClQplHsA.js
 ae43bb414286ae9c1f672cd8b7333c6bd67415e3ba47fc53906caf5e3ed0e2e0  ./assets/r16/assets/map-language-Cion04od.js
@@ -709,8 +709,8 @@ e779bebfe271f61b9311b3c1431301a24eafc93afaaafdf2c28110d0f91fa6be  ./assets/r16/a
 4c2678d0aade7b67829e09fe2d0c1a9b0564b6317713a4b36dc329db9a110e42  ./assets/r16/assets/release-CrXR5I0u.js
 90406120e1791e35af1ed2ffa5f28e553e963ba9b3e0e95bbd4d1f1e15a5f869  ./assets/r16/assets/runtime-diagnostics-VDcgG8F-.js
 7fec3aa98c0cbfe593314991ddf66c607705a8d400d567d110922dfeee9df062  ./assets/r16/assets/search.worker-CAycSTGq.js
-d4fb292fecd33de9e7e42156835e42bb2126215662056265e51d9b3c3f67ca73  ./assets/r16/assets/styles-90JOyVzK.css
-db771cdef08b5654c39ba607ed00ab4405e56bacd0e58d9bedc227c2de4e8eae  ./assets/r16/assets/styles-CdG0I-jd.js
+db771cdef08b5654c39ba607ed00ab4405e56bacd0e58d9bedc227c2de4e8eae  ./assets/r16/assets/styles-BB9bXHPn.js
+609aea4308a715f109a0ee8854526e411f1cdd76dd8522f8880329a794237bc3  ./assets/r16/assets/styles-YgKp7jxP.css
 9f77b0bf8ae915ba5d43e4369051efbd2d27ae6f834c125c5bce807609495093  ./assets/r16/assets/user-contribution-studio-BknKK2u9.js
 8cd1953fb1000f088e085827b1a8240d2ee8535e30d10243938af5f7139c8700  ./assets/r16/assets/weather-cities-DKjRLSFM.js
 d35165044984f513a5dee4d7457972c0e07963e50d9bb5d506f614f4ba86dd4d  ./assets/r16/assets/weather-directory-9U7VIcWW.js
@@ -734,7 +734,7 @@ e8f6a216da5abebb85ed217ec19b910264107336b4d86ef40fe3748007bcfb58  ./assets/r16/a
 4893663ecbb19de5b27f81c1e69fcde1cbc5bd8be8374f3ab51465bad0508a96  ./assets/r16/fonts/DroidLogo-Bold.ttf
 7355b16c9f0cc29f3b90be45723c0b0ec4506ee581753b9a8187d1b45b2fd9e2  ./assets/r16/fonts/RedHatDisplay-Variable.woff2
 8eb44ac578038db018c17f06807a5049fadbe9e4ad1abde21c4840b7232c9766  ./assets/r16/fonts/UniQAIDAR-Money-Heist-002.ttf
-ac544a08807561397188ecfb4a1177dbd7a84d5ad3b5a793993543e94684ec54  ./assets/r16/index.html
+1f0880d933ad2d97717388af7f7b6c43b1253f11a22b47fe8fd19561a6b35b53  ./assets/r16/index.html
 8d0a7755445c691035dde93660a46e9b17997c2d059ad6a70e2c066bcaed80b2  ./assets/r16/legal/account-deletion.html
 cd01b1089f849f1054e23c7c7c08906fb683c64adfc4fd610e93fc04b41c0418  ./assets/r16/legal/contribution-guidelines.html
 31bdbd87a75dfe9ef348efc5b8e12d7b42c7642ecd8532fc4bbcbbc31b54ee23  ./assets/r16/legal/legal-i18n.js
@@ -742,9 +742,9 @@ ec399e301545efcb2479ae6ea744c5f72ac3d7c5db44284d52c3145752130fcb  ./assets/r16/l
 882729c57351af07d741e49095bd8dd28ec6c7f4545b6f696e026f8078a3b6f1  ./assets/r16/legal/privacy.html
 41fc5c0089ebbb1a434c8f94f7d172fc6a9daca4443df502f5f068c6645ef171  ./assets/r16/legal/security.html
 f73ce362f5aa2b6fd1e357e6372e32afb08a41dac661a1895505c022c9075cbb  ./assets/r16/legal/terms.html
-6a30f44281c40f4127623d1b35f76b531a58ead47a88d3cdf3385521944de91a  ./assets/r16/manifest.json
+782deb6eb76572eae4c5d2932f65d6c8c0674b413bd88159375f0bf6593a97c7  ./assets/r16/manifest.json
 310e56035be90c354717e174f69d1d6cdc245e247cf05b96e3b7b879bb67b5e0  ./assets/r16/manifest.webmanifest
-ddb747af14ca12f19fdf6453afe7f42bc5f7d9d1602c800cfd8d0ae0b92fb62a  ./assets/r16/weather-cities.html
+b352c5f87e85c3ab6a15bcd261901d2a0a40862e696e2bb2a1ef7935051552f3  ./assets/r16/weather-cities.html
 f029536d9dc5237cbe90f61fc2f25a3e340a058dad0ed77d74e9f060dc9a2502  ./assets/weather/cities.json
 0057181ebb7cd9c26d1737bcc8dcad3029bd47fad3f9efdf5920c706cf84a11c  ./assets/weather/mist.json
 e594535008e290246e376fc95c5ba2d57843d8a4d08638a89f7d3dbd0d29d125  ./assets/weather/rain.json
