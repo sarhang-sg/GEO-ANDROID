@@ -1,28 +1,15 @@
-# Security — NAV KURD 10.4.4
+# NAV KURD 11.0.0 security policy
 
-Now updated — NAV KURD 10.4.4 · Reviewed 14 October 2026.
+Report vulnerabilities privately to **sarhang.salah9@gmail.com**. Include the app version, Android version, device model, affected feature and reproduction steps. Remove account, precise location and credential data from logs.
 
-- The application accepts only an HTTPS map origin.
-- Android cleartext traffic is disabled.
-- Geolocation and camera access are granted only to the configured NAV KURD
-  origin and only after Android runtime permission.
-- Unknown custom URL schemes are blocked; phone, mail, map and market links are
-  delegated to Android.
-- Public downloads use Android DownloadManager or scoped MediaStore storage.
-- Offline WebView/IndexedDB files stay in app-private scoped storage; the app
-  never requests all-files access. Optional automatic widget location is off
-  by default and requires explicit opt-in plus Android background-location permission.
-- Widget weather uses the last user-authorized location, caches the response
-  and sends coordinates to the configured HTTPS weather service and Open-Meteo
-  forecast/air-quality endpoints. Turning off automatic widget location stops
-  its background location requests.
-- Native diagnostics redact tokens, email addresses and precise coordinates
-  before retaining a bounded local history for the feedback preview.
-- Application backup and device-transfer extraction are disabled.
-- WebView debugging is disabled in release builds.
-- Signing keys and passwords are ignored by Git and must remain private.
-- Supabase service-role credentials, Map provider secret keys and Firebase
-  server credentials must never be included in this client.
+## Device and account data
 
-Report security issues through the private owner channel or
-`sarhang.salah9@gmail.com`; do not publish exploit details first.
+The WebView restricts native operations to the trusted HTTPS application origin. The shared map uses scoped Supabase sessions. Weather synchronization uses app-private preferences and cached observations. GPS and notification access are governed by Android runtime permissions. Background location and alerts depend on the permissions the user has granted.
+
+## Software integrity and signing
+
+The project pins release tooling, verifies the native offline catalog and checks the SHA-256 source and presentation manifests. Signing is configured by the established private keystore in CI. Keep key properties, keystores, passwords and service credentials outside source control. Production receipts bind the APK and AAB to the source commit, version, source manifest and expected certificate listed in `ANDROID_APP_LINK_SHA256.txt`.
+
+Use the Termux downloader or verify the signed release receipt and APK certificate before sideloading an update. A compromised signing key requires the owner’s Android signing-key recovery process.
+
+[Public disclosure policy](https://geo-map-kappa.vercel.app/legal/security.html)

@@ -101,14 +101,10 @@ const _seasons = [
   ['پاییز', 'الخريف', 'Autumn'],
 ];
 const _base = [
-  (0xff232675, 0xff512979),
-  (0xffff9475, 0xffb899ff),
-  (0xff00d3fb, 0xffffdd4a),
-  (0xff00cfff, 0xffffe041),
-  (0xff04cbf4, 0xffffda32),
-  (0xff279bff, 0xffffb531),
-  (0xffff7034, 0xffc41c85),
-  (0xff29227a, 0xff4e237f),
+  (0xff242345, 0xff332749), (0xff51416b, 0xff79564f),
+  (0xff25465f, 0xff386963), (0xff24405f, 0xff316553),
+  (0xff274363, 0xff536449), (0xff35486c, 0xff75594c),
+  (0xff513550, 0xff743e4a), (0xff202742, 0xff382d4b),
 ];
 num? number(Object? value) => value is num && value.isFinite ? value : null;
 Map<String, dynamic> object(Object? v) =>

@@ -63,7 +63,7 @@ if [[ "$target" == com.navkurd.app ]]; then
         previous="$work/previous.apk"
         digest=abfa0f8bcc08b4893fe81d6a6da7e73f59db6d6c088510107e8dfc71166777d0
         curl -fsSL --retry 3 --connect-timeout 15 --max-time 180 \
-            https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v10.4.4/NAV-KURD-10.4.4.apk \
+            https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v11.0.0/NAV-KURD-11.0.0.apk \
             -o "$previous"
     fi
     printf '%s  %s\n' "$digest" "$previous" | sha256sum -c --strict

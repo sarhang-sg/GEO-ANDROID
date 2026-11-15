@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geo_android/src/kurdish_localizations.dart';
 import 'package:geo_android/weather/weather_art.dart';
+import 'package:geo_android/weather/weather_city_picker.dart';
 import 'package:geo_android/weather/weather_model.dart';
 import 'package:geo_android/weather/weather_widget.dart';
 import 'package:lottie/lottie.dart';
@@ -131,9 +132,8 @@ class _WeatherScreen extends StatefulWidget {
 
 class _WeatherScreenState extends State<_WeatherScreen>
     with WidgetsBindingObserver {
-  String route = 'details', lang = 'ku', query = '';
+  String route = 'details', lang = 'ku';
   Map<String, dynamic> data = {};
-  List<Map<String, dynamic>> cities = [];
   int generation = 0;
   bool busy = true;
   Timer? timer;
@@ -158,14 +158,10 @@ class _WeatherScreenState extends State<_WeatherScreen>
           await weatherChannel.invokeMethod<String>('route') ?? 'details';
       final language =
           await weatherChannel.invokeMethod<String>('language') ?? 'ku';
-      final list =
-          jsonDecode(await rootBundle.loadString('assets/weather/cities.json'))
-              as List;
       if (!mounted) return;
       setState(() {
         lang = language;
         route = start;
-        cities = list.map(object).toList();
       });
       final cached = await weatherChannel.invokeMethod<String>('snapshot');
       if (mounted && cached != null && generation == 0) {
@@ -223,7 +219,6 @@ class _WeatherScreenState extends State<_WeatherScreen>
     if (!mounted) return;
     setState(() {
       route = next;
-      query = '';
     });
     _scroll();
   }
@@ -278,50 +273,10 @@ class _WeatherScreenState extends State<_WeatherScreen>
     );
   }
 
-  Widget _picker(WeatherModel m) {
-    final q = query.trim().toLowerCase();
-    String localName(Map<String, dynamic> c) =>
-        ((lang == 'ku' ? null : c[lang]) as String?)?.trim().isNotEmpty == true
-        ? c[lang] as String
-        : c['name'] as String;
-    final matches = cities
-        .where(
-          (c) => [
-            c['name'],
-            c['ar'],
-            c['en'],
-          ].any((v) => v.toString().toLowerCase().contains(q)),
-        )
-        .toList();
-    return Column(
-      key: const ValueKey('cities'),
-      children: [
-        ListTile(
-          leading: action(
-            Icons.arrow_back,
-            m.t('گەڕانەوە', 'عودة', 'Back'),
-            () => _show('details'),
-          ),
-          title: label(m.t('شار هەڵبژێرە', 'اختر مدينة', 'Choose city'), 22),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: TextField(
-            onChanged: (v) => setState(() => query = v),
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
-              hintText: m.t('ناوی شار', 'اسم المدينة', 'City name'),
-              filled: true,
-            ),
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.my_location),
-          title: label(
-            m.t('شوێنی ئێستام', 'موقعي الحالي', 'Use my location'),
-            16,
-          ),
-          onTap: () async {
+  Widget _picker(WeatherModel m) => WeatherCityPicker(
+    language:lang, onBack:()=>_show('details'),
+    onSelect:(city){ unawaited(HapticFeedback.selectionClick()); unawaited(_load(false,selection:city)); },
+    onGps:() async {
             unawaited(HapticFeedback.selectionClick());
             if (!(await Permission.locationWhenInUse.request()).isGranted ||
                 !mounted) {
@@ -354,24 +309,8 @@ class _WeatherScreenState extends State<_WeatherScreen>
             } finally {
               if (mounted && seq == generation) setState(() => busy = false);
             }
-          },
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: matches.length,
-            itemBuilder: (ctx, i) => ListTile(
-              title: label(localName(matches[i]), 17),
-              subtitle: label(matches[i]['en'].toString(), 12),
-              onTap: () {
-                unawaited(HapticFeedback.selectionClick());
-                unawaited(_load(true, selection: matches[i]));
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+    },
+  );
 
   Widget _details(WeatherModel m) {
     final city = m.city.isEmpty
@@ -515,6 +454,7 @@ class _WeatherScreenState extends State<_WeatherScreen>
             height: 112,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
+              padding: const EdgeInsetsDirectional.only(start: 8, end: 14),
               itemCount: m.hours.length,
               separatorBuilder: (_, _) => const SizedBox(width: 6),
               itemBuilder: (_, i) {
@@ -558,7 +498,7 @@ class _WeatherScreenState extends State<_WeatherScreen>
               ),
         ],
         const SizedBox(height: 20),
-        Center(child: label('Open-Meteo  ·  Developer: Sarhang Salah', 11)),
+        Center(child: label('Open-Meteo · Developer: Sarhang Salah', 11)),
       ],
     );
   }
@@ -606,7 +546,7 @@ class _WeatherScreenState extends State<_WeatherScreen>
     decoration: BoxDecoration(
       color: const Color(0x55213b54),
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: Colors.white24),
+
     ),
     child: child,
   );

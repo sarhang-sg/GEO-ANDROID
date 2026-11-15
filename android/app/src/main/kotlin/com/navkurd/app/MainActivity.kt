@@ -135,7 +135,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 "openWeatherDetails" -> {
                     (call.arguments as? String)?.let { raw ->
                         val selected=WeatherPlace.from(org.json.JSONObject(raw))
-                        if (selected!=null) WeatherStore.select(this,selected)
+                        if (selected!=null) { WeatherStore.select(this,selected); NavKurdWidgetProvider.refreshWeather(this,true) }
                     }
                     startActivity(Intent(this,WeatherActivity::class.java).putExtra("weather_route","details"))
                     result.success(true)

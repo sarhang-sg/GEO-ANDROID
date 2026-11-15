@@ -1,0 +1,1 @@
+export{t as installWeatherDirectory}from"./weather-directory-BnHmsFL1.js";

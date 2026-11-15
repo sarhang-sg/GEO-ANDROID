@@ -23,7 +23,7 @@ class PublicationTests(unittest.TestCase):
             certificate='A'*64
             (root/'ANDROID_APP_LINK_SHA256.txt').write_text(certificate)
             commit='b'*40
-            metadata=dict(gitCommit=commit,versionName='10.4.4',versionCode=100404,packageId='com.navkurd.app',debuggable=False,
+            metadata=dict(gitCommit=commit,versionName='11.0.0',versionCode=110000,packageId='com.navkurd.app',debuggable=False,
                           signingCertificateSha256=certificate,sourceManifestSha256=hashlib.sha256(b'verified-source\n').hexdigest(),workflowRunId='10',files={})
             for kind in ('apk','aab'):
                 binary=root/'release'/('signed.'+kind);binary.write_bytes(b'CI-verified-fixture')
@@ -35,10 +35,10 @@ class PublicationTests(unittest.TestCase):
                 if args[0]=='api':
                     if case=='resume-draft':
                         receipt={k:metadata[k] for k in ('packageId','versionName','versionCode','gitCommit','workflowRunId','sourceManifestSha256','signingCertificateSha256')}
-                        receipt['files']={kind:dict(name=f'NAV-KURD-10.4.4.{kind}',bytes=len(b'CI-verified-fixture'),sha256=hashlib.sha256(b'CI-verified-fixture').hexdigest()) for kind in ('apk','aab')}
+                        receipt['files']={kind:dict(name=f'NAV-KURD-11.0.0.{kind}',bytes=len(b'CI-verified-fixture'),sha256=hashlib.sha256(b'CI-verified-fixture').hexdigest()) for kind in ('apk','aab')}
                         receipt_url='https://api.github.com/repos/owner/repo/releases/assets/100'
                         if '--slurp' in args:
-                            return SimpleNamespace(returncode=0,stdout=json.dumps([[{'id':99,'tag_name':'v10.4.4-candidate-'+commit[:12]}]]),stderr='')
+                            return SimpleNamespace(returncode=0,stdout=json.dumps([[{'id':99,'tag_name':'v11.0.0-candidate-'+commit[:12]}]]),stderr='')
                         if args[1]=='repos/owner/repo/releases/99':
                             assets=[dict(name=f['name'],size=f['bytes'],digest='sha256:'+f['sha256'],state='uploaded') for f in receipt['files'].values()]
                             assets.append(dict(name='DOWNLOAD-RECEIPT.json',url=receipt_url))
@@ -53,7 +53,7 @@ class PublicationTests(unittest.TestCase):
                     return SimpleNamespace(returncode=1,stdout='',stderr='not found')
                 if args[:2]==('release','upload') and case=='upload-failed':raise SystemExit('simulated interrupted upload')
                 return SimpleNamespace(returncode=0,stdout='',stderr='')
-            environment=dict(GITHUB_REF='refs/heads/main',NAV_KURD_VERSION='10.4.4',NAV_KURD_VERSION_CODE='100404',GITHUB_SHA=commit,GITHUB_REPOSITORY='owner/repo',RUNNER_TEMP=str(root/'runner'))
+            environment=dict(GITHUB_REF='refs/heads/main',NAV_KURD_VERSION='11.0.0',NAV_KURD_VERSION_CODE='110000',GITHUB_SHA=commit,GITHUB_REPOSITORY='owner/repo',RUNNER_TEMP=str(root/'runner'))
             previous=Path.cwd()
             try:
                 with patch.dict(os.environ,environment),patch.object(module,'gh',side_effect=fake_gh):
@@ -65,10 +65,10 @@ class PublicationTests(unittest.TestCase):
             if case=='success':
                 self.assertEqual(mutating,[('release','create'),('release','upload')])
                 create=next(c for c in calls if c[:2]==('release','create'))
-                self.assertEqual(create[2],'v10.4.4-candidate-'+commit[:12])
+                self.assertEqual(create[2],'v11.0.0-candidate-'+commit[:12])
                 self.assertIn('--draft',create)
-                self.assertFalse(any(c[:3]==('release','edit','v10.4.4') for c in calls))
-                receipt=json.loads((root/'runner/nav-kurd-publish-10.4.4/DOWNLOAD-RECEIPT.json').read_text())
+                self.assertFalse(any(c[:3]==('release','edit','v11.0.0') for c in calls))
+                receipt=json.loads((root/'runner/nav-kurd-publish-11.0.0/DOWNLOAD-RECEIPT.json').read_text())
                 self.assertEqual(receipt['gitCommit'],commit)
                 self.assertEqual(receipt['files']['apk']['sha256'],hashlib.sha256(b'CI-verified-fixture').hexdigest())
             elif case=='upload-failed':self.assertNotIn(('release','edit'),mutating)

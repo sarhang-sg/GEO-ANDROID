@@ -151,7 +151,7 @@ class WeatherGlass extends StatelessWidget {
     required this.weather,
     required this.child,
     this.radius = 24,
-    this.blur = true,
+    this.blur = false,
   });
   final WeatherModel weather;
   final Widget child;
@@ -204,7 +204,6 @@ class WeatherGlass extends StatelessWidget {
                   const Color(0x99121e35),
                 ],
               ),
-              border: Border.all(color: Colors.white24),
               borderRadius: BorderRadius.circular(radius),
             ),
           ),

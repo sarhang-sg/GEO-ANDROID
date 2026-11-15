@@ -338,7 +338,7 @@ packages:
       path: "packages/nav_kurd_local_core"
       relative: true
     source: path
-    version: "10.4.4"
+    version: "11.0.0"
   nm:
     dependency: transitive
     description:

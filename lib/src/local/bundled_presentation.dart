@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter/services.dart';
 import 'package:nav_kurd_local_core/nav_kurd_local_core.dart';
 
@@ -24,6 +25,15 @@ final class BundledPresentation {
     return BundledPresentation._(Map.unmodifiable(files));
   }
   bool contains(String path)=>files.containsKey(path);
+  Future<WebResourceResponse?> response(String path,String method) async {
+    if (!contains(path)) return null;
+    if (method != 'GET' && method != 'HEAD') return WebResourceResponse(statusCode:405,reasonPhrase:'Method not allowed');
+    const mime={'html':'text/html','js':'application/javascript','css':'text/css','json':'application/json','svg':'image/svg+xml','woff2':'font/woff2','ttf':'font/ttf','webmanifest':'application/manifest+json'};
+    try {
+      return WebResourceResponse(statusCode:200,reasonPhrase:'OK',contentType:mime[path.split('.').last] ?? 'application/octet-stream',
+        data:method=='HEAD'?Uint8List(0):await read(path),headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+    } catch (_) { return WebResourceResponse(statusCode:500,reasonPhrase:'Bundled resource unavailable'); }
+  }
   Future<Uint8List> read(String path) async {
     final file=files[path];
     if(file==null)throw CoreFailure('presentation_missing','Bundled resource is absent: $path');

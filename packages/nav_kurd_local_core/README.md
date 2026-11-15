@@ -1,6 +1,6 @@
-# NAV KURD local core — 10.4.4
+# NAV KURD local core — 11.0.0
 
-Now updated — NAV KURD 10.4.4 · Reviewed 14 October 2026.
+Now updated — NAV KURD 11.0.0 · Reviewed 14 October 2026.
 
 The Android runtime uses this library for its read-only SQLite catalog,
 mutable preferences, query worker and random-access PMTiles readers. Flutter
@@ -84,6 +84,6 @@ dart test
 ```
 
 The signed-release workflow also verifies the real offline catalog and bundled
-assets. App version 10.4.4 is provided by `assets/application-release.json`;
+assets. App version 11.0.0 is provided by `assets/application-release.json`;
 geographic data retains its source provenance and content-derived pack identity.
 Physical GPS, camera and launcher behavior require device testing.

@@ -14,23 +14,24 @@ import kotlin.math.abs
 
 class NavKurdWidgetProvider:AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        WeatherBitmaps.showFallback(context, manager, ids)
+        WeatherBitmaps.restore(context, manager, ids)
         scheduleRefresh(context)
         WeatherWork.paint(context)
         NavKurdWeatherJob.schedule(context)
     }
 
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) {
-        WeatherBitmaps.showFallback(context, manager, intArrayOf(id))
+        WeatherBitmaps.restore(context, manager, intArrayOf(id))
         WeatherWork.paint(context)
     }
+    override fun onDeleted(context:Context, ids:IntArray) { WeatherBitmaps.discard(context,ids) }
     override fun onEnabled(context:Context){scheduleRefresh(context);NavKurdWeatherJob.schedule(context)}
     override fun onDisabled(context:Context){NavKurdWeatherJob.cancelWidget(context);context.getSystemService(AlarmManager::class.java).cancel(phaseIntent(context));NavKurdWidgetLocation.configure(context)}
     override fun onReceive(context:Context,intent:Intent){
         super.onReceive(context,intent)
         if(intent.action in listOf(Intent.ACTION_BOOT_COMPLETED,Intent.ACTION_MY_PACKAGE_REPLACED,Intent.ACTION_TIME_CHANGED,Intent.ACTION_TIMEZONE_CHANGED) && hasWidgets(context)){
             val manager = AppWidgetManager.getInstance(context)
-            WeatherBitmaps.showFallback(context, manager, manager.getAppWidgetIds(ComponentName(context, NavKurdWidgetProvider::class.java)))
+            WeatherBitmaps.restore(context, manager, manager.getAppWidgetIds(ComponentName(context, NavKurdWidgetProvider::class.java)))
             scheduleRefresh(context);WeatherWork.paint(context)
         }
     }
@@ -40,7 +41,7 @@ class NavKurdWidgetProvider:AppWidgetProvider() {
         const val KEY_LAST_RENDER_AT="last_render_at";const val KEY_LAST_RENDER_ERROR="last_render_error"
         const val KEY_TIMEZONE="timezone";const val KEY_IS_DAY="is_day";const val KEY_WEATHER_CODE="weather_code";const val KEY_DUST="dust"
         fun hasWidgets(context:Context)=AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context,NavKurdWidgetProvider::class.java)).isNotEmpty()
-        fun setLanguage(c:Context,rawLanguage:String){val lang=rawLanguage.substringBefore('-').lowercase().takeIf{it=="en" || it=="ar"}?:"ku";WeatherStore.prefs(c).edit().putString(KEY_LANGUAGE,lang).apply()}
+        fun setLanguage(c:Context,rawLanguage:String){val lang=rawLanguage.substringBefore('-').lowercase().takeIf{it=="en" || it=="ar"}?:"ku";val p=WeatherStore.prefs(c);if (p.getString(KEY_LANGUAGE,"ku")!=lang) { p.edit().putString(KEY_LANGUAGE,lang).apply(); if(hasWidgets(c)) WeatherWork.paint(c) }}
         fun updateStatus(c:Context,status:String,detail:String){WeatherStore.prefs(c).edit().putString("status",status).putString("detail",detail.take(128)).apply()}
         fun refreshWeather(context:Context,force:Boolean){if(hasWidgets(context))NavKurdWeatherJob.schedule(context,force=force)}
         fun storeLocationAndRefresh(context:Context,latitude:Double,longitude:Double,accuracy:Double){
