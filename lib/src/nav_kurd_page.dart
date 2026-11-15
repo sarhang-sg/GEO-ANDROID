@@ -10,8 +10,8 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:geo_android/src/app_config.dart';
 import 'package:geo_android/src/download_name.dart';
 import 'package:geo_android/src/local/android_local_runtime.dart';
-import 'package:geo_android/src/local/bundled_presentation.dart';
 import 'package:geo_android/src/local/android_location.dart';
+import 'package:geo_android/src/local/bundled_presentation.dart';
 import 'package:geo_android/src/local/location_presentation_bridge.dart';
 import 'package:geo_android/src/native_bridge.dart';
 import 'package:geo_android/src/permission_coordinator.dart';
@@ -373,7 +373,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
                 if (request.url.path == '/client-config.json' || request.url.path.startsWith('/api/')) return null;
                 final ui = await presentation.bundle.response(request.url.path,request.method ?? 'GET');
                 if (ui != null) return ui;
-                try { return (await _localOpening).resources.respond(request); }
+                try { return await (await _localOpening).resources.respond(request); }
                 catch (_) { return WebResourceResponse(statusCode:503,reasonPhrase:'Offline pack unavailable'); }
               },
               onLoadStart: (controller, url) {

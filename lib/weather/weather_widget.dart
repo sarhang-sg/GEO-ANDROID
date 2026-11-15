@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:geo_android/weather/weather_art.dart';
 import 'package:geo_android/src/kurdish_localizations.dart' show navKurdDelegates;
+import 'package:geo_android/weather/weather_art.dart';
 import 'package:geo_android/weather/weather_model.dart';
 
 TextStyle ink(double size, {FontWeight weight = FontWeight.w500}) => TextStyle(
