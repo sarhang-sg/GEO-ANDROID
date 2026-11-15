@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import os
 import subprocess
+import sys
 import shutil
 import tempfile
 
@@ -57,6 +58,24 @@ def main():
         # This directory is a generated, manifest-owned presentation only.
         shutil.rmtree(destination)
         shutil.copytree(staging,destination)
+    # Keep native offline legal routes consistent with the verified presentation.
+    core = root/'android/app/src/main/assets/nav_kurd_core'
+    core_manifest = core/'manifest.json'
+    inventory = json.loads(core_manifest.read_text())
+    changed = False
+    for row in inventory['files']:
+        name = row['path']
+        if not name.startswith('resources/legal/'):
+            continue
+        updated = destination/name.removeprefix('resources/')
+        if not updated.is_file() or sha(updated) == row['sha256']:
+            continue
+        shutil.copyfile(updated, core/name)
+        row.update(bytes=updated.stat().st_size, sha256=sha(updated))
+        changed = True
+    if changed:
+        core_manifest.write_text(json.dumps(inventory,ensure_ascii=False,separators=(',',':'))+'\n')
+        subprocess.run([sys.executable,str(root/'tools/verify-local-data.py'),'--update-identities'],check=True)
     print(f'Synced {len(rows)} UI files for {release["appVersion"]}; native core data unchanged.')
 
 

@@ -1,6 +1,5 @@
 # NAV KURD release identity
 
-Now updated — NAV KURD 11.0.0 · Reviewed 14 October 2026.
 
 The public certificate description in this directory and the canonical
 `../ANDROID_APP_LINK_SHA256.txt` fingerprint identify the real NAV KURD update

@@ -1,6 +1,5 @@
 # NAV KURD local core — 11.0.0
 
-Now updated — NAV KURD 11.0.0 · Reviewed 14 October 2026.
 
 The Android runtime uses this library for its read-only SQLite catalog,
 mutable preferences, query worker and random-access PMTiles readers. Flutter

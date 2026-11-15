@@ -56,14 +56,13 @@ adb shell appwidget grantbind --package com.navkurd.smoke
 reuse_widget=false
 if [[ "$target" == com.navkurd.app ]]; then
     # Exercise the signed, in-place update from the version reported by the user.
-    if [[ -n "${PREVIOUS_SIGNED_APK:-}" ]]; then
-        previous=$PREVIOUS_SIGNED_APK
-        digest=876df2758627e7a5e3507e46ba4efcc678308e040703b99353f0b8f0512cd044
-    else
-        previous="$work/previous.apk"
-        digest=abfa0f8bcc08b4893fe81d6a6da7e73f59db6d6c088510107e8dfc71166777d0
+    # This is the public signed upgrade baseline. The downloaded APK is checked
+    # against its published receipt before installation, then upgraded in place.
+    previous=${PREVIOUS_SIGNED_APK:-"$work/previous.apk"}
+    digest=3d1d9bd9ea6cc9b97dad6eff98e59ad5a81e13371d46534d984be3f11ea981ff
+    if [[ -z "${PREVIOUS_SIGNED_APK:-}" ]]; then
         curl -fsSL --retry 3 --connect-timeout 15 --max-time 180 \
-            https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v11.0.0/NAV-KURD-11.0.0.apk \
+            https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v10.4.6/NAV-KURD-10.4.6.apk \
             -o "$previous"
     fi
     printf '%s  %s\n' "$digest" "$previous" | sha256sum -c --strict
@@ -81,11 +80,20 @@ fi
 adb install -r --no-streaming "$apk"
 # One device installation exercises the public launcher, then an actual bound widget.
 adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
+# ADB can report success before UIAutomator creates its hierarchy (especially
+# during a WebView cold start). Only accept a fresh, complete accessibility tree.
+read_window() {
+    local path=/data/local/tmp/nav-kurd-window.xml
+    adb shell rm -f "$path" || return 1
+    timeout 18 adb shell uiautomator dump --compressed "$path" >/dev/null 2>&1 || return 1
+    adb shell test -s "$path" || return 1
+    adb exec-out cat "$path" > "$work/window.xml" || return 1
+    python3 -c 'import sys,xml.etree.ElementTree as ET; assert ET.parse(sys.argv[1]).getroot().tag == "hierarchy"' "$work/window.xml" 2>/dev/null
+}
 wait_screen() {
     local kind=$1 action x y
     for _ in $(seq 1 30); do
-        if timeout 18 adb shell uiautomator dump /sdcard/nav-kurd-smoke.xml >/dev/null 2>&1; then
-            adb shell cat /sdcard/nav-kurd-smoke.xml > "$work/window.xml"
+        if read_window; then
             read -r action x y < <(python3 "$here/map-window.py" "$work/window.xml" "$kind")
             case "$action" in
                 tap) adb shell input tap "$x" "$y" ;;
@@ -103,8 +111,14 @@ adb exec-out screencap -p > "$evidence/map.png"
 adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse "$reuse_widget"
 timeout 145 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F widget-bitmap-ready >/dev/null; do sleep 2; done'
 adb exec-out screencap -p > "$evidence/widget.png"
-timeout 15 adb shell uiautomator dump /sdcard/nav-kurd-widget.xml >/dev/null
-adb shell cat /sdcard/nav-kurd-widget.xml > "$evidence/widget.xml"
+for _ in $(seq 1 12); do
+    if read_window && grep -q ':id/weather_forecast' "$work/window.xml"; then
+        cp "$work/window.xml" "$evidence/widget.xml"
+        break
+    fi
+    sleep 1
+done
+test -s "$evidence/widget.xml"
 read -r tap_x tap_y < <(python3 - "$evidence/widget.xml" <<'PY'
 import re
 import sys
