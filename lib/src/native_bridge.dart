@@ -79,6 +79,8 @@ final class NativeBridge {
     }
   }
 
+  Future<void> reportMapDrawn() => _methods.invokeMethod<void>('mapDrawn');
+
   Future<void> enterImmersiveMode() async {
     try {
       await _methods.invokeMethod<void>('enterImmersiveMode');

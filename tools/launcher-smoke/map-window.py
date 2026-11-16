@@ -11,6 +11,8 @@ except ET.ParseError:
 
 nodes = list(root.iter("node"))
 labels = [(node, (node.get("text", "") + " " + node.get("content-desc", "")).strip()) for node in nodes]
+target_visible = any(node.get("package") == sys.argv[3] for node in nodes)
+drawn = target_visible and sys.argv[4] == "yes"
 skip = {"ئێستا نا", "ليس الآن", "Not now", "تێپەڕاندن", "تخطي", "Skip"}
 for node, label in labels:
     if label in skip or (node.get("resource-id") == "android:id/ok" and
@@ -25,11 +27,11 @@ for node, label in labels:
 if sys.argv[2] == "weather":
     has_forecast = any(title in label for _, label in labels
                        for title in ("پێشبینیی ٢٤ کاتژمێر", "توقعات ٢٤ ساعة", "24-hour forecast"))
-    print("ready" if has_forecast else "wait")
+    print("ready" if target_visible and (has_forecast or drawn) else "wait")
     sys.exit(0)
 
 has_web = any(n.get("class") == "android.webkit.WebView" for n in nodes)
 has_ready = any(ready in label for _, label in labels
                 for ready in ("نەخشە ئامادەیە", "الخريطة جاهزة", "Map ready"))
 has_loader = any("2 + 2 = 1" in label or "2 plus 2 equals 1" in label for _, label in labels)
-print("ready" if has_web and has_ready and not has_loader else "wait")
+print("ready" if target_visible and has_web and (has_ready or drawn) and not has_loader else "wait")

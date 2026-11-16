@@ -167,9 +167,9 @@ class _WeatherScreenState extends State<_WeatherScreen>
       if (mounted && cached != null && generation == 0) {
         setState(() => data = object(jsonDecode(cached)));
       }
+      _scroll();
       if (mounted && generation == 0) await _load(false);
       if (mounted) {
-        _scroll();
         unawaited(weatherPrompts(context, weatherChannel, lang: lang));
       }
     } catch (e) {
@@ -202,16 +202,20 @@ class _WeatherScreenState extends State<_WeatherScreen>
   }
 
   void _scroll() {
-    if (route == 'forecast') {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final ctx = hourlyAnchor.currentContext;
-        if (ctx != null) {
-          Scrollable.ensureVisible(
-            ctx,
-            duration: const Duration(milliseconds: 280),
-          );
-        }
-      });
+    if (!mounted || route != 'forecast') return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_revealForecast()));
+  }
+
+  Future<void> _revealForecast() async {
+    final anchor = hourlyAnchor.currentContext;
+    if (!mounted || route != 'forecast' || anchor == null) return;
+    await Scrollable.ensureVisible(anchor, duration: const Duration(milliseconds: 280));
+    if (!mounted || route != 'forecast') return;
+    final header = hourlyAnchor.currentContext?.findRenderObject();
+    if (header is! RenderBox || !header.attached || !header.hasSize) return;
+    final viewport = Offset.zero & MediaQuery.sizeOf(context);
+    if (viewport.overlaps(header.localToGlobal(Offset.zero) & header.size)) {
+      await weatherChannel.invokeMethod<void>('forecastDrawn');
     }
   }
 
@@ -328,10 +332,10 @@ class _WeatherScreenState extends State<_WeatherScreen>
         : m.sky == Sky.clear && m.day
         ? 'rays'
         : 'mist';
-    return ListView(
+    return SingleChildScrollView(
       key: const ValueKey('detail'),
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 32),
-      children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(
           children: [
             action(
@@ -499,7 +503,7 @@ class _WeatherScreenState extends State<_WeatherScreen>
         ],
         const SizedBox(height: 20),
         Center(child: label('Open-Meteo · Developer: Sarhang Salah', 11)),
-      ],
+      ]),
     );
   }
 

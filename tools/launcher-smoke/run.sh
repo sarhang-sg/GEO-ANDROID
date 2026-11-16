@@ -18,7 +18,7 @@ finish() {
         adb exec-out screencap -p > "$evidence/failure.png" || true
         tail -30 "$work/emulator.log" || true
         adb logcat -b crash -d -t 160 || true
-        adb logcat -d -s NavKurdSmoke:I NavKurdWidget:W flutter:I AndroidRuntime:E | tail -150 || true
+        adb logcat -d -s NavKurdStartup:I NavKurdSmoke:I NavKurdWidget:W flutter:I AndroidRuntime:E | tail -150 || true
         adb shell dumpsys activity activities | grep -m1 'mResumedActivity\|topResumedActivity' || true
         adb shell dumpsys activity exit-info "$target" | head -60 || true
         timeout 15 adb shell uiautomator dump /sdcard/nav-kurd-failure.xml >/dev/null 2>&1 &&
@@ -78,6 +78,7 @@ if [[ "$target" == com.navkurd.app ]]; then
     adb logcat -b crash -c
 fi
 adb install -r --no-streaming "$apk"
+adb logcat -b main -c
 # One device installation exercises the public launcher, then an actual bound widget.
 adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
 # ADB can report success before UIAutomator creates its hierarchy (especially
@@ -85,16 +86,25 @@ adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
 read_window() {
     local path=/data/local/tmp/nav-kurd-window.xml
     adb shell rm -f "$path" || return 1
-    timeout 18 adb shell uiautomator dump --compressed "$path" >/dev/null 2>&1 || return 1
+    timeout 18 adb shell uiautomator dump "$path" >/dev/null 2>&1 || return 1
     adb shell test -s "$path" || return 1
     adb exec-out cat "$path" > "$work/window.xml" || return 1
     python3 -c 'import sys,xml.etree.ElementTree as ET; assert ET.parse(sys.argv[1]).getroot().tag == "hierarchy"' "$work/window.xml" 2>/dev/null
 }
 wait_screen() {
-    local kind=$1 action x y
+    local kind=$1 action x y pid frame
+    case "$kind" in map) frame=map-drawn ;; weather) frame=forecast-drawn ;; *) return 2 ;; esac
     for _ in $(seq 1 30); do
         if read_window; then
-            read -r action x y < <(python3 "$here/map-window.py" "$work/window.xml" "$kind")
+            # Some WebView versions expose only the host view to UIAutomator.
+            # The activity reports its first usable frame after the real map
+            # paints, or after the requested forecast heading enters the viewport.
+            pid=$(adb shell pidof -s "$target" | tr -d '\r') || pid=
+            local drawn=no
+            if [[ "$pid" =~ ^[0-9]+$ ]] && adb logcat --pid="$pid" -b main -d -v raw -s NavKurdStartup:I | grep -Fx "$frame" >/dev/null; then
+                drawn=yes
+            fi
+            read -r action x y < <(python3 "$here/map-window.py" "$work/window.xml" "$kind" "$target" "$drawn")
             case "$action" in
                 tap) adb shell input tap "$x" "$y" ;;
                 ready) cp "$work/window.xml" "$evidence/$kind.xml"; return 0 ;;

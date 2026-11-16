@@ -51,6 +51,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     private var pendingDeepLink: String? = null
     private var localCore: LocalCoreChannel? = null
     private var nativeLocation: NativeLocationService? = null
+    private var mapDrawn = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -166,6 +167,14 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 "scheduleNotifications" -> {
                     NavKurdNotificationScheduler.schedule(this)
                     NavKurdNotificationScheduler.checkForUpdateSoon(this)
+                    result.success(null)
+                }
+                "mapDrawn" -> {
+                    if (!mapDrawn) {
+                        reportFullyDrawn()
+                        android.util.Log.i("NavKurdStartup", "map-drawn")
+                        mapDrawn = true
+                    }
                     result.success(null)
                 }
                 "enterImmersiveMode" -> {

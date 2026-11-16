@@ -490,6 +490,12 @@ final class _NavKurdPageState extends State<NavKurdPage>
     controller.addJavaScriptHandler(handlerName: 'nativeLocalCore', callback: _handleLocalCore);
     _controller = controller;
     controller.addJavaScriptHandler(
+      handlerName: 'nativeMapDrawn',
+      callback: (_) async {
+        if (await _isCurrentOriginTrusted()) await _bridge.reportMapDrawn();
+      },
+    );
+    controller.addJavaScriptHandler(
       handlerName: 'nativeShare',
       callback: _handleNativeShare,
     );
