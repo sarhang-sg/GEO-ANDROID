@@ -361,7 +361,16 @@ jobs:
           )
           test "$(find release -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 11
 
+      - name: Calculate offline routes using the signed APK and AAB
+        run: |
+          python3 tools/test-offline-routes.py "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" \
+            "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.aab"
+      - name: Prepare Android launcher system image
+        run: bash tools/launcher-smoke/prepare-emulator.sh
       - name: Launch the verified signed APK and exercise the home-screen widget
+        timeout-minutes: 17
+        env:
+          NAV_KURD_LAUNCHER_PREPARED: "true"
         run: |
           bash tools/launcher-smoke/run.sh "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" com.navkurd.app \
             "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.aab"

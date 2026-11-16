@@ -56,7 +56,14 @@ jobs:
           bash tools/install-android-sdk.sh
           flutter build apk --debug --no-pub
 
+      - name: Calculate offline routes using the packaged APK
+        run: python3 tools/test-offline-routes.py build/app/outputs/flutter-apk/app-debug.apk
+      - name: Prepare Android launcher system image
+        run: bash tools/launcher-smoke/prepare-emulator.sh
       - name: Launch the APK and exercise the home-screen widget
+        timeout-minutes: 15
+        env:
+          NAV_KURD_LAUNCHER_PREPARED: "true"
         run: bash tools/launcher-smoke/run.sh build/app/outputs/flutter-apk/app-debug.apk com.navkurd.app.debug
 
       - name: Retain Android launcher screenshots and crash log

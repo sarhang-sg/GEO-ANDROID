@@ -1,6 +1,6 @@
 74d17ea6ad508590064eebbd85ff7eeb62bb3682b818eca909d3877f210a021a  ./.gitattributes
-d8e70c35cce04eee07c3f1e31a7189f82659a9876e6643a1330458bb401d2b68  ./.github/workflows/android-checks.yml
-79f0cf283c3d0bc58b9bfd54113855df48d0eb3623d874859d1d84088aea0d66  ./.github/workflows/android-release.yml
+ba266f04627cbf4bc5ed99c42424c8c711cf6702004843a27ff626ac95a23102  ./.github/workflows/android-checks.yml
+d0080b7be519daa94a5c9ff98b86c0203907581b0b42d6e84797d1bde3752c52  ./.github/workflows/android-release.yml
 1e0dd8ae6020159c408ce54512d6f63235bc0956ca0b28c46199dbdf21c3cad3  ./.gitignore
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./ANDROID_APP_LINK_SHA256.txt
@@ -1030,7 +1030,8 @@ f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/instal
 8f3919006af93d38a36242f16941d0efae7f827375d9a35fa47f8830d6144de7  ./tools/launcher-smoke/AndroidManifest.xml
 498c14571c075f92079e7885507451f3725959cd5ae850878f655536d35b362f  ./tools/launcher-smoke/WidgetHost.java
 e962de202bb80dbc84a33c31db7a7bbd127cb2081553dfc63c0f3e7cc68aba81  ./tools/launcher-smoke/map-window.py
-cfcd8cdb5a90f218437f755ba3d59b34b1c429bc774ad8af1f41a0078d6a29df  ./tools/launcher-smoke/run.sh
+c4e352a454cffc14bb8dfd185559206a8d73d91a4bd2ac4af1981ae721fb4f06  ./tools/launcher-smoke/prepare-emulator.sh
+8ea7b01aeb392bfbbb3fa26348cad44f236875a5a440d88a68e0660e38b07c72  ./tools/launcher-smoke/run.sh
 e2bedb36a6dd9e58351728092ae28eb1b55e6ef0dd04628a698fcbd3c11a7029  ./tools/native-data/build_core.mjs
 21588489dd463ca2cfe4c785f77fa8ed643989903238e82850b61bfa88f4f5d7  ./tools/native-data/r16.mjs
 1b738e7dcde18c570d70fec964b46d871395ff6f98430cc7927a130c51e577fc  ./tools/native-data/schema.sql
