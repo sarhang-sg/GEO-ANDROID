@@ -16,6 +16,7 @@ work=$(mktemp -d)
 evidence="${RUNNER_TEMP:-/tmp}/nav-kurd-launcher-check"
 mkdir -p "$evidence"
 emulator_pid=
+device_log_pid=
 phase='checking emulator prerequisites'
 finish() {
     code=$?
@@ -39,6 +40,7 @@ finish() {
         timeout 5 adb emu kill >/dev/null 2>&1 || true
     fi
     if [[ -n "$emulator_pid" ]]; then kill "$emulator_pid" 2>/dev/null || true; fi
+    if [[ -n "$device_log_pid" ]]; then kill "$device_log_pid" 2>/dev/null || true; fi
     rm -rf "$work"
     exit "$code"
 }
@@ -50,7 +52,9 @@ test -s "$sdk/system-images/android-35/google_apis/x86_64/system.img"
 export ANDROID_AVD_HOME="$work/avd"
 mkdir -p "$ANDROID_AVD_HOME" "$work/classes" "$work/dex"
 printf 'no\n' | avdmanager create avd --force --name navkurd --package 'system-images;android-35;google_apis;x86_64' >/dev/null
-emulator -avd navkurd -port 5554 -gpu swiftshader -no-window -noaudio -no-boot-anim -no-snapshot -memory 2048 >"$work/emulator.log" 2>&1 &
+# GitHub's Linux runners do not expose a hardware GPU. Use Mesa GLES for the
+# virtual device; SwiftShader can terminate the emulator when surfaces change.
+emulator -avd navkurd -port 5554 -gpu lavapipe -feature -Vulkan -no-window -noaudio -no-boot-anim -no-snapshot -memory 2048 >"$work/emulator.log" 2>&1 &
 emulator_pid=$!
 export ANDROID_SERIAL=emulator-5554
 timeout 120 adb wait-for-device
@@ -96,6 +100,8 @@ fi
 phase='installing the current APK'
 timeout 150 adb install -r --no-streaming "$apk"
 adb logcat -b main -c
+adb logcat -b main -b crash -v threadtime -s NavKurdStartup:I NavKurdSmoke:I NavKurdWidget:W flutter:I AndroidRuntime:E >"$evidence/launcher.log" 2>&1 &
+device_log_pid=$!
 # One device installation exercises the public launcher, then an actual bound widget.
 adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
 # ADB can report success before UIAutomator creates its hierarchy (especially
