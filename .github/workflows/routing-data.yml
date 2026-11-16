@@ -1,0 +1,30 @@
+name: Publish verified offline routing data
+on:
+  push:
+    branches: ['data/road-graph-*']
+    paths: ['contracts/offline-routing.json', 'tools/prepare-road-graph.py', '.github/workflows/routing-data.yml']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Archive the identified road data independently of daily upstream updates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=$(jq -r .tag contracts/offline-routing.json)
+          test "$GITHUB_REF_NAME" = "data/$tag"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            python3 tools/prepare-road-graph.py --upstream --out "$RUNNER_TEMP/graph"
+            gh release create "$tag" --target "$GITHUB_SHA" --latest=false \
+              --title "NAV KURD offline routing data · $tag" \
+              --notes "Routable OpenStreetMap data from BRouter, © OpenStreetMap contributors, ODbL 1.0. https://www.openstreetmap.org/copyright" \
+              "$RUNNER_TEMP"/graph/*.rd5 contracts/offline-routing.json
+          fi
+          python3 tools/prepare-road-graph.py --out "$RUNNER_TEMP/published"
