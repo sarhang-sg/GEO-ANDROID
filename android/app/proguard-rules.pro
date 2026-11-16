@@ -7,6 +7,9 @@
 -dontwarn org.chromium.**
 -dontwarn com.google.android.play.core.**
 
+# BRouter selects its path model by class name from the signed travel profile.
+-keep class btools.router.**Model { *; }
+
 # Room derives this name from WorkDatabase and constructs it through reflection.
 -keepnames class androidx.work.impl.WorkDatabase
 -keep class androidx.work.impl.WorkDatabase_Impl {

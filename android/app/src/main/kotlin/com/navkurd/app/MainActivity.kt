@@ -51,6 +51,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     private var pendingDeepLink: String? = null
     private var localCore: LocalCoreChannel? = null
     private var nativeLocation: NativeLocationService? = null
+    private var offlineRouting: OfflineRouting? = null
     private var mapDrawn = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,6 +112,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
 
     override fun onDestroy() {
         localCore?.close(); nativeLocation?.close()
+        offlineRouting?.close()
         deviceIo.shutdown()
         super.onDestroy()
     }
@@ -130,6 +132,14 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     private fun handleMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
+                "offlineRoute" -> {
+                    val routes = offlineRouting ?: OfflineRouting(applicationContext).also { offlineRouting = it }
+                    routes.route(call, result)
+                }
+                "cancelOfflineRoute" -> {
+                    offlineRouting?.cancel(call.argument<Number>("id")?.toInt())
+                    result.success(null)
+                }
                 "getInitialDeepLink" -> result.success(intent?.dataString)
                 "prompts" -> result.success(WeatherPrompts.take(this))
                 "settings" -> result.success(WeatherPrompts.settings(this))

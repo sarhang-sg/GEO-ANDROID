@@ -4,6 +4,7 @@ apk=$(realpath "${1:?Supply the APK to exercise}")
 target=${2:?Supply the package ID}
 case "$target" in com.navkurd.app|com.navkurd.app.debug) ;; *) exit 2 ;; esac
 here=$(cd "$(dirname "$0")" && pwd)
+python3 "$here/../test-offline-routes.py" "$apk" "${@:3}"
 sdk=${ANDROID_HOME:?Android SDK is required}
 tools="$sdk/build-tools/37.0.0"
 platform="$sdk/platforms/android-36/android.jar"

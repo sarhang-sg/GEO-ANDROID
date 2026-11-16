@@ -9,6 +9,16 @@ if (file("google-services.json").isFile) {
     apply(plugin = "com.google.gms.google-services")
     apply(plugin = "com.google.firebase.crashlytics")
 }
+val graphAssets = layout.buildDirectory.dir("generated/navkurd-road-assets")
+val sourceRoot = rootProject.projectDir.parentFile
+val prepareRoadGraph = tasks.register<Exec>("prepareNavKurdRoadGraph") {
+    val script = sourceRoot.resolve("tools/prepare-road-graph.py")
+    inputs.files(script, sourceRoot.resolve("contracts/offline-routing.json"))
+    outputs.dir(graphAssets)
+    commandLine("python3", script, "--out", graphAssets.get().dir("road-graph").asFile)
+}
+tasks.named("preBuild") { dependsOn(prepareRoadGraph) }
+
 val keyProperties = Properties()
 val keyPropertiesFile = rootProject.file("key.properties")
 val hasReleaseKey = keyPropertiesFile.exists()
@@ -40,9 +50,10 @@ android {
     androidResources {
         // PMTiles stays random-access inside the signed APK, including after
         // the user removes the installed offline-map copy.
-        noCompress += "pmtiles"
+        noCompress += listOf("pmtiles", "rd5")
     }
 
+    sourceSets.getByName("main").assets.srcDir(graphAssets)
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -113,6 +124,7 @@ flutter {
 }
 
 dependencies {
+    implementation(files(sourceRoot.resolve("third_party/brouter/brouter-core-1.7.10.jar")))
     implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("androidx.work:work-runtime-ktx:2.10.5")

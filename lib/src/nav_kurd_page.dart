@@ -532,6 +532,15 @@ final class _NavKurdPageState extends State<NavKurdPage>
         return _bridge.runtimeInfo(includeStorage: request['includeStorage'] == true);
       },
     );
+    for (final entry in const {
+      'nativeOfflineRoute': 'offlineRoute',
+      'nativeCancelOfflineRoute': 'cancelOfflineRoute',
+    }.entries) {
+      controller.addJavaScriptHandler(handlerName: entry.key, callback: (arguments) async {
+        if (!await _isCurrentOriginTrusted() || arguments.isEmpty || arguments.first is! Map) return null;
+        return const MethodChannel('navkurd/native').invokeMethod<Object?>(entry.value, arguments.first);
+      });
+    }
     for (final entry in const {'nativeWeatherDetails':'openWeatherDetails','nativeWeatherJourney':'setWeatherJourney'}.entries) {
       controller.addJavaScriptHandler(handlerName:entry.key,callback:(arguments) async {
         if (!await _isCurrentOriginTrusted()) return false;

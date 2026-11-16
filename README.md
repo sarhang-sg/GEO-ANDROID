@@ -8,11 +8,13 @@ Sarhang Salah’s Kurdish-first GIS and weather app for Android. Release 11.0.0 
 
 Flutter hosts a hardware-accelerated WebView containing the release-bound map UI in `assets/r16`. The native local core supplies the SQLite catalog, PMTiles and device GPS. Pack integrity is checked before native data is used. The regular map launch presents the signature split Loading animation.
 
+The APK includes a separate routable OpenStreetMap road graph covering 40°–50° E and 30°–40° N. The native BRouter engine calculates new driving, walking and cycling routes offline, including turn instructions. New route requests outside that region use the configured online providers. Route geometry, directions and GPS tracking use the shared map presentation on both platforms.
+
 Launcher weather actions use a separate weather entry point. City and forecast taps open the corresponding view. Refresh and GPS actions schedule native work. The foreground weather view requests full forecasts, while the widget requests current conditions and five hours. A dedicated Flutter engine renders launcher-sized bitmaps. Native RemoteViews provide accessibility and touch targets. WorkManager coordinates network work and backoff. Android controls background execution and permission availability.
 
 ## Build and verify
 
-Use Git LFS, Flutter 3.47.7, Java 17 and the Android SDK packages listed in `tools/install-android-sdk.sh`. Check out the repository with LFS enabled.
+Use Git LFS, Python 3, Flutter 3.47.7, Java 17 and the Android SDK packages listed in `tools/install-android-sdk.sh`. Check out the repository with LFS enabled. Gradle fetches the archived road graph at build time and verifies each segment against `contracts/offline-routing.json`. The installed app can calculate regional routes on first use without downloading additional data.
 
 ```sh
 git lfs pull

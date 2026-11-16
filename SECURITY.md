@@ -13,3 +13,5 @@ The project pins release tooling, verifies the native offline catalog and checks
 Use the Termux downloader or verify the signed release receipt and APK certificate before sideloading an update. A compromised signing key requires the owner’s Android signing-key recovery process.
 
 [Public disclosure policy](https://geo-map-kappa.vercel.app/legal/security.html)
+
+The build verifies all offline road segments against pinned SHA-256 digests. Android also checks each segment when extracting it from the signed package. Only the trusted map document can request native directions. The native bridge validates route coordinates and travel modes and bounds calculation time.

@@ -363,7 +363,8 @@ jobs:
 
       - name: Launch the verified signed APK and exercise the home-screen widget
         run: |
-          bash tools/launcher-smoke/run.sh "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" com.navkurd.app
+          bash tools/launcher-smoke/run.sh "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" com.navkurd.app \
+            "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.aab"
 
       - name: Upload signed Android release
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
