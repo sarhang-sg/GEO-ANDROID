@@ -5,11 +5,11 @@ d8e70c35cce04eee07c3f1e31a7189f82659a9876e6643a1330458bb401d2b68  ./.github/work
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./ANDROID_APP_LINK_SHA256.txt
 982d5fdd0acecff482546418aa173816b1cb0e193691d0beeb702d169160b445  ./LICENSE
-aa66e24de99facad9015f90f7db34e68eab0041b10747320726a5f2dbdf3e0b8  ./README.md
+e7c655ef3ba0d24cb45c81b712db490d26898038b1f592f1958591db0031aaf2  ./README.md
 47ebcf27861b35d76fbe45cc12d9dd321eab1c5b1581d5e560f7209cff189705  ./SECURITY.md
 c17e145abf54b5e4da0f8b706463b945b2adba3a5db7fa375f619380bf35937d  ./TERMUX.sh
 fb936c475d36fa551a08113887463c5eabe3a4006e26554530c1730cd3cfc700  ./analysis_options.yaml
-56333300a4bfdedd798fac3ca28191c1b4a92bdeebe549a46f1e1e38464d389f  ./android/app/build.gradle.kts
+294a2ae0decaed2e31b0e853bb043a596fa39ae790bdc6feb665475ded61cee8  ./android/app/build.gradle.kts
 1703313c7630c8685a21336b761d32c76b288328fb9e2cb464355119d33ab35e  ./android/app/proguard-rules.pro
 678647a824ef7ab16066708585790ab265135d32fdf84bcd918a4b050f8891b9  ./android/app/src/debug/AndroidManifest.xml
 567c1642a09895fce3c1f434627035d9ca30f7d98d6d029777bf5f43aed3b39d  ./android/app/src/main/AndroidManifest.xml
@@ -612,7 +612,7 @@ cbcaa6e795e7f1f0b2299569169b34b7821438caa157bf4b6b44d0a8cb2f1cef  ./android/app/
 bf8fc3b2c052b7204e9c5a8d78e4d6ab6b125d3236a943f34583b838c477f419  ./android/app/src/main/assets/routing-profiles/lookups.dat
 00241f71fe9251d3e38571a4eb296352c7c2451d86eb34e656123820c27b315e  ./android/app/src/main/assets/routing-profiles/trekking.brf
 694c7fc824d8c50cb022c5b8a6352b2afb8d2a88345fe01f92d2106a3e7cb80c  ./android/app/src/main/java/btools/router/NavKurdDirections.java
-af9b1c8a7e01db1dfbb06312179bd123cf3483d87590e9f8ccc9afb724a1f690  ./android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt
+d9f384f22ae6234415e11c0f1e86679e3afafa319fd25669e5a8dc80b5bf9e2c  ./android/app/src/main/kotlin/com/navkurd/app/MainActivity.kt
 1b1c87e6dd4f9f24c053cc108a0c6e0df6e0e8943965767db5263a2b5520f4fa  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdAccountNotifications.kt
 bde0547cec90298ee10724f9beec2c48dda126634736ee93dde61b4069e0cb17  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdDiagnostics.kt
 a43b4bf6a154144781f24b8d034c97d22fbfaa1713a260933f455a2585dd82bd  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdNotificationReceiver.kt
@@ -629,7 +629,7 @@ e84416f5c8f557d40d76b8bcef390c1ffb6600493a92f04bad96daa30207e97e  ./android/app/
 55912def3ed9d8d52d4d4c2bd94fd78985d77961fe976a609c82b95a31b6e361  ./android/app/src/main/kotlin/com/navkurd/app/WeatherActivity.kt
 fe268926ce83bf7cb8eff1d02cc5708d69f8b59e22ea6ae0d28689384637eb95  ./android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt
 503f86aa11d838ce7913bc8781301c367e21488f038c92f65c87dbbe536e6e3e  ./android/app/src/main/kotlin/com/navkurd/app/WeatherRenderService.kt
-7fc9b8edccf6a80444722ba244cb4dada5055b6d1d284af8902cc46dbde74e43  ./android/app/src/main/kotlin/com/navkurd/app/WeatherStore.kt
+968d06c3bf45ccded71b62dc3dfe1b67523e39fff467ea0ba3baf9dee2a59862  ./android/app/src/main/kotlin/com/navkurd/app/WeatherStore.kt
 b60f35f32130adb364856beefa53133e2dbe85f5f93bb78d60c722d31c8c9dea  ./android/app/src/main/kotlin/com/navkurd/app/WeatherWork.kt
 1c71e863bfc2ad4c65de8ba648319c50eef28ccf04f9983391d37014947df210  ./android/app/src/main/kotlin/com/navkurd/app/localcore/CorePackInstaller.kt
 16d4cf2ce55e3608662ec69ecfdacf2d3a2e81f3b67b9521a5db1f293683af08  ./android/app/src/main/kotlin/com/navkurd/app/localcore/LocalCoreChannel.kt
@@ -777,13 +777,13 @@ c5c4372a1738210364216dbd013297d30d61f8bf67961c0cc8f86e77562ab98c  ./lib/src/loca
 52177bf3b911ecdb5361b94249fe75a4a3a2eafef4ddd8ea25b8d09dbdc3507c  ./lib/src/local/core_resource_handler.dart
 1be609b284bf4b5c35890d620a21b218e114ffb530855a8a80ea20e1aff7fcf9  ./lib/src/local/location_presentation_bridge.dart
 37944460c13ea00c622b48cd3f4fdb725b53d0c2633c3f21766c4bb81fe2c217  ./lib/src/native_bridge.dart
-210a3ebcc3a25e16efa7ee790b148ed2d2678bab955ad7f6d2a86f0c4b388067  ./lib/src/nav_kurd_page.dart
+71b8cc56c502011c616c75cc73454de41756d75008197b3e97ef9da60f3beafd  ./lib/src/nav_kurd_page.dart
 bcae15e965731addc9b549140264bc76b7f6e475ae425a5245dcde3802fea363  ./lib/src/permission_coordinator.dart
 243dc4815a44ad9173ff16dadd2294e121b2c5800b1a81527e7926029e177469  ./lib/src/url_policy.dart
 2951536e921b711b04f4724c99314b7aa830964e72be1d3b5301848d546eadb8  ./lib/weather/weather_art.dart
 da9c57afc88362851512c8da296e8ff67b15e12f5ecb655e14af6c48a518ca3d  ./lib/weather/weather_city_picker.dart
 42d08509355f75f26a98d67c0face03d308c6304acfb4d1dcc3cfea6b9d9605b  ./lib/weather/weather_model.dart
-73ece1e1ab914a9bf22514b4a6121c5fa3b6e0be940803be3551da382fd35cd7  ./lib/weather/weather_screen.dart
+4f6ccf2313501e48ffc16ca1aa836cb9bc96d935a7526432e899c9eb8b1ec406  ./lib/weather/weather_screen.dart
 1200bbf1c5d57f4039dd08ed42c06cb8e14b3a89ce37e4c5ac9feb7eaba3b7c8  ./lib/weather/weather_widget.dart
 23d164b37c82a2c2e1061bbc367c609f718951ddb70de7e0ac5fe9058c91844a  ./packages/flutter_inappwebview_android/LICENSE
 c4facebf0b203b17b35002aef7314f7f6b999fb9cc75a0f13e37e2fdfb4cf3eb  ./packages/flutter_inappwebview_android/NAV_KURD_INTEGRATION.md
@@ -1028,7 +1028,7 @@ a3ab21c82013f6333e375f1104a8b6329c99d2916f44b8fb9cf920bf0299f9f5  ./tools/develo
 78710cbcc298869d00d9a4d7297a9059f48858e5071a438ab07cb2bcb03d25ca  ./tools/generate-launcher-icons.sh
 f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/install-android-sdk.sh
 8f3919006af93d38a36242f16941d0efae7f827375d9a35fa47f8830d6144de7  ./tools/launcher-smoke/AndroidManifest.xml
-20d3eac1244d51374ebc28b6af8ddf1d479f6bff2f1481bb2fc7bcd8bd4f1cef  ./tools/launcher-smoke/WidgetHost.java
+498c14571c075f92079e7885507451f3725959cd5ae850878f655536d35b362f  ./tools/launcher-smoke/WidgetHost.java
 e962de202bb80dbc84a33c31db7a7bbd127cb2081553dfc63c0f3e7cc68aba81  ./tools/launcher-smoke/map-window.py
 cfcd8cdb5a90f218437f755ba3d59b34b1c429bc774ad8af1f41a0078d6a29df  ./tools/launcher-smoke/run.sh
 e2bedb36a6dd9e58351728092ae28eb1b55e6ef0dd04628a698fcbd3c11a7029  ./tools/native-data/build_core.mjs

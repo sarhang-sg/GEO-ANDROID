@@ -636,7 +636,10 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<void> _requestNotificationsAfterLoad() async {
     await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
-    await weatherPrompts(context, const MethodChannel('navkurd/native'));
+    const channel = MethodChannel('navkurd/native');
+    final language = await channel.invokeMethod<String>('language') ?? 'ku';
+    if (!mounted) return;
+    await weatherPrompts(context, channel, lang: language);
     await _bridge.scheduleNotifications();
   }
 

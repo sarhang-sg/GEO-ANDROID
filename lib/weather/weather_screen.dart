@@ -169,9 +169,6 @@ class _WeatherScreenState extends State<_WeatherScreen>
       }
       _scroll();
       if (mounted && generation == 0) await _load(false);
-      if (mounted) {
-        unawaited(weatherPrompts(context, weatherChannel, lang: lang));
-      }
     } catch (e) {
       await _record(e);
       if (mounted) setState(() => busy = false);

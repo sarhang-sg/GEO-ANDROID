@@ -142,6 +142,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 }
                 "getInitialDeepLink" -> result.success(intent?.dataString)
                 "prompts" -> result.success(WeatherPrompts.take(this))
+                "language" -> result.success(WeatherStore.prefs(this).getString("language", "ku"))
                 "settings" -> result.success(WeatherPrompts.settings(this))
                 "openWeatherDetails" -> {
                     (call.arguments as? String)?.let { raw ->

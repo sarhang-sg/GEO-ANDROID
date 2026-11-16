@@ -1,4 +1,6 @@
 import java.util.Properties
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
 
 plugins {
     id("com.android.application")
@@ -9,15 +11,30 @@ if (file("google-services.json").isFile) {
     apply(plugin = "com.google.gms.google-services")
     apply(plugin = "com.google.firebase.crashlytics")
 }
-val graphAssets = layout.buildDirectory.dir("generated/navkurd-road-assets")
 val sourceRoot = rootProject.projectDir.parentFile
-val prepareRoadGraph = tasks.register<Exec>("prepareNavKurdRoadGraph") {
-    val script = sourceRoot.resolve("tools/prepare-road-graph.py")
-    inputs.files(script, sourceRoot.resolve("contracts/offline-routing.json"))
-    outputs.dir(graphAssets)
-    commandLine("python3", script, "--out", graphAssets.get().dir("road-graph").asFile)
+
+abstract class PrepareNavKurdRoadGraph : DefaultTask() {
+    @get:InputFile @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val scriptFile: RegularFileProperty
+    @get:InputFile @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val manifestFile: RegularFileProperty
+    @get:OutputDirectory abstract val assetsDirectory: DirectoryProperty
+    @get:Inject abstract val execOperations: ExecOperations
+
+    @TaskAction fun prepare() {
+        execOperations.exec {
+            commandLine("python3", scriptFile.get().asFile, "--out", assetsDirectory.dir("road-graph").get().asFile)
+        }
+    }
 }
-tasks.named("preBuild") { dependsOn(prepareRoadGraph) }
+
+androidComponents.onVariants { variant ->
+    val prepare = tasks.register<PrepareNavKurdRoadGraph>("prepare${variant.name.replaceFirstChar { it.uppercaseChar() }}NavKurdRoadGraph") {
+        scriptFile.set(sourceRoot.resolve("tools/prepare-road-graph.py"))
+        manifestFile.set(sourceRoot.resolve("contracts/offline-routing.json"))
+    }
+    variant.sources.assets?.addGeneratedSourceDirectory(prepare, PrepareNavKurdRoadGraph::assetsDirectory)
+}
 
 val keyProperties = Properties()
 val keyPropertiesFile = rootProject.file("key.properties")
@@ -53,7 +70,6 @@ android {
         noCompress += listOf("pmtiles", "rd5")
     }
 
-    sourceSets.getByName("main").assets.srcDir(graphAssets)
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

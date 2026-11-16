@@ -14,6 +14,8 @@ Launcher weather actions use a separate weather entry point. City and forecast t
 
 ## Build and verify
 
+On a fresh installation with no saved city or GPS fix, the widget shows live weather for Erbil. Selecting a city or enabling GPS takes precedence. Widget deep links open the forecast directly. Notification and battery guidance appear in the map application.
+
 Use Git LFS, Python 3, Flutter 3.47.7, Java 17 and the Android SDK packages listed in `tools/install-android-sdk.sh`. Check out the repository with LFS enabled. Gradle fetches the archived road graph at build time and verifies each segment against `contracts/offline-routing.json`. The installed app can calculate regional routes on first use without downloading additional data.
 
 ```sh

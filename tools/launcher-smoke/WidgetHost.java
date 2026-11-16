@@ -85,8 +85,11 @@ public final class WidgetHost extends Activity {
             if (b != null && b.getWidth() >= 100 && b.getHeight() >= 48) {
                 View forecast = view.findViewById(forecastId);
                 if (forecast == null || !forecast.isClickable()) throw new IllegalStateException("Inactive forecast tap");
-                Log.i("NavKurdSmoke", "widget-bitmap-ready " + b.getWidth() + "x" + b.getHeight());
-                return;
+                CharSequence reading = forecast.getContentDescription();
+                if (reading != null && reading.toString().contains("°C")) {
+                    Log.i("NavKurdSmoke", "widget-bitmap-ready " + b.getWidth() + "x" + b.getHeight());
+                    return;
+                }
             }
         }
         if (SystemClock.uptimeMillis() < deadline) main.postDelayed(this::check, 500);
