@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:geo_android/src/kurdish_localizations.dart' show navKurdDelegates;
 import 'package:geo_android/weather/weather_art.dart';
 import 'package:geo_android/weather/weather_model.dart';
 
@@ -26,7 +27,7 @@ Widget label(
   FontWeight weight = FontWeight.w500,
   TextAlign align = TextAlign.start,
 }) => Text(
-  text,
+  text.replaceAllMapped(RegExp(r'-?\d+(?:[.,]\d+)?\s*(?:km/h|µg/m³|°C|°|%)'), (m) => '\u2066${m[0]}\u2069'),
   maxLines: 1,
   overflow: TextOverflow.ellipsis,
   textAlign: align,
@@ -42,7 +43,6 @@ class GlassBadge extends StatelessWidget {
     padding: EdgeInsets.symmetric(horizontal: size * .55, vertical: 1),
     decoration: BoxDecoration(
       color: const Color(0x60203a52),
-      border: Border.all(color: Colors.white30),
       borderRadius: BorderRadius.circular(20),
     ),
     child: label(text, size),
@@ -65,7 +65,7 @@ class WeatherWidgetArt extends StatelessWidget {
       final large = !small && h >= 158 && w >= 215;
       final head = small ? h * .29 : h * .24;
       final hero = small
-          ? h - head
+          ? h * .54
           : large
           ? h * .30
           : h * .46;
@@ -160,6 +160,12 @@ class WeatherWidgetArt extends StatelessWidget {
                 ),
               ),
             ),
+            if (small)
+              Positioned(
+                bottom: 1, left: pad, right: pad, height: h * .14,
+                child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown,
+                  child: label('Open-Meteo · Developer: Sarhang Salah', 8)),
+              ),
             if (small && weather.stale)
               Positioned(
                 left: 3,
@@ -192,8 +198,6 @@ class WeatherWidgetArt extends StatelessWidget {
                           ),
                         ),
                       ),
-                    if (weather.hours.isEmpty)
-                      Expanded(child: label(weather.status, 10)),
                   ],
                 ),
               ),
@@ -250,7 +254,7 @@ class WeatherWidgetArt extends StatelessWidget {
                         ),
                       if (weather.stale || !weather.hasData)
                         label(weather.status, 9),
-                      label('Open-Meteo  ·  Developer: Sarhang Salah', 9),
+                      label('Open-Meteo · Developer: Sarhang Salah', 9),
                     ],
                   ),
                 ),
@@ -299,10 +303,14 @@ Future<Uint8List> weatherBitmap(
       textScaler: TextScaler.noScaling,
     ),
     child: Localizations(
-      locale: const Locale('ckb'),
-      delegates: const [DefaultWidgetsLocalizations.delegate],
+      locale: model.lang == 'ku' ? const Locale('ckb') : Locale(model.lang),
+      delegates: [
+        // The bitmap tree has no display frame to wait for asynchronous Material delegates.
+        for (final delegate in navKurdDelegates.whereType<LocalizationsDelegate<WidgetsLocalizations>>())
+          if (delegate.isSupported(model.lang == 'ku' ? const Locale('ckb') : Locale(model.lang))) delegate,
+      ],
       child: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: model.lang == 'en' ? TextDirection.ltr : TextDirection.rtl,
         child: DefaultTextStyle(style: ink(13), child: WeatherWidgetArt(model)),
       ),
     ),
@@ -349,7 +357,9 @@ Future<void> startWeatherRenderer() async {
   bitmapChannel.setMethodCallHandler((call) async {
     if (call.method != 'render') throw MissingPluginException();
     final args = object(call.arguments);
-    final weather = WeatherModel(object(args['weather']), 'ku', DateTime.now());
+    final snapshot = object(args['weather']);
+    final lang = snapshot['language'];
+    final weather = WeatherModel(snapshot, lang == 'ar' || lang == 'en' ? lang as String : 'ku', DateTime.now());
     return weatherBitmap(
       Size(
         (args['width'] as num).toDouble(),

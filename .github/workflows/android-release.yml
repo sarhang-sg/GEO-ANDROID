@@ -33,8 +33,8 @@ jobs:
       CI: "true"
       FLUTTER_SUPPRESS_ANALYTICS: "true"
       NAV_KURD_PACKAGE: com.navkurd.app
-      NAV_KURD_VERSION: 10.4.6
-      NAV_KURD_VERSION_CODE: 100406
+      NAV_KURD_VERSION: 11.0.0
+      NAV_KURD_VERSION_CODE: 110000
       BUNDLETOOL_VERSION: 1.18.3
       BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
     steps:
@@ -361,20 +361,24 @@ jobs:
           )
           test "$(find release -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 11
 
-      - name: Launch the verified signed APK and exercise the home-screen widget
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Calculate offline routes using the signed APK and AAB
         run: |
-          if gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/731024626" > "$RUNNER_TEMP/nav-kurd-weather-1044.apk"; then
-            export PREVIOUS_SIGNED_APK="$RUNNER_TEMP/nav-kurd-weather-1044.apk"
-          fi
-          unset GH_TOKEN
-          bash tools/launcher-smoke/run.sh "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" com.navkurd.app
+          python3 tools/test-offline-routes.py "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" \
+            "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.aab"
+      - name: Prepare Android launcher system image
+        run: bash tools/launcher-smoke/prepare-emulator.sh
+      - name: Launch the verified signed APK and exercise the home-screen widget
+        timeout-minutes: 17
+        env:
+          NAV_KURD_LAUNCHER_PREPARED: "true"
+        run: |
+          bash tools/launcher-smoke/run.sh "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.apk" com.navkurd.app \
+            "release/NAV-KURD-${NAV_KURD_VERSION}-ANDROID-FINAL.aab"
 
       - name: Upload signed Android release
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: NAV-KURD-10.4.6-signed-release
+          name: NAV-KURD-11.0.0-signed-release
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
@@ -434,6 +438,11 @@ jobs:
             "$staging/NAV-KURD-${NAV_KURD_VERSION}.aab" \
             "$staging/DOWNLOAD-RECEIPT.json"
           echo "Published verified latest release: $tag"
+
+      - name: Retire superseded public app versions after web publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/prune-published-versions.py
 
       - name: Remove temporary signing material
         if: always()

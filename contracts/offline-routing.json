@@ -1,0 +1,12 @@
+{
+  "tag": "road-graph-20261116",
+  "source": "https://brouter.de/brouter/segments4/",
+  "copyright": "© OpenStreetMap contributors",
+  "license": "https://www.openstreetmap.org/copyright",
+  "files": {
+    "E40_N30.rd5": [7034970, "79b4108e83ad67582b9c8dcf52401d043dae388fa5a4446222e8182be4c8d4f6"],
+    "E40_N35.rd5": [20882020, "8d53ffea2d0091a39d22eb285aebeffbae4c9bbfd220a31ae031a800920bf6c4"],
+    "E45_N30.rd5": [12844728, "f060c716c2aed9f878191fc1972cf47426e9432b40541a7d58bdf1e0e0455927"],
+    "E45_N35.rd5": [18203511, "03fe1d7e0f365395c4c50636660b69adc379af15557a6f7739dd8e9bc13985f4"]
+  }
+}

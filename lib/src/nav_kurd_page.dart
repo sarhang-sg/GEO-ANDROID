@@ -11,6 +11,7 @@ import 'package:geo_android/src/app_config.dart';
 import 'package:geo_android/src/download_name.dart';
 import 'package:geo_android/src/local/android_local_runtime.dart';
 import 'package:geo_android/src/local/android_location.dart';
+import 'package:geo_android/src/local/bundled_presentation.dart';
 import 'package:geo_android/src/local/location_presentation_bridge.dart';
 import 'package:geo_android/src/native_bridge.dart';
 import 'package:geo_android/src/permission_coordinator.dart';
@@ -41,6 +42,11 @@ final class _NavKurdPageState extends State<NavKurdPage>
   late final PermissionCoordinator _permissions;
   late final AndroidLocation _location;
   late Future<AndroidLocalRuntime> _localOpening;
+  late Future<({BundledPresentation bundle,String document})> _presentation;
+  Future<({BundledPresentation bundle,String document})> _openPresentation() async {
+    final bundle = await BundledPresentation.open(AppConfig.appVersion);
+    return (bundle:bundle,document:utf8.decode(await bundle.read('/index.html')));
+  }
   AndroidLocalRuntime? _local;
   Map<String, dynamic>? _runtimeInfo;
   StreamSubscription<Map<String, dynamic>>? _locationSubscription;
@@ -115,7 +121,11 @@ final class _NavKurdPageState extends State<NavKurdPage>
       unawaited(_bridge.recordDiagnostic(level: 'error', source: 'native.location', message: error.toString()));
       _deliverLocation({'type':'error','code':'location_channel','message':'Native location service failed.'});
     });
+    _presentation = _openPresentation();
     _localOpening = _openLocal();
+    _localOpening.then<void>((_) {}, onError:(Object error,StackTrace stack) {
+      if (mounted) setState(()=>_mainFrameFailed=true);
+    });
     _initialUri = UrlPolicy.appUriForDeepLink(widget.initialDeepLink);
     _deepLinkSubscription = _bridge.deepLinks.listen(_handleDeepLink);
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
@@ -140,8 +150,8 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<AndroidLocalRuntime> _openLocal() async {
     try {
       final package = await _bridge.runtimeInfo();
-      final runtime = await AndroidLocalRuntime.open(package);
       _runtimeInfo = package;
+      final runtime = await AndroidLocalRuntime.open(package);
       if (!mounted) { await runtime.close(); throw StateError('Page disposed during local installation.'); }
       _local = runtime;
       _mapSubscription = runtime.mapEvents.listen((snapshot)=>unawaited(_deliverMapSnapshot(snapshot)),onError:(Object error,StackTrace stack){
@@ -291,28 +301,22 @@ final class _NavKurdPageState extends State<NavKurdPage>
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<AndroidLocalRuntime>(
-    future: _localOpening,
+  Widget build(BuildContext context) => FutureBuilder<({BundledPresentation bundle,String document})>(
+    future: _presentation,
     builder: (context, snapshot) {
       if (snapshot.hasError) {
         return Scaffold(backgroundColor: _background,
           body: _OfflinePanel(isOnline: true, localDataFailure: true,
-            onRetry: () => setState(() => _localOpening = _openLocal()), onSettings: _bridge.openAppSettings));
+            onRetry: () => setState(() { _presentation=_openPresentation(); _localOpening = _openLocal(); }), onSettings: _bridge.openAppSettings));
       }
       if (!snapshot.hasData) {
-        return const Scaffold(
-          backgroundColor: _background,
-          body: Center(child: CircularProgressIndicator(
-            semanticsLabel: 'نەخشەکە ئامادە دەکرێت',
-            strokeWidth: 2,
-          )),
-        );
+        return const ColoredBox(color: _background);
       }
       return _buildReady(context, snapshot.requireData);
     },
   );
 
-  Widget _buildReady(BuildContext context, AndroidLocalRuntime runtime) {
+  Widget _buildReady(BuildContext context, ({BundledPresentation bundle,String document}) presentation) {
     return PopScope<Object?>(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -347,7 +351,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
           children: <Widget>[
             InAppWebView(
               key: ValueKey<int>(_webViewGeneration),
-              initialData: InAppWebViewInitialData(data:runtime.initialDocument,
+              initialData: InAppWebViewInitialData(data:presentation.document,
                 baseUrl:WebUri(_initialUri.toString()),historyUrl:WebUri(_initialUri.toString()),
                 mimeType:'text/html',encoding:'utf-8'),
               initialSettings: _settings,
@@ -355,7 +359,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
                 <UserScript>[
                   UserScript(
                     source:
-                        'window.__NAV_KURD_NATIVE_HARDWARE__=Object.freeze(${jsonEncode(_runtimeInfo)});$_documentStartBridgeScript',
+                        'window.__NAV_KURD_PUBLIC_CONFIG__={};window.__NAV_KURD_NATIVE_HARDWARE__=Object.freeze(${jsonEncode(_runtimeInfo)});$_documentStartBridgeScript',
                   forMainFrameOnly: true,
                     injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
                   ),
@@ -364,7 +368,14 @@ final class _NavKurdPageState extends State<NavKurdPage>
                 ],
               ),
               onWebViewCreated: _onWebViewCreated,
-              shouldInterceptRequest: (controller, request) => runtime.resources.respond(request),
+              shouldInterceptRequest: (controller, request) async {
+                if (!AppConfig.isTrustedOrigin(request.url)) return null;
+                if (request.url.path == '/client-config.json' || request.url.path.startsWith('/api/')) return null;
+                final ui = await presentation.bundle.response(request.url.path,request.method ?? 'GET');
+                if (ui != null) return ui;
+                try { return await (await _localOpening).resources.respond(request); }
+                catch (_) { return WebResourceResponse(statusCode:503,reasonPhrase:'Offline pack unavailable'); }
+              },
               onLoadStart: (controller, url) {
                 _documentEpoch += 1;
                 _trustCheck = null;
@@ -479,6 +490,12 @@ final class _NavKurdPageState extends State<NavKurdPage>
     controller.addJavaScriptHandler(handlerName: 'nativeLocalCore', callback: _handleLocalCore);
     _controller = controller;
     controller.addJavaScriptHandler(
+      handlerName: 'nativeMapDrawn',
+      callback: (_) async {
+        if (await _isCurrentOriginTrusted()) await _bridge.reportMapDrawn();
+      },
+    );
+    controller.addJavaScriptHandler(
       handlerName: 'nativeShare',
       callback: _handleNativeShare,
     );
@@ -515,6 +532,15 @@ final class _NavKurdPageState extends State<NavKurdPage>
         return _bridge.runtimeInfo(includeStorage: request['includeStorage'] == true);
       },
     );
+    for (final entry in const {
+      'nativeOfflineRoute': 'offlineRoute',
+      'nativeCancelOfflineRoute': 'cancelOfflineRoute',
+    }.entries) {
+      controller.addJavaScriptHandler(handlerName: entry.key, callback: (arguments) async {
+        if (!await _isCurrentOriginTrusted() || arguments.isEmpty || arguments.first is! Map) return null;
+        return const MethodChannel('navkurd/native').invokeMethod<Object?>(entry.value, arguments.first);
+      });
+    }
     for (final entry in const {'nativeWeatherDetails':'openWeatherDetails','nativeWeatherJourney':'setWeatherJourney'}.entries) {
       controller.addJavaScriptHandler(handlerName:entry.key,callback:(arguments) async {
         if (!await _isCurrentOriginTrusted()) return false;
@@ -574,8 +600,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
         if (value is! Map<Object?, Object?>) return false;
         final rawLanguage = value['language'];
         final language = rawLanguage is String ? rawLanguage : 'ku';
-        await _bridge.setLanguage(language);
-        return true;
+        return _bridge.setLanguage(language);
       },
     );
     controller.addJavaScriptHandler(
@@ -597,6 +622,9 @@ final class _NavKurdPageState extends State<NavKurdPage>
     if (!mounted || !identical(controller, _controller)) return;
     _trustedDocument = true;
     await controller.evaluateJavascript(source: _afterLoadBridgeScript);
+    await controller.evaluateJavascript(
+      source: "window.dispatchEvent(new Event('nav-kurd:native-ready'));",
+    );
     await _deliverConnectivity();
     if (!mounted) return;
     if (_mainFrameFailed) setState(() => _mainFrameFailed = false);
@@ -610,7 +638,10 @@ final class _NavKurdPageState extends State<NavKurdPage>
   Future<void> _requestNotificationsAfterLoad() async {
     await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
-    await weatherPrompts(context, const MethodChannel('navkurd/native'));
+    const channel = MethodChannel('navkurd/native');
+    final language = await channel.invokeMethod<String>('language') ?? 'ku';
+    if (!mounted) return;
+    await weatherPrompts(context, channel, lang: language);
     await _bridge.scheduleNotifications();
   }
 

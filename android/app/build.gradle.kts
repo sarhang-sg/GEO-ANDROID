@@ -1,4 +1,6 @@
 import java.util.Properties
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
 
 plugins {
     id("com.android.application")
@@ -9,6 +11,31 @@ if (file("google-services.json").isFile) {
     apply(plugin = "com.google.gms.google-services")
     apply(plugin = "com.google.firebase.crashlytics")
 }
+val sourceRoot = rootProject.projectDir.parentFile
+
+abstract class PrepareNavKurdRoadGraph : DefaultTask() {
+    @get:InputFile @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val scriptFile: RegularFileProperty
+    @get:InputFile @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val manifestFile: RegularFileProperty
+    @get:OutputDirectory abstract val assetsDirectory: DirectoryProperty
+    @get:Inject abstract val execOperations: ExecOperations
+
+    @TaskAction fun prepare() {
+        execOperations.exec {
+            commandLine("python3", scriptFile.get().asFile, "--out", assetsDirectory.dir("road-graph").get().asFile)
+        }
+    }
+}
+
+androidComponents.onVariants { variant ->
+    val prepare = tasks.register<PrepareNavKurdRoadGraph>("prepare${variant.name.replaceFirstChar { it.uppercaseChar() }}NavKurdRoadGraph") {
+        scriptFile.set(sourceRoot.resolve("tools/prepare-road-graph.py"))
+        manifestFile.set(sourceRoot.resolve("contracts/offline-routing.json"))
+    }
+    variant.sources.assets?.addGeneratedSourceDirectory(prepare, PrepareNavKurdRoadGraph::assetsDirectory)
+}
+
 val keyProperties = Properties()
 val keyPropertiesFile = rootProject.file("key.properties")
 val hasReleaseKey = keyPropertiesFile.exists()
@@ -40,7 +67,7 @@ android {
     androidResources {
         // PMTiles stays random-access inside the signed APK, including after
         // the user removes the installed offline-map copy.
-        noCompress += "pmtiles"
+        noCompress += listOf("pmtiles", "rd5")
     }
 
     compileOptions {
@@ -113,6 +140,7 @@ flutter {
 }
 
 dependencies {
+    implementation(files(sourceRoot.resolve("third_party/brouter/brouter-core-1.7.10.jar")))
     implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("androidx.work:work-runtime-ktx:2.10.5")

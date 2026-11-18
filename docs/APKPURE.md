@@ -1,8 +1,7 @@
-# APKPure submission draft — NAV KURD 10.4.4
+# APKPure submission draft — NAV KURD 11.0.0
 
-Now updated — NAV KURD 10.4.4 · Reviewed 14 October 2026.
 
-Package: `com.navkurd.app`. Version: `10.4.4` / `100404`. Minimum Android: API 24.
+Package: `com.navkurd.app`. Version: `11.0.0` / `110000`. Minimum Android: API 24.
 
 Use the APK produced by the existing signed workflow after CI passes. This source kit has not been submitted to APKPure.
 

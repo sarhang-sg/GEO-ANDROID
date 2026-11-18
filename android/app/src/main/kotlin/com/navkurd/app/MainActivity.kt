@@ -51,6 +51,8 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     private var pendingDeepLink: String? = null
     private var localCore: LocalCoreChannel? = null
     private var nativeLocation: NativeLocationService? = null
+    private var offlineRouting: OfflineRouting? = null
+    private var mapDrawn = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,6 +112,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
 
     override fun onDestroy() {
         localCore?.close(); nativeLocation?.close()
+        offlineRouting?.close()
         deviceIo.shutdown()
         super.onDestroy()
     }
@@ -129,13 +132,22 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     private fun handleMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
+                "offlineRoute" -> {
+                    val routes = offlineRouting ?: OfflineRouting(applicationContext).also { offlineRouting = it }
+                    routes.route(call, result)
+                }
+                "cancelOfflineRoute" -> {
+                    offlineRouting?.cancel(call.argument<Number>("id")?.toInt())
+                    result.success(null)
+                }
                 "getInitialDeepLink" -> result.success(intent?.dataString)
                 "prompts" -> result.success(WeatherPrompts.take(this))
+                "language" -> result.success(WeatherStore.prefs(this).getString("language", "ku"))
                 "settings" -> result.success(WeatherPrompts.settings(this))
                 "openWeatherDetails" -> {
                     (call.arguments as? String)?.let { raw ->
                         val selected=WeatherPlace.from(org.json.JSONObject(raw))
-                        if (selected!=null) WeatherStore.select(this,selected)
+                        if (selected!=null) { WeatherStore.select(this,selected); NavKurdWidgetProvider.refreshWeather(this,true) }
                     }
                     startActivity(Intent(this,WeatherActivity::class.java).putExtra("weather_route","details"))
                     result.success(true)
@@ -166,6 +178,14 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 "scheduleNotifications" -> {
                     NavKurdNotificationScheduler.schedule(this)
                     NavKurdNotificationScheduler.checkForUpdateSoon(this)
+                    result.success(null)
+                }
+                "mapDrawn" -> {
+                    if (!mapDrawn) {
+                        reportFullyDrawn()
+                        android.util.Log.i("NavKurdStartup", "map-drawn")
+                        mapDrawn = true
+                    }
                     result.success(null)
                 }
                 "enterImmersiveMode" -> {

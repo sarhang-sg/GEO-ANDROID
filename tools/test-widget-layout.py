@@ -24,7 +24,9 @@ class LauncherContract(unittest.TestCase):
                 self.assertTrue(ids[key].get(A + "contentDescription"))
             self.assertEqual(ids["weather_bitmap"].get(A + "scaleType"), "fitXY")
             for key in expected:
-                self.assertTrue(ids[key].get(A + "text"), f"{key} is blank during first bind or offline recovery")
+                self.assertIsNone(ids[key].get(A + "text"), f"{key} draws over the forecast bitmap")
+            self.assertEqual(ids["weather_pending"].get(A + "maxLines"), "1")
+            self.assertEqual(ids["weather_pending"].get(A + "text"), "@string/weather_syncing")
 
 if __name__ == "__main__":
     unittest.main()

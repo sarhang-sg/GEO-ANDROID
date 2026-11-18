@@ -15,6 +15,7 @@ import org.json.JSONObject
 class WeatherActivity : FlutterActivity() {
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
     private var channel: MethodChannel?=null
+    private var forecastDrawn=false
     private fun target()=intent?.getStringExtra("weather_route")?.takeIf { it in listOf("cities","forecast") } ?: "details"
     override fun onResume(){super.onResume();NavKurdWidgetLocation.foreground=true}
     override fun onPause(){NavKurdWidgetLocation.foreground=false;super.onPause()}
@@ -27,6 +28,14 @@ class WeatherActivity : FlutterActivity() {
             when(call.method){
                 "route"->result.success(target())
                 "back"->{returnToMap();result.success(null)}
+                "forecastDrawn" -> {
+                    if (!forecastDrawn && target() == "forecast") {
+                        reportFullyDrawn()
+                        android.util.Log.i("NavKurdStartup", "forecast-drawn")
+                        forecastDrawn = true
+                    }
+                    result.success(null)
+                }
                 "report"->{WeatherStore.report(this,"flutter",IllegalStateException(call.arguments.toString().take(300)));result.success(null)}
                 "settings"->{result.success(WeatherPrompts.settings(this))}
                 "prompts"->result.success(WeatherPrompts.take(this))

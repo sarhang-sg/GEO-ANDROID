@@ -1,6 +1,6 @@
 name: nav_kurd_local_core
 description: NAV KURD immutable offline catalog and local state foundation.
-version: 10.4.4
+version: 11.0.0
 publish_to: none
 environment:
   sdk: ">=3.10.0 <4.0.0"

@@ -5,6 +5,10 @@ target=${2:?Supply the package ID}
 case "$target" in com.navkurd.app|com.navkurd.app.debug) ;; *) exit 2 ;; esac
 here=$(cd "$(dirname "$0")" && pwd)
 sdk=${ANDROID_HOME:?Android SDK is required}
+if [[ ${NAV_KURD_LAUNCHER_PREPARED:-false} != true ]]; then
+    python3 "$here/../test-offline-routes.py" "$apk" "${@:3}"
+    bash "$here/prepare-emulator.sh"
+fi
 tools="$sdk/build-tools/37.0.0"
 platform="$sdk/platforms/android-36/android.jar"
 export PATH="$sdk/platform-tools:$sdk/emulator:$sdk/cmdline-tools/latest/bin:$PATH"
@@ -12,31 +16,49 @@ work=$(mktemp -d)
 evidence="${RUNNER_TEMP:-/tmp}/nav-kurd-launcher-check"
 mkdir -p "$evidence"
 emulator_pid=
+device_log_pid=
+phase='checking emulator prerequisites'
 finish() {
     code=$?
+    trap - EXIT
     if ((code)); then
-        adb exec-out screencap -p > "$evidence/failure.png" || true
+        printf 'Launcher check failed while %s (exit %s)\n' "$phase" "$code" >&2
+        df -h "$work" || true
         tail -30 "$work/emulator.log" || true
-        adb logcat -b crash -d -t 160 || true
-        adb logcat -d -s NavKurdSmoke:I NavKurdWidget:W flutter:I AndroidRuntime:E | tail -150 || true
-        adb shell dumpsys activity activities | grep -m1 'mResumedActivity\|topResumedActivity' || true
-        adb shell dumpsys activity exit-info "$target" | head -60 || true
-        timeout 15 adb shell uiautomator dump /sdcard/nav-kurd-failure.xml >/dev/null 2>&1 &&
-            adb shell cat /sdcard/nav-kurd-failure.xml | head -c 8000 || true
     fi
-    adb logcat -b crash -d > "$evidence/crash.txt" || true
-    if [[ -n "$emulator_pid" ]]; then adb emu kill >/dev/null 2>&1 || true; fi
+    if [[ -n "$emulator_pid" ]] && [[ "$(timeout 5 adb get-state 2>/dev/null || true)" == device ]]; then
+        if ((code)); then
+            timeout 10 adb exec-out screencap -p > "$evidence/failure.png" || true
+            timeout 8 adb logcat -b crash -d -t 160 || true
+            timeout 8 adb logcat -d -s NavKurdStartup:I NavKurdSmoke:I NavKurdWidget:W flutter:I AndroidRuntime:E | tail -150 || true
+            timeout 8 adb shell dumpsys activity activities | grep -m1 'mResumedActivity\|topResumedActivity' || true
+            timeout 8 adb shell dumpsys activity exit-info "$target" | head -60 || true
+            timeout 15 adb shell uiautomator dump /sdcard/nav-kurd-failure.xml >/dev/null 2>&1 &&
+                timeout 5 adb shell cat /sdcard/nav-kurd-failure.xml | head -c 8000 || true
+        fi
+        timeout 8 adb logcat -b crash -d > "$evidence/crash.txt" || true
+        timeout 5 adb emu kill >/dev/null 2>&1 || true
+    fi
+    if [[ -n "$emulator_pid" ]]; then kill "$emulator_pid" 2>/dev/null || true; fi
+    if [[ -n "$device_log_pid" ]]; then kill "$device_log_pid" 2>/dev/null || true; fi
+    cp "$work/emulator.log" "$evidence/emulator.log" 2>/dev/null || true
     rm -rf "$work"
     exit "$code"
 }
 trap finish EXIT
 test -c /dev/kvm
 if [[ ! -w /dev/kvm ]]; then sudo setfacl -m "u:$(id -un):rw" /dev/kvm; fi
-sdkmanager --install emulator platform-tools 'system-images;android-35;google_apis;x86_64' >/dev/null
+phase='starting the Android 15 emulator'
+test -s "$sdk/system-images/android-35/google_apis/x86_64/system.img"
 export ANDROID_AVD_HOME="$work/avd"
 mkdir -p "$ANDROID_AVD_HOME" "$work/classes" "$work/dex"
 printf 'no\n' | avdmanager create avd --force --name navkurd --package 'system-images;android-35;google_apis;x86_64' >/dev/null
-emulator -avd navkurd -port 5554 -gpu swiftshader -no-window -noaudio -no-boot-anim -no-snapshot -memory 2048 >"$work/emulator.log" 2>&1 &
+export ANDROID_SDK_ROOT="$sdk"
+emulator="${RUNNER_TEMP:-/tmp}/nav-kurd-emulator-14212360/emulator/emulator"
+test -x "$emulator"
+# ANGLE avoids the legacy SwiftShader GLES surface teardown crash when Flutter
+# switches between the WebView and forecast activities on a CPU-only CI host.
+"$emulator" -avd navkurd -sysdir "$sdk/system-images/android-35/google_apis/x86_64" -port 5554 -gpu swangle_indirect -feature -Vulkan -no-window -noaudio -no-boot-anim -no-snapshot -memory 2048 >"$work/emulator.log" 2>&1 &
 emulator_pid=$!
 export ANDROID_SERIAL=emulator-5554
 timeout 120 adb wait-for-device
@@ -51,23 +73,37 @@ javac --release 8 -classpath "$platform" -d "$work/classes" "$here/WidgetHost.ja
 "$tools/zipalign" -f 4 "$work/host.apk" "$work/aligned.apk"
 keytool -genkeypair -alias smoke -keystore "$work/emulator-only.jks" -storepass android -keypass android -keyalg RSA -dname 'CN=Emulator test' -validity 2 >/dev/null 2>&1
 "$tools/apksigner" sign --ks "$work/emulator-only.jks" --ks-pass pass:android --out "$work/test.apk" "$work/aligned.apk"
-adb install --no-streaming "$work/test.apk"
+phase='installing the launcher test host'
+timeout 45 adb install --no-streaming "$work/test.apk"
 adb shell appwidget grantbind --package com.navkurd.smoke
 reuse_widget=false
 if [[ "$target" == com.navkurd.app ]]; then
+    phase='binding the previous signed widget before upgrade'
     # Exercise the signed, in-place update from the version reported by the user.
-    if [[ -n "${PREVIOUS_SIGNED_APK:-}" ]]; then
-        previous=$PREVIOUS_SIGNED_APK
-        digest=876df2758627e7a5e3507e46ba4efcc678308e040703b99353f0b8f0512cd044
-    else
-        previous="$work/previous.apk"
-        digest=abfa0f8bcc08b4893fe81d6a6da7e73f59db6d6c088510107e8dfc71166777d0
-        curl -fsSL --retry 3 --connect-timeout 15 --max-time 180 \
-            https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v10.4.4/NAV-KURD-10.4.4.apk \
-            -o "$previous"
+    # This is the public signed upgrade baseline. The downloaded APK is checked
+    # against its published receipt before installation, then upgraded in place.
+    previous=${PREVIOUS_SIGNED_APK:-"$work/previous.apk"}
+    curl -fsSL --retry 3 --max-time 40 https://geo-map-kappa.vercel.app/releases/latest.json -o "$work/previous.json"
+    read -r digest url < <(python3 - "$work/previous.json" <<'RECEIPT'
+import json,re,sys
+r=json.load(open(sys.argv[1]));a=r['artifact']
+assert a['sha256']==r['apkSha256'] and re.fullmatch(r'[a-f0-9]{64}',a['sha256'])
+assert a['url']==r['directApkUrl'] and a['url'].startswith('https://github.com/sarhang-sg/GEO-ANDROID/releases/download/')
+print(a['sha256'],a['url'])
+RECEIPT
+    )
+    if [[ -z "${PREVIOUS_SIGNED_APK:-}" ]]; then
+        curl -fsSL --retry 3 --connect-timeout 15 --max-time 180 "$url" -o "$previous"
     fi
     printf '%s  %s\n' "$digest" "$previous" | sha256sum -c --strict
-    adb install --no-streaming "$previous"
+    "$tools/apksigner" verify --print-certs "$previous" > "$work/previous-signature.txt"
+    python3 - "$work/previous-signature.txt" "$here/../../ANDROID_APP_LINK_SHA256.txt" <<'CERTIFICATE'
+import pathlib,re,sys
+s=pathlib.Path(sys.argv[1]).read_text()
+expected=pathlib.Path(sys.argv[2]).read_text().strip().replace(':','').lower()
+assert re.search(r'Signer #1 certificate SHA-256 digest: ([0-9a-f]+)',s).group(1)==expected
+CERTIFICATE
+    timeout 150 adb install --no-streaming "$previous"
     adb shell am start -W -n "$target/com.navkurd.app.MainActivity" || echo 'Previous build failed to start'
     adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez initial true
     timeout 30 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F previous-widget-bound >/dev/null; do sleep 1; done'
@@ -78,15 +114,41 @@ if [[ "$target" == com.navkurd.app ]]; then
     adb shell am force-stop "$target"
     adb logcat -b crash -c
 fi
-adb install -r --no-streaming "$apk"
+phase='installing the current APK'
+timeout 150 adb install -r --no-streaming "$apk"
+adb logcat -b main -c
+adb logcat -b main -b crash -v threadtime -s NavKurdStartup:I NavKurdSmoke:I NavKurdWidget:W flutter:I AndroidRuntime:E >"$evidence/launcher.log" 2>&1 &
+device_log_pid=$!
 # One device installation exercises the public launcher, then an actual bound widget.
 adb shell am start -W -n "$target/com.navkurd.app.MainActivity"
+# ADB can report success before UIAutomator creates its hierarchy (especially
+# during a WebView cold start). Only accept a fresh, complete accessibility tree.
+read_window() {
+    local path=/data/local/tmp/nav-kurd-window.xml
+    adb shell rm -f "$path" || return 1
+    timeout 18 adb shell uiautomator dump "$path" >/dev/null 2>&1 || return 1
+    adb shell test -s "$path" || return 1
+    adb exec-out cat "$path" > "$work/window.xml" || return 1
+    python3 -c 'import sys,xml.etree.ElementTree as ET; assert ET.parse(sys.argv[1]).getroot().tag == "hierarchy"' "$work/window.xml" 2>/dev/null
+}
 wait_screen() {
-    local kind=$1 action x y
+    local kind=$1 action x y pid frame
+    case "$kind" in map) frame=map-drawn ;; weather) frame=forecast-drawn ;; *) return 2 ;; esac
     for _ in $(seq 1 30); do
-        if timeout 18 adb shell uiautomator dump /sdcard/nav-kurd-smoke.xml >/dev/null 2>&1; then
-            adb shell cat /sdcard/nav-kurd-smoke.xml > "$work/window.xml"
-            read -r action x y < <(python3 "$here/map-window.py" "$work/window.xml" "$kind")
+        if ! kill -0 "$emulator_pid" 2>/dev/null; then
+            echo 'The emulator process exited before UI verification completed' >&2
+            return 1
+        fi
+        if read_window; then
+            # Some WebView versions expose only the host view to UIAutomator.
+            # The activity reports its first usable frame after the real map
+            # paints, or after the requested forecast heading enters the viewport.
+            pid=$(adb shell pidof -s "$target" | tr -d '\r') || pid=
+            local drawn=no
+            if [[ "$pid" =~ ^[0-9]+$ ]] && adb logcat --pid="$pid" -b main -d -v raw -s NavKurdStartup:I | grep -Fx "$frame" >/dev/null; then
+                drawn=yes
+            fi
+            read -r action x y < <(python3 "$here/map-window.py" "$work/window.xml" "$kind" "$target" "$drawn")
             case "$action" in
                 tap) adb shell input tap "$x" "$y" ;;
                 ready) cp "$work/window.xml" "$evidence/$kind.xml"; return 0 ;;
@@ -97,14 +159,22 @@ wait_screen() {
     echo "$kind screen did not finish loading" >&2
     return 1
 }
+phase='waiting for the bundled map'
 wait_screen map
 echo 'PASS launcher opened the bundled map'
 adb exec-out screencap -p > "$evidence/map.png"
-adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse "$reuse_widget"
+phase='waiting for the launcher bitmap and live temperature'
+timeout 45 adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse "$reuse_widget"
 timeout 145 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F widget-bitmap-ready >/dev/null; do sleep 2; done'
 adb exec-out screencap -p > "$evidence/widget.png"
-timeout 15 adb shell uiautomator dump /sdcard/nav-kurd-widget.xml >/dev/null
-adb shell cat /sdcard/nav-kurd-widget.xml > "$evidence/widget.xml"
+for _ in $(seq 1 12); do
+    if read_window && grep -q ':id/weather_forecast' "$work/window.xml"; then
+        cp "$work/window.xml" "$evidence/widget.xml"
+        break
+    fi
+    sleep 1
+done
+test -s "$evidence/widget.xml"
 read -r tap_x tap_y < <(python3 - "$evidence/widget.xml" <<'PY'
 import re
 import sys
@@ -116,6 +186,7 @@ assert x2 > x1 and y2 > y1 and node.get("clickable") == "true"
 print((x1 + x2) // 2, (y1 + y2) // 2)
 PY
 )
+phase='opening the forecast from the widget'
 adb shell input tap "$tap_x" "$tap_y"
 top_is() { adb shell dumpsys activity activities | grep -E '(topResumedActivity|mResumedActivity).*'"$target"'/([^ ]*\.)?'"$1"'[ }]'>/dev/null; }
 for _ in $(seq 1 15); do if top_is WeatherActivity; then break; fi; sleep 1; done

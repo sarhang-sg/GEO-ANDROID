@@ -61,13 +61,14 @@ final class NativeBridge {
     }
   }
 
-  Future<void> setLanguage(String language) async {
+  Future<bool> setLanguage(String language) async {
     try {
       await _methods.invokeMethod<void>('setLanguage', <String, String>{
         'language': language,
       });
+      return true;
     } on PlatformException {
-      // The web app remains localized even if a launcher has no widget.
+      return false;
     }
   }
 
@@ -78,6 +79,8 @@ final class NativeBridge {
       // Android may suppress background alarms or notifications by policy.
     }
   }
+
+  Future<void> reportMapDrawn() => _methods.invokeMethod<void>('mapDrawn');
 
   Future<void> enterImmersiveMode() async {
     try {

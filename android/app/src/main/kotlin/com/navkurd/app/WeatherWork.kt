@@ -40,7 +40,7 @@ class WeatherWork(context:Context,params:WorkerParameters):CoroutineWorker(conte
                 .putBoolean("is_day",current.optInt("is_day")==1).apply()
             if(mode=="daily" && !data.optBoolean("stale")) NavKurdNotifications.showDailyWeather(c)
             if(NavKurdWidgetProvider.hasWidgets(c)){
-                periodic(c,interval(data));WeatherBitmaps.update(c)
+                periodic(c,if(c.getSystemService(android.os.PowerManager::class.java).isPowerSaveMode) 210L else interval(data));WeatherBitmaps.update(c)
             }
             if(data.optBoolean("stale") && runAttemptCount<3) Result.retry() else Result.success()
         } catch(e:CancellationException){throw e} catch(e:Exception){

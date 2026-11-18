@@ -1,7 +1,7 @@
 name: geo_android
 description: NAV KURD standalone Flutter shell for Android.
 publish_to: "none"
-version: 10.4.6+100406
+version: 11.0.0+110000
 
 environment:
   sdk: ">=3.11.0 <4.0.0"
@@ -36,6 +36,8 @@ flutter:
     - assets/weather/
     - assets/application-release.json
     - assets/r16/
+    - assets/r16/fonts/
+    - assets/r16/assets/weather/
     - assets/r16/assets/
     - assets/r16/legal/
     - assets/images/nav-kurd-logo.png
