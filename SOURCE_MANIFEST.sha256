@@ -1032,7 +1032,7 @@ f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/instal
 8f3919006af93d38a36242f16941d0efae7f827375d9a35fa47f8830d6144de7  ./tools/launcher-smoke/AndroidManifest.xml
 498c14571c075f92079e7885507451f3725959cd5ae850878f655536d35b362f  ./tools/launcher-smoke/WidgetHost.java
 e962de202bb80dbc84a33c31db7a7bbd127cb2081553dfc63c0f3e7cc68aba81  ./tools/launcher-smoke/map-window.py
-16458e56e4dfe485e45a0442243ca99c25b2fd38ad7add0dfb68c901118206de  ./tools/launcher-smoke/prepare-emulator.sh
+af8d470824b0b841bc5810cd7c91b3e8a09e54be9c32cd3fa4aa75ede2685a94  ./tools/launcher-smoke/prepare-emulator.sh
 c9089540c3ad0ed08837735524c738b4a4397186554ff4ee68f00229e8707109  ./tools/launcher-smoke/run.sh
 e2bedb36a6dd9e58351728092ae28eb1b55e6ef0dd04628a698fcbd3c11a7029  ./tools/native-data/build_core.mjs
 21588489dd463ca2cfe4c785f77fa8ed643989903238e82850b61bfa88f4f5d7  ./tools/native-data/r16.mjs

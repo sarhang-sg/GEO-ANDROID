@@ -8,6 +8,10 @@ if [[ ! -s "$image" || ! -x "$sdk/emulator/emulator" ]]; then
 fi
 test -s "$image"
 test -x "$sdk/emulator/emulator"
+# The standalone emulator links PulseAudio even when launched with -noaudio.
+# GitHub's minimal Ubuntu image does not provide that runtime dependency.
+sudo apt-get update -qq
+sudo apt-get install -y --no-install-recommends libpulse0
 df -h "${RUNNER_TEMP:-/tmp}"
 # This reviewed emulator keeps the host renderer stable during Flutter surface changes.
 archive="${RUNNER_TEMP:-/tmp}/nav-kurd-emulator-14212360"
