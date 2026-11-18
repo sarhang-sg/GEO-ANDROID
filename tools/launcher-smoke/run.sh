@@ -56,7 +56,9 @@ printf 'no\n' | avdmanager create avd --force --name navkurd --package 'system-i
 export ANDROID_SDK_ROOT="$sdk"
 emulator="${RUNNER_TEMP:-/tmp}/nav-kurd-emulator-14212360/emulator/emulator"
 test -x "$emulator"
-"$emulator" -avd navkurd -sysdir "$sdk/system-images/android-35/google_apis/x86_64" -port 5554 -gpu swiftshader_indirect -feature -Vulkan -no-window -noaudio -no-boot-anim -no-snapshot -memory 2048 >"$work/emulator.log" 2>&1 &
+# ANGLE avoids the legacy SwiftShader GLES surface teardown crash when Flutter
+# switches between the WebView and forecast activities on a CPU-only CI host.
+"$emulator" -avd navkurd -sysdir "$sdk/system-images/android-35/google_apis/x86_64" -port 5554 -gpu swangle_indirect -feature -Vulkan -no-window -noaudio -no-boot-anim -no-snapshot -memory 2048 >"$work/emulator.log" 2>&1 &
 emulator_pid=$!
 export ANDROID_SERIAL=emulator-5554
 timeout 120 adb wait-for-device
@@ -133,6 +135,10 @@ wait_screen() {
     local kind=$1 action x y pid frame
     case "$kind" in map) frame=map-drawn ;; weather) frame=forecast-drawn ;; *) return 2 ;; esac
     for _ in $(seq 1 30); do
+        if ! kill -0 "$emulator_pid" 2>/dev/null; then
+            echo 'The emulator process exited before UI verification completed' >&2
+            return 1
+        fi
         if read_window; then
             # Some WebView versions expose only the host view to UIAutomator.
             # The activity reports its first usable frame after the real map

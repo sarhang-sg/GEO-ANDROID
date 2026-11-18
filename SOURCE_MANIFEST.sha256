@@ -1,5 +1,5 @@
 74d17ea6ad508590064eebbd85ff7eeb62bb3682b818eca909d3877f210a021a  ./.gitattributes
-ba266f04627cbf4bc5ed99c42424c8c711cf6702004843a27ff626ac95a23102  ./.github/workflows/android-checks.yml
+741009f9ef939aeb6f6138e1d6c3655612069d49bbb0f52bdba1dd291d8152bc  ./.github/workflows/android-checks.yml
 4dc4975b138ea2f5cd9010404a03c7d312dc7bf02e443f23628b3687bc1bafaa  ./.github/workflows/android-release.yml
 1e0dd8ae6020159c408ce54512d6f63235bc0956ca0b28c46199dbdf21c3cad3  ./.gitignore
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
@@ -1033,7 +1033,7 @@ f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/instal
 498c14571c075f92079e7885507451f3725959cd5ae850878f655536d35b362f  ./tools/launcher-smoke/WidgetHost.java
 e962de202bb80dbc84a33c31db7a7bbd127cb2081553dfc63c0f3e7cc68aba81  ./tools/launcher-smoke/map-window.py
 af8d470824b0b841bc5810cd7c91b3e8a09e54be9c32cd3fa4aa75ede2685a94  ./tools/launcher-smoke/prepare-emulator.sh
-c9089540c3ad0ed08837735524c738b4a4397186554ff4ee68f00229e8707109  ./tools/launcher-smoke/run.sh
+52b10187e29e620767a6aa549420a6aec971366755d0089c8c51ab97565b9334  ./tools/launcher-smoke/run.sh
 e2bedb36a6dd9e58351728092ae28eb1b55e6ef0dd04628a698fcbd3c11a7029  ./tools/native-data/build_core.mjs
 21588489dd463ca2cfe4c785f77fa8ed643989903238e82850b61bfa88f4f5d7  ./tools/native-data/r16.mjs
 1b738e7dcde18c570d70fec964b46d871395ff6f98430cc7927a130c51e577fc  ./tools/native-data/schema.sql
