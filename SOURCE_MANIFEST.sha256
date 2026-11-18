@@ -1,6 +1,6 @@
 74d17ea6ad508590064eebbd85ff7eeb62bb3682b818eca909d3877f210a021a  ./.gitattributes
 741009f9ef939aeb6f6138e1d6c3655612069d49bbb0f52bdba1dd291d8152bc  ./.github/workflows/android-checks.yml
-4dc4975b138ea2f5cd9010404a03c7d312dc7bf02e443f23628b3687bc1bafaa  ./.github/workflows/android-release.yml
+96a2837c875de695596c063c1f405a7568bf7ff9acdd161bda72ef93da410c0b  ./.github/workflows/android-release.yml
 1e0dd8ae6020159c408ce54512d6f63235bc0956ca0b28c46199dbdf21c3cad3  ./.gitignore
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./ANDROID_APP_LINK_SHA256.txt
@@ -1041,7 +1041,7 @@ e2bedb36a6dd9e58351728092ae28eb1b55e6ef0dd04628a698fcbd3c11a7029  ./tools/native
 66eb65c1f091997086a71e9a5f6cfa5be6a0b3f290dacb9a9619829ba68f35c0  ./tools/offline-routing-check/OfflineRouteCheck.java
 18f988f51e1dc5780cdafb7399465db02df8abfb961d70004fce98dca0b6d7d1  ./tools/package-source.py
 156f01f9d185cfe0cd5d53a7f7c7b3d3eb398889a3f2aebeed8c3c1d90490bd6  ./tools/prepare-road-graph.py
-16380d8204a22b6ad1886304a0e2b0f4881310dc853d4568528a10cfe1f0b275  ./tools/prune-published-versions.py
+efd973eb35cb8dfa8c23143667cbb1f746869c3e46b6f35279354a9b74c46446  ./tools/prune-published-versions.py
 30d19f131bf1a10e8c68cbf8aa4d53768fa11ef45227c0d2c498f5b505599ab4  ./tools/publish-verified-release.py
 ade6a244cbb6f53eabfc56822684b9324957344c52c74846482a87c6a15c2e64  ./tools/sync-web-presentation.py
 93a6487bd46bd860f3f6ae56e41d06d3d6310d52f0565f7692797fb9c2b96b22  ./tools/test-location-presentation.mjs

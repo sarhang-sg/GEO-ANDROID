@@ -26,7 +26,27 @@ concurrency:
 
 jobs:
 
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      published: ${{ steps.state.outputs.published }}
+      release_commit: ${{ steps.state.outputs.release_commit }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Resolve the immutable publication state
+        id: state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAV_KURD_VERSION: 11.0.0
+          NAV_KURD_VERSION_CODE: 110000
+        run: python3 tools/prune-published-versions.py --state
+
   build:
+    needs: publication
+    if: needs.publication.outputs.published != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -439,11 +459,22 @@ jobs:
             "$staging/DOWNLOAD-RECEIPT.json"
           echo "Published verified latest release: $tag"
 
-      - name: Retire superseded public app versions after web publication
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 tools/prune-published-versions.py
-
       - name: Remove temporary signing material
         if: always()
         run: rm -f android/app/nav-kurd-release.jks android/app/nav-kurd-release.p12 android/key.properties
+
+  retire:
+    needs: [publication, build]
+    if: ${{ always() && needs.publication.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.publication.outputs.published == 'true')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Retire superseded public app versions after web publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAV_KURD_VERSION: 11.0.0
+          NAV_KURD_RELEASE_COMMIT: ${{ needs.publication.outputs.release_commit }}
+        run: python3 tools/prune-published-versions.py
