@@ -41,6 +41,7 @@ finish() {
     fi
     if [[ -n "$emulator_pid" ]]; then kill "$emulator_pid" 2>/dev/null || true; fi
     if [[ -n "$device_log_pid" ]]; then kill "$device_log_pid" 2>/dev/null || true; fi
+    cp "$work/emulator.log" "$evidence/emulator.log" 2>/dev/null || true
     rm -rf "$work"
     exit "$code"
 }
@@ -52,9 +53,10 @@ test -s "$sdk/system-images/android-35/google_apis/x86_64/system.img"
 export ANDROID_AVD_HOME="$work/avd"
 mkdir -p "$ANDROID_AVD_HOME" "$work/classes" "$work/dex"
 printf 'no\n' | avdmanager create avd --force --name navkurd --package 'system-images;android-35;google_apis;x86_64' >/dev/null
-# GitHub's Linux runners do not expose a hardware GPU. Use Mesa GLES for the
-# virtual device; SwiftShader can terminate the emulator when surfaces change.
-emulator -avd navkurd -port 5554 -gpu lavapipe -feature -Vulkan -no-window -noaudio -no-boot-anim -no-snapshot -memory 2048 >"$work/emulator.log" 2>&1 &
+export ANDROID_SDK_ROOT="$sdk"
+emulator="${RUNNER_TEMP:-/tmp}/nav-kurd-emulator-14212360/emulator/emulator"
+test -x "$emulator"
+"$emulator" -avd navkurd -sysdir "$sdk/system-images/android-35/google_apis/x86_64" -port 5554 -gpu swiftshader_indirect -feature -Vulkan -no-window -noaudio -no-boot-anim -no-snapshot -memory 2048 >"$work/emulator.log" 2>&1 &
 emulator_pid=$!
 export ANDROID_SERIAL=emulator-5554
 timeout 120 adb wait-for-device
@@ -79,13 +81,26 @@ if [[ "$target" == com.navkurd.app ]]; then
     # This is the public signed upgrade baseline. The downloaded APK is checked
     # against its published receipt before installation, then upgraded in place.
     previous=${PREVIOUS_SIGNED_APK:-"$work/previous.apk"}
-    digest=3d1d9bd9ea6cc9b97dad6eff98e59ad5a81e13371d46534d984be3f11ea981ff
+    curl -fsSL --retry 3 --max-time 40 https://geo-map-kappa.vercel.app/releases/latest.json -o "$work/previous.json"
+    read -r digest url < <(python3 - "$work/previous.json" <<'RECEIPT'
+import json,re,sys
+r=json.load(open(sys.argv[1]));a=r['artifact']
+assert a['sha256']==r['apkSha256'] and re.fullmatch(r'[a-f0-9]{64}',a['sha256'])
+assert a['url']==r['directApkUrl'] and a['url'].startswith('https://github.com/sarhang-sg/GEO-ANDROID/releases/download/')
+print(a['sha256'],a['url'])
+RECEIPT
+    )
     if [[ -z "${PREVIOUS_SIGNED_APK:-}" ]]; then
-        curl -fsSL --retry 3 --connect-timeout 15 --max-time 180 \
-            https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v10.4.6/NAV-KURD-10.4.6.apk \
-            -o "$previous"
+        curl -fsSL --retry 3 --connect-timeout 15 --max-time 180 "$url" -o "$previous"
     fi
     printf '%s  %s\n' "$digest" "$previous" | sha256sum -c --strict
+    "$tools/apksigner" verify --print-certs "$previous" > "$work/previous-signature.txt"
+    python3 - "$work/previous-signature.txt" "$here/../../ANDROID_APP_LINK_SHA256.txt" <<'CERTIFICATE'
+import pathlib,re,sys
+s=pathlib.Path(sys.argv[1]).read_text()
+expected=pathlib.Path(sys.argv[2]).read_text().strip().replace(':','').lower()
+assert re.search(r'Signer #1 certificate SHA-256 digest: ([0-9a-f]+)',s).group(1)==expected
+CERTIFICATE
     timeout 150 adb install --no-streaming "$previous"
     adb shell am start -W -n "$target/com.navkurd.app.MainActivity" || echo 'Previous build failed to start'
     adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez initial true

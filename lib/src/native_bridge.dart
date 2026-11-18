@@ -61,13 +61,14 @@ final class NativeBridge {
     }
   }
 
-  Future<void> setLanguage(String language) async {
+  Future<bool> setLanguage(String language) async {
     try {
       await _methods.invokeMethod<void>('setLanguage', <String, String>{
         'language': language,
       });
+      return true;
     } on PlatformException {
-      // The web app remains localized even if a launcher has no widget.
+      return false;
     }
   }
 

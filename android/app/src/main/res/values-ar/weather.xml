@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="weather_pick_city">اختر مدينة</string>
+    <string name="weather_open_forecast">توقعات الطقس</string>
+    <string name="weather_last_reading">آخر تحديث في %1$s</string>
+    <string name="weather_syncing">جارٍ الاتصال...</string>
+    <string name="weather_gps">تحديث الموقع</string>
+    <string name="weather_refresh">تحديث الطقس</string>
+</resources>

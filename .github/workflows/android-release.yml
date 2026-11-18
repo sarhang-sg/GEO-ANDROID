@@ -439,6 +439,11 @@ jobs:
             "$staging/DOWNLOAD-RECEIPT.json"
           echo "Published verified latest release: $tag"
 
+      - name: Retire superseded public app versions after web publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/prune-published-versions.py
+
       - name: Remove temporary signing material
         if: always()
         run: rm -f android/app/nav-kurd-release.jks android/app/nav-kurd-release.p12 android/key.properties

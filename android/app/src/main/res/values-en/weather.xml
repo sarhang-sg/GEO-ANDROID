@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="weather_pick_city">Choose a city</string>
+    <string name="weather_open_forecast">Weather forecast</string>
+    <string name="weather_last_reading">Last updated at %1$s</string>
+    <string name="weather_syncing">Connecting...</string>
+    <string name="weather_gps">Update location</string>
+    <string name="weather_refresh">Refresh weather</string>
+</resources>

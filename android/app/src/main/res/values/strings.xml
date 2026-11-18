@@ -38,4 +38,6 @@
     <string name="weather_open_forecast">پێشبینیی کەشوهەوا</string>
     <string name="weather_last_reading">دوایین نوێکردنەوە لە %1$s</string>
     <string name="weather_syncing">لە هەوڵی پەیوەندیکردندایە...</string>
+    <string name="weather_gps">نوێکردنەوەی شوێن</string>
+    <string name="weather_refresh">نوێکردنەوەی کەشوهەوا</string>
 </resources>

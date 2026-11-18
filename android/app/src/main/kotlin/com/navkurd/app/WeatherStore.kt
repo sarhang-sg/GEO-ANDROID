@@ -14,15 +14,15 @@ import java.net.URL
 import java.util.Locale
 import kotlin.math.*
 
-internal data class WeatherPlace(val lat: Double, val lon: Double, val name: String) {
+internal data class WeatherPlace(val lat: Double, val lon: Double, val name: String, val names: JSONObject? = null) {
     val key: String get() = String.format(Locale.US, "%.3f_%.3f", lat, lon)
-    fun json() = JSONObject().put("lat",lat).put("lon",lon).put("name",name)
+    fun json() = JSONObject().put("lat",lat).put("lon",lon).put("name",name).put("names",names)
     companion object {
         fun from(obj: JSONObject?): WeatherPlace? {
             if (obj == null) return null
             val lat = obj.optDouble("lat"); val lon = obj.optDouble("lon")
             if (lat !in -90.0..90.0 || lon !in -180.0..180.0) return null
-            return WeatherPlace(lat,lon,obj.optString("name").take(120))
+            return WeatherPlace(lat,lon,obj.optString("name").take(120),obj.optJSONObject("names"))
         }
     }
 }
@@ -42,6 +42,20 @@ internal object WeatherStore {
     fun cities(c: Context): JSONArray = catalog ?: synchronized(this) {
         catalog ?: c.assets.open("flutter_assets/assets/weather/cities.json").bufferedReader().use { JSONArray(it.readText()) }.also { catalog = it }
     }
+    private fun localize(c: Context, place: WeatherPlace): WeatherPlace {
+        val language = prefs(c).getString("language","ku") ?: "ku"
+        val saved = place.names?.optString(language)?.takeIf { it.isNotBlank() }
+        if (saved != null) return place.copy(name=saved)
+        val directory = cities(c)
+        for (i in 0 until directory.length()) {
+            val item = directory.getJSONObject(i)
+            if (abs(item.getDouble("lat")-place.lat)<.02 && abs(item.getDouble("lon")-place.lon)<.02) {
+                val field = if (language=="en" || language=="ar") language else "name"
+                return place.copy(name=item.optString(field).ifBlank { place.name })
+            }
+        }
+        return place
+    }
     private fun named(c: Context, lat: Double, lon: Double): WeatherPlace {
         val places = cities(c)
         var best = 35.0; var name = String.format(Locale.US,"%.2f°, %.2f°",lat,lon)
@@ -49,7 +63,12 @@ internal object WeatherStore {
             val item = places.getJSONObject(i); val dy = item.getDouble("lat")-lat
             val dx = (item.getDouble("lon")-lon)*cos(Math.toRadians(lat))
             val distance = 111.2*hypot(dy,dx)
-            if (distance < best) { best=distance; name=item.getString("name") }
+            if (distance < best) {
+                best=distance
+                val language=prefs(c).getString("language","ku")
+                val field=if(language=="en" || language=="ar") language else "name"
+                name=item.optString(field).ifBlank { item.getString("name") }
+            }
         }
         return WeatherPlace(lat,lon,name)
     }
@@ -73,13 +92,13 @@ internal object WeatherStore {
                     .putLong("location_at",fix.time).putBoolean("weather_prefer_gps",true).apply()
                 return place
             }
-            if (selected != null) return selected
+            if (selected != null) return localize(c,selected)
             if (p.contains("latitude") && p.contains("longitude")) {
                 val lat=p.getFloat("latitude",Float.NaN).toDouble(); val lon=p.getFloat("longitude",Float.NaN).toDouble()
                 if (lat in -90.0..90.0 && lon in -180.0..180.0) return named(c,lat,lon)
             }
         }
-        if (selected != null) return selected
+        if (selected != null) return localize(c,selected)
         // A launcher can request weather before the first map launch or GPS consent.
         // Show a named atlas city without registering it as a device location.
         val directory = cities(c)

@@ -600,8 +600,7 @@ final class _NavKurdPageState extends State<NavKurdPage>
         if (value is! Map<Object?, Object?>) return false;
         final rawLanguage = value['language'];
         final language = rawLanguage is String ? rawLanguage : 'ku';
-        await _bridge.setLanguage(language);
-        return true;
+        return _bridge.setLanguage(language);
       },
     );
     controller.addJavaScriptHandler(
@@ -623,6 +622,9 @@ final class _NavKurdPageState extends State<NavKurdPage>
     if (!mounted || !identical(controller, _controller)) return;
     _trustedDocument = true;
     await controller.evaluateJavascript(source: _afterLoadBridgeScript);
+    await controller.evaluateJavascript(
+      source: "window.dispatchEvent(new Event('nav-kurd:native-ready'));",
+    );
     await _deliverConnectivity();
     if (!mounted) return;
     if (_mainFrameFailed) setState(() => _mainFrameFailed = false);
