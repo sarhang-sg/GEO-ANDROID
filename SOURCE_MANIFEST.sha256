@@ -1033,7 +1033,7 @@ f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/instal
 498c14571c075f92079e7885507451f3725959cd5ae850878f655536d35b362f  ./tools/launcher-smoke/WidgetHost.java
 e962de202bb80dbc84a33c31db7a7bbd127cb2081553dfc63c0f3e7cc68aba81  ./tools/launcher-smoke/map-window.py
 af8d470824b0b841bc5810cd7c91b3e8a09e54be9c32cd3fa4aa75ede2685a94  ./tools/launcher-smoke/prepare-emulator.sh
-52b10187e29e620767a6aa549420a6aec971366755d0089c8c51ab97565b9334  ./tools/launcher-smoke/run.sh
+0ea529854882c8b1bd53a09abb605e49fbf29034f6496c81e2f1598c84987ea2  ./tools/launcher-smoke/run.sh
 e2bedb36a6dd9e58351728092ae28eb1b55e6ef0dd04628a698fcbd3c11a7029  ./tools/native-data/build_core.mjs
 21588489dd463ca2cfe4c785f77fa8ed643989903238e82850b61bfa88f4f5d7  ./tools/native-data/r16.mjs
 1b738e7dcde18c570d70fec964b46d871395ff6f98430cc7927a130c51e577fc  ./tools/native-data/schema.sql
@@ -1056,4 +1056,4 @@ cd4e09baab56428abd6658270de62cb8dde42d9e80cd4c15f4dc558606abaae4  ./tools/update
 ce8f79169cd8746a7278d285180dcb0f48202de55813911157781f855b5f90d1  ./tools/verify-local-data.py
 f77098681234b4e71e9d68d566b9ae61b9c37f4251e311ec8be68455583165be  ./tools/verify-machine-tests.py
 45d6136e37d49c6119134dd7f6a98df161e2e0a38e372ac935dd2a399e9eb3cd  ./tools/verify-release-assets.py
-cc3efd003f73fd985a6f99d6b08b144c320ba1e15f3712864e570f2e325c44fd  ./tools/verify-release-signature.sh
+aaf58a59c2e60e12b805f88ddad50525333a5c1c9bd4d89a0390d5271a43e94a  ./tools/verify-release-signature.sh

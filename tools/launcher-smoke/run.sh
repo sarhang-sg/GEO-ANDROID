@@ -101,7 +101,8 @@ RECEIPT
 import pathlib,re,sys
 s=pathlib.Path(sys.argv[1]).read_text()
 expected=pathlib.Path(sys.argv[2]).read_text().strip().replace(':','').lower()
-assert re.search(r'Signer #1 certificate SHA-256 digest: ([0-9a-f]+)',s).group(1)==expected
+certificates={value.lower() for value in re.findall(r'certificate SHA-256 digest:\s*([0-9a-fA-F]{64})\b',s)}
+assert certificates == {expected}, 'Previous APK must have exactly the established signing identity'
 CERTIFICATE
     timeout 150 adb install --no-streaming "$previous"
     adb shell am start -W -n "$target/com.navkurd.app.MainActivity" || echo 'Previous build failed to start'
