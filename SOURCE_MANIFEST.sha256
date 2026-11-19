@@ -693,13 +693,13 @@ a20f24f90135424da7219c45d070b95812d67e5373eef3b7df42eef5a0b5ea76  ./android/key.
 94d12016fb948e5a04b1c6d9d7b3beb495ec1c3aae54f9f45c23c238e221e601  ./assets/application-release.json
 bbf847a9a280b385dd7f1c64172413977471dbeeeefc598e30e567a500906870  ./assets/images/nav-kurd-logo.png
 453a53c704fbaa239881406bab7472eecba7f9746003dd39c1e36c38ee388565  ./assets/r16/assets/app-url-CKyBgAKA.js
-52726d542b8519fd302ac3f67895c0f209c991b4f2b97edc90b925af769789e2  ./assets/r16/assets/cities-DVtk_7bt.js
+76a3500b53efe89f635f92019efedb7ad755e419a5344560506ab3b6d872d39d  ./assets/r16/assets/cities-BIzeCW0M.js
 00b9f11cfe18038b6395f7b1c47e480e81f86307579f77f74e21d17ba3062770  ./assets/r16/assets/clipboard-mu55EQoE.js
 f3d8bce7853d3599987e16bddca9f8a64b814d1c4020d410224e2a52fa0a199a  ./assets/r16/assets/dialog-close-icon-BOOke_OB.js
 a594db22c941a17c79e18922e6b6d3ec6bfa399457554e75481ae9b71ec815bf  ./assets/r16/assets/dom-CCMEPdhX.js
 02b01a9f8a8035477914f08262c2db62e66be99b734e2e272694d753630e1764  ./assets/r16/assets/feedback-studio-KF7wF41Z.js
 6658edb38fc278aeacacaf82478315a0ced3fed6f63458b57ee8421b30d4d5b3  ./assets/r16/assets/geo-format-8OEz8TGd.js
-9349720a314d2e1f1fc9af11bb2e307fbf8400b8dd53a1e59536bda2f09f8163  ./assets/r16/assets/index-DoOeCC8y.js
+c6ea3d60d07d8880d097b3db798ad2628e48d4bece9cbb0859d655c80dbb9674  ./assets/r16/assets/index-C0LWhSRq.js
 9429ce6530c5b49f3b351eb9eafb48c82f470690a4ae7978fc85cfb2a74b10b8  ./assets/r16/assets/loading-view-BSN0U7ES.js
 5fc1b1c6f247acb93e47f9a120b09a73698750b1fa4a5a18ac16f0caa1e275f5  ./assets/r16/assets/local-provider-CFsuKCna.js
 d251c7bbddf14c3a8fb49a701f4979094dcb433b90f284c347209d1f3d8439c4  ./assets/r16/assets/main-Cr8ao9KQ.js
@@ -718,8 +718,8 @@ c3fbe67830c8812edfade169470632879031816b6d337ab2dc55b368e195d6c4  ./assets/r16/a
 909fff5139490356875abac86148e868ec09c659543e73b7ae1b65ece1cf8503  ./assets/r16/assets/release-BrGCOtOs.js
 90406120e1791e35af1ed2ffa5f28e553e963ba9b3e0e95bbd4d1f1e15a5f869  ./assets/r16/assets/runtime-diagnostics-VDcgG8F-.js
 00b5fe3daf5272248d01ef9273a63f8fd3aa877be3793e58af9fb589ede30a89  ./assets/r16/assets/search.worker-BQfgiuSn.js
-e5246c03cc11291aec183733bf179c6c5fa5286e53faa92cff9660f3486bfa61  ./assets/r16/assets/styles-BflBBXXV.css
-db771cdef08b5654c39ba607ed00ab4405e56bacd0e58d9bedc227c2de4e8eae  ./assets/r16/assets/styles-EZu-THa9.js
+db771cdef08b5654c39ba607ed00ab4405e56bacd0e58d9bedc227c2de4e8eae  ./assets/r16/assets/styles-Cn-leOG_.js
+a3ab411dab783a211fc32e67a6308e44c4a805cf9a7e623ab8291de0a5340a60  ./assets/r16/assets/styles-DGZq19qD.css
 9f77b0bf8ae915ba5d43e4369051efbd2d27ae6f834c125c5bce807609495093  ./assets/r16/assets/user-contribution-studio-BknKK2u9.js
 5e9004375cff9f9d14c3773109e50a864ead32eb4783f7038856357e0f05a0af  ./assets/r16/assets/weather-cities-CswBAmcv.js
 ec6737f46943537753a65f367bfe725f73aa8f232778076cd87ab568692a3ae8  ./assets/r16/assets/weather-directory-BE_gMLye.js
@@ -743,7 +743,7 @@ e8f6a216da5abebb85ed217ec19b910264107336b4d86ef40fe3748007bcfb58  ./assets/r16/a
 4893663ecbb19de5b27f81c1e69fcde1cbc5bd8be8374f3ab51465bad0508a96  ./assets/r16/fonts/DroidLogo-Bold.ttf
 7355b16c9f0cc29f3b90be45723c0b0ec4506ee581753b9a8187d1b45b2fd9e2  ./assets/r16/fonts/RedHatDisplay-Variable.woff2
 8eb44ac578038db018c17f06807a5049fadbe9e4ad1abde21c4840b7232c9766  ./assets/r16/fonts/UniQAIDAR-Money-Heist-002.ttf
-992909efa65d253e59e032706de4fb905bbd52f72b2546e8c630c418adbcb974  ./assets/r16/index.html
+b5e93f44a8aa0e81e83194c520bcd1116806a17c0849a840971ad906bfbfcdb5  ./assets/r16/index.html
 8d0a7755445c691035dde93660a46e9b17997c2d059ad6a70e2c066bcaed80b2  ./assets/r16/legal/account-deletion.html
 cd01b1089f849f1054e23c7c7c08906fb683c64adfc4fd610e93fc04b41c0418  ./assets/r16/legal/contribution-guidelines.html
 31bdbd87a75dfe9ef348efc5b8e12d7b42c7642ecd8532fc4bbcbbc31b54ee23  ./assets/r16/legal/legal-i18n.js
@@ -751,9 +751,9 @@ ec399e301545efcb2479ae6ea744c5f72ac3d7c5db44284d52c3145752130fcb  ./assets/r16/l
 882729c57351af07d741e49095bd8dd28ec6c7f4545b6f696e026f8078a3b6f1  ./assets/r16/legal/privacy.html
 41fc5c0089ebbb1a434c8f94f7d172fc6a9daca4443df502f5f068c6645ef171  ./assets/r16/legal/security.html
 f73ce362f5aa2b6fd1e357e6372e32afb08a41dac661a1895505c022c9075cbb  ./assets/r16/legal/terms.html
-90555b2c722bdd18bbed1dd46dedde0cccd74c058c7db3af84391b40facbcf0a  ./assets/r16/manifest.json
+6c4764dd388cc0e0b5d4e6b4e50a6598f4e484ecdce3293da74dcb8b60e47134  ./assets/r16/manifest.json
 310e56035be90c354717e174f69d1d6cdc245e247cf05b96e3b7b879bb67b5e0  ./assets/r16/manifest.webmanifest
-1aa22cfb50d3c5ac525034f641d54a8ca7ca455fc89d4dc26d057ea05a4abe55  ./assets/r16/weather-cities.html
+03bbbcdcffac548e94b11d1a437e038f1842e78ceeff093ab36c8557dd88f8ea  ./assets/r16/weather-cities.html
 f029536d9dc5237cbe90f61fc2f25a3e340a058dad0ed77d74e9f060dc9a2502  ./assets/weather/cities.json
 0057181ebb7cd9c26d1737bcc8dcad3029bd47fad3f9efdf5920c706cf84a11c  ./assets/weather/mist.json
 e594535008e290246e376fc95c5ba2d57843d8a4d08638a89f7d3dbd0d29d125  ./assets/weather/rain.json
@@ -995,7 +995,7 @@ ec29eba599994edc920a9ed6231e9c865accc820445c4053bf01326915103ba0  ./packages/nav
 69d5fc7c4dc082613882215d52d18b02b1688b833d674ce9b281f45821626b7d  ./packages/nav_kurd_local_core/analysis_options.yaml
 3fb0d7b85f5e145bfbe9c15e1656ca6efada429cf14c2ef929ab4dbb7c7ffc14  ./packages/nav_kurd_local_core/bin/check_core.dart
 2ed5f3cc6226383e18d44e8030aea63b4369ae5c6b5a6e477ee4d3c7e5831753  ./packages/nav_kurd_local_core/lib/nav_kurd_local_core.dart
-3c39aad9a708289f0621a3abc056a7091974c525123376a594e1cc94b8090493  ./packages/nav_kurd_local_core/lib/src/application_release.dart
+5ce01c2100328246488368fe640133230e7fe2133e93e02e8c1ffb7bdaf67764  ./packages/nav_kurd_local_core/lib/src/application_release.dart
 265b614e2f0bf45f4430eca8e559fc6f783d279fcccaae119795bfcbe7c76c24  ./packages/nav_kurd_local_core/lib/src/catalog_database.dart
 75ca66286503db1f9dbd3d78e9050bfa31543c2dfb8bd6770a398fd307bece32  ./packages/nav_kurd_local_core/lib/src/core_failure.dart
 db37168f8ad908d2c20b996bf9e7a80803b789bf3d7eb37a131ed70471272530  ./packages/nav_kurd_local_core/lib/src/core_manifest.dart
@@ -1011,7 +1011,7 @@ a08908a3bbbef01b5c62abff1eb8da676ba382cfd92b835bb95090c5f2ea03e3  ./packages/nav
 218e8d5db91c71ee1073991d1b93afa4860dd681186d18cc8ea150dab433cc7d  ./packages/nav_kurd_local_core/lib/src/search_rules.dart
 28c3b1c5cb8e27387606b66ccd93c39730e3fb2dd352d510af28255760dc670e  ./packages/nav_kurd_local_core/pubspec.lock
 8c2c8c6edcbc80ecc660291dc268900126d84c51f0862c49245ad68d0f001e96  ./packages/nav_kurd_local_core/pubspec.yaml
-e86c30fd1cd24c4d3fff9d61089709e3b2867a316ca7286ce95bc312ca90822b  ./packages/nav_kurd_local_core/test/application_release_test.dart
+122d9565ee4c09440e0e9c3d7fd6db7bd65f52468987c87f3d430d0a92526647  ./packages/nav_kurd_local_core/test/application_release_test.dart
 3c05e4fc9fd1cff3854ca3031758fa3068f43dad5bc84341d752e3848d5441f8  ./packages/nav_kurd_local_core/test/r16_preferences_test.dart
 4bd4f7f4bc44799d4e1137d161f375179feaf0adc5a942d0dbaf35ddb22ba7c6  ./pubspec.lock
 759982320c0120d85ef22abcb2520a3d6092ba3ea29e82b17f9705541890261c  ./pubspec.yaml

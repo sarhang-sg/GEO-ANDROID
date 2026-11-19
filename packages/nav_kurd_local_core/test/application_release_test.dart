@@ -11,6 +11,7 @@ void main() {
     final result = runtimeVersionInfo(data, {
       'appVersion': '11.0.0',
       'androidVersionCode': 110001,
+      'androidReleaseTag': 'v11.0.0-build.110001',
     });
     expect(result['appVersion'], '11.0.0');
     expect(result['androidVersionCode'], 110001);
@@ -33,6 +34,11 @@ void main() {
       {'appVersion': '10.4', 'androidVersionCode': 110001},
       {'appVersion': '11.0.0', 'androidVersionCode': '110001'},
       {'appVersion': '11.0.0', 'androidVersionCode': 0},
+      {
+        'appVersion': '11.0.0',
+        'androidVersionCode': 110001,
+        'androidReleaseTag': 'v11.0.0-build.110000',
+      },
     ]) {
       expect(
         () => validateApplicationRelease(release),
