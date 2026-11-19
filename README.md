@@ -1,8 +1,20 @@
+![NAV KURD cover by Sarhang Salah](docs/images/nav-kurd-cover.jpg)
+
 # NAV KURD 11.0.0 for Android
 
-Sarhang Salah’s Kurdish-first GIS and weather app for Android. Release 11.0.0 uses Android version code `110000` and application ID `com.navkurd.app`. Kurdish, Arabic and English are supported.
+Sarhang Salah’s Kurdish-first GIS and weather app for Android. Release 11.0.0 uses Android version code `110001` and application ID `com.navkurd.app`. Kurdish, Arabic and English are supported.
 
 [Web application](https://geo-map-kappa.vercel.app/) · [Web source](https://github.com/sarhang-sg/GEO-MAP)
+
+## Map and weather
+
+The place card fits between the map controls. It shows the same weather gradients and location QR code as the web app. The QR opens the named coordinates on another device. The 3D GPS arrow uses the same geometry with or without a compass reading.
+
+<p align="center">
+  <img src="docs/images/nav-kurd-screen-1.jpg" width="30%" alt="NAV KURD navigation" />
+  <img src="docs/images/nav-kurd-screen-2.jpg" width="30%" alt="Place details" />
+  <img src="docs/images/nav-kurd-screen-3.jpg" width="30%" alt="Weather and map controls" />
+</p>
 
 ## Architecture
 

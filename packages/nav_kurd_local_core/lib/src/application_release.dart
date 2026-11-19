@@ -3,6 +3,7 @@ import 'core_failure.dart';
 const _applicationFields = {
   'appVersion',
   'androidVersionCode',
+  'androidReleaseTag',
   'releaseId',
   'releaseDate',
   'serviceWorkerRelease',
@@ -20,6 +21,9 @@ Map<String, Object?> validateApplicationRelease(Map<String, Object?> value) {
       !RegExp(r'^\d+\.\d+\.\d+$').hasMatch(value['appVersion']! as String) ||
       value['androidVersionCode'] is! int ||
       (value['androidVersionCode']! as int) < 1 ||
+      (value.containsKey('androidReleaseTag') &&
+          value['androidReleaseTag'] !=
+              'v${value['appVersion']}-build.${value['androidVersionCode']}') ||
       value.entries.any(
         (e) => e.key != 'androidVersionCode' && e.value is! String,
       )) {

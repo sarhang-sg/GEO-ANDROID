@@ -58,6 +58,8 @@ def expected_assets(root: Path) -> dict[str, tuple[int, str]]:
     presentation = json.loads((root / 'assets/r16/manifest.json').read_text())
     if not identity.get('presentationVersion') or identity['presentationVersion'] != presentation.get('appVersion'):
         raise SystemExit('Bundled map presentation does not match the Android release declaration.')
+    if identity['releaseId'] != presentation.get('releaseId'):
+        raise SystemExit('Bundled map presentation belongs to a different build.')
     expected['assets/flutter_assets/assets/application-release.json'] = (release.stat().st_size, file_hash(release))
     return expected
 

@@ -2,6 +2,11 @@ name: NAV KURD Android release
 
 on:
   workflow_dispatch:
+    inputs:
+      retire_superseded:
+        description: Retire older app downloads after the owner verifies web publication
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -24,6 +29,10 @@ concurrency:
   group: nav-kurd-android-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  NAV_KURD_VERSION: 11.0.0
+  NAV_KURD_VERSION_CODE: 110001
+
 jobs:
 
   publication:
@@ -40,8 +49,6 @@ jobs:
         id: state
         env:
           GH_TOKEN: ${{ github.token }}
-          NAV_KURD_VERSION: 11.0.0
-          NAV_KURD_VERSION_CODE: 110000
         run: python3 tools/prune-published-versions.py --state
 
   build:
@@ -53,8 +60,6 @@ jobs:
       CI: "true"
       FLUTTER_SUPPRESS_ANALYTICS: "true"
       NAV_KURD_PACKAGE: com.navkurd.app
-      NAV_KURD_VERSION: 11.0.0
-      NAV_KURD_VERSION_CODE: 110000
       BUNDLETOOL_VERSION: 1.18.3
       BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
     steps:
@@ -426,7 +431,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          tag="v${NAV_KURD_VERSION}"
+          tag="v${NAV_KURD_VERSION}-build.${NAV_KURD_VERSION_CODE}"
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Existing stable release detected; refusing replacement." >&2
             exit 1
@@ -465,7 +470,7 @@ jobs:
 
   retire:
     needs: [publication, build]
-    if: ${{ always() && needs.publication.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.publication.outputs.published == 'true')) }}
+    if: ${{ always() && inputs.retire_superseded && needs.publication.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.publication.outputs.published == 'true')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -475,6 +480,5 @@ jobs:
       - name: Retire superseded public app versions after web publication
         env:
           GH_TOKEN: ${{ github.token }}
-          NAV_KURD_VERSION: 11.0.0
           NAV_KURD_RELEASE_COMMIT: ${{ needs.publication.outputs.release_commit }}
         run: python3 tools/prune-published-versions.py

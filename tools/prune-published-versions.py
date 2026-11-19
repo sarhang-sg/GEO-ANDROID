@@ -26,9 +26,8 @@ def github(path, method='GET', missing_ok=False):
     return json.loads(result.stdout) if result.stdout.strip() else None
 
 
-def publication_state(repo, version):
+def publication_state(repo, version, stable):
     """Reuse an immutable signed release for publication-only maintenance."""
-    stable = 'v' + version
     release = github(f'repos/{repo}/releases/tags/{quote(stable, safe="")}', missing_ok=True)
     source = os.environ['GITHUB_SHA']
     if release is not None:
@@ -65,24 +64,29 @@ def publication_state(repo, version):
 
 def main():
     version = os.environ['NAV_KURD_VERSION']
+    code = int(os.environ['NAV_KURD_VERSION_CODE'])
+    stable = f'v{version}-build.{code}'
+    identity = json.loads(Path('assets/application-release.json').read_text())
+    if (identity['appVersion'], identity['androidVersionCode'], identity['androidReleaseTag']) != (version, code, stable):
+        raise SystemExit('The requested build differs from the Android release manifest')
     commit = os.environ.get('NAV_KURD_RELEASE_COMMIT') or os.environ['GITHUB_SHA']
     repo = os.environ['GITHUB_REPOSITORY']
     if repo != 'sarhang-sg/GEO-ANDROID':
         raise SystemExit('Unexpected release repository')
     if sys.argv[1:] == ['--state']:
-        publication_state(repo, version)
+        publication_state(repo, version, stable)
         return
     if sys.argv[1:]:
         raise SystemExit('Unknown publication option')
-    stable = 'v' + version
     receipt = read_json(f'https://github.com/{repo}/releases/download/{stable}/DOWNLOAD-RECEIPT.json')
-    if receipt['gitCommit'] != commit or receipt['versionName'] != version:
+    if receipt['gitCommit'] != commit or receipt['versionName'] != version or receipt['versionCode'] != code:
         raise SystemExit('Published source differs from the release being retired')
     deadline = time.monotonic() + 900
     while True:
         try:
             public = read_json('https://geo-map-kappa.vercel.app/releases/latest.json')
-            if (public.get('version') == version
+            if (public.get('version') == version and public.get('versionCode') == code
+                    and public.get('artifact', {}).get('releaseTag') == stable
                     and public.get('artifact', {}).get('gitCommit') == commit
                     and public.get('apkSha256') == receipt['files']['apk']['sha256']):
                 break
@@ -98,10 +102,22 @@ def main():
     for page in releases:
         for release in page:
             tag = release['tag_name']
-            match = re.fullmatch(r'v?(\d+)\.(\d+)\.(\d+)(?:-(?:candidate|retired)-.*)?', tag)
+            match = re.fullmatch(r'v?(\d+)\.(\d+)\.(\d+)(?:-(?:build\.(\d+)|(candidate|retired)-[\w.-]+))?', tag)
             if tag == stable or not match:
                 continue
-            if tuple(map(int, match.groups())) > current:
+            version_tuple = tuple(int(match[i]) for i in (1, 2, 3))
+            if version_tuple > current:
+                continue
+            if version_tuple == current:
+                # Preserve the original public v11 URL and any newer in-flight build.
+                older_build = match[4] is not None and int(match[4]) < code
+                own_draft = match[5] == 'candidate' and release['draft'] and release['target_commitish'] == commit
+                if not (older_build or own_draft):
+                    continue
+            live = read_json('https://geo-map-kappa.vercel.app/releases/latest.json')
+            if live.get('artifact', {}).get('gitCommit') != commit or live.get('apkSha256') != receipt['files']['apk']['sha256']:
+                raise SystemExit('The live download changed during cleanup')
+            if tag == live.get('artifact', {}).get('releaseTag'):
                 continue
             subprocess.run(['gh', 'release', 'delete', tag, '--repo', repo, '--yes'], check=True)
             # Draft candidates have no Git tag. Retiring their release must not

@@ -26,6 +26,8 @@ def main():
     application=json.loads((root/'assets/application-release.json').read_text())
     if application.get('presentationVersion') != release['appVersion']:
         raise SystemExit('The web build differs from the presentation version declared by Android.')
+    if any(application.get(key) != release.get(key) for key in ('releaseId', 'androidVersionCode', 'androidReleaseTag')):
+        raise SystemExit('Use the matching web release and Android build before syncing the presentation.')
     build = tempfile.TemporaryDirectory(prefix='nav-kurd-android-dist-')
     dist = args.dist.resolve() if args.dist else Path(build.name)
     if not args.dist:

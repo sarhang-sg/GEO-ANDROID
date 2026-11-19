@@ -10,10 +10,11 @@ void main() {
     };
     final result = runtimeVersionInfo(data, {
       'appVersion': '11.0.0',
-      'androidVersionCode': 110000,
+      'androidVersionCode': 110001,
+      'androidReleaseTag': 'v11.0.0-build.110001',
     });
     expect(result['appVersion'], '11.0.0');
-    expect(result['androidVersionCode'], 110000);
+    expect(result['androidVersionCode'], 110001);
     expect(result['mapDataVersion'], 'verified-map-pack');
     expect(data['appVersion'], '10.0.0');
     expect(() => result['appVersion'] = 'bad', throwsUnsupportedError);
@@ -22,7 +23,7 @@ void main() {
     expect(
       () => validateApplicationRelease({
         'appVersion': '11.0.0',
-        'androidVersionCode': 110000,
+        'androidVersionCode': 110001,
         'mapDataVersion': 'fake',
       }),
       throwsA(isA<CoreFailure>()),
@@ -30,9 +31,14 @@ void main() {
   });
   test('malformed version and code fail before opening a data worker', () {
     for (final release in [
-      {'appVersion': '10.4', 'androidVersionCode': 110000},
-      {'appVersion': '11.0.0', 'androidVersionCode': '110000'},
+      {'appVersion': '10.4', 'androidVersionCode': 110001},
+      {'appVersion': '11.0.0', 'androidVersionCode': '110001'},
       {'appVersion': '11.0.0', 'androidVersionCode': 0},
+      {
+        'appVersion': '11.0.0',
+        'androidVersionCode': 110001,
+        'androidReleaseTag': 'v11.0.0-build.110000',
+      },
     ]) {
       expect(
         () => validateApplicationRelease(release),

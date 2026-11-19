@@ -23,7 +23,7 @@ class PublicationTests(unittest.TestCase):
             certificate='A'*64
             (root/'ANDROID_APP_LINK_SHA256.txt').write_text(certificate)
             commit='b'*40
-            metadata=dict(gitCommit=commit,versionName='11.0.0',versionCode=110000,packageId='com.navkurd.app',debuggable=False,
+            metadata=dict(gitCommit=commit,versionName='11.0.0',versionCode=110001,packageId='com.navkurd.app',debuggable=False,
                           signingCertificateSha256=certificate,sourceManifestSha256=hashlib.sha256(b'verified-source\n').hexdigest(),workflowRunId='10',files={})
             for kind in ('apk','aab'):
                 binary=root/'release'/('signed.'+kind);binary.write_bytes(b'CI-verified-fixture')
@@ -53,7 +53,7 @@ class PublicationTests(unittest.TestCase):
                     return SimpleNamespace(returncode=1,stdout='',stderr='not found')
                 if args[:2]==('release','upload') and case=='upload-failed':raise SystemExit('simulated interrupted upload')
                 return SimpleNamespace(returncode=0,stdout='',stderr='')
-            environment=dict(GITHUB_REF='refs/heads/main',NAV_KURD_VERSION='11.0.0',NAV_KURD_VERSION_CODE='110000',GITHUB_SHA=commit,GITHUB_REPOSITORY='owner/repo',RUNNER_TEMP=str(root/'runner'))
+            environment=dict(GITHUB_REF='refs/heads/main',NAV_KURD_VERSION='11.0.0',NAV_KURD_VERSION_CODE='110001',GITHUB_SHA=commit,GITHUB_REPOSITORY='owner/repo',RUNNER_TEMP=str(root/'runner'))
             previous=Path.cwd()
             try:
                 with patch.dict(os.environ,environment),patch.object(module,'gh',side_effect=fake_gh):
