@@ -22,10 +22,12 @@ case "${1:-help}" in
     mkdir -p "$nav_downloads"
     nav_staging="$(mktemp -d "$nav_downloads/.nav-kurd-download.XXXXXX")"
     trap 'rm -rf "$nav_staging"' EXIT
-    gh release view "v$nav_version" --repo sarhang-sg/GEO-ANDROID \
+    nav_tag="$(python3 -c 'import json; print(json.load(open("assets/application-release.json"))["androidReleaseTag"])')"
+    [[ "$nav_tag" == "v${nav_version}-build.${nav_code}" ]] || { echo 'Release tag and Android version code differ.' >&2; exit 1; }
+    gh release view "$nav_tag" --repo sarhang-sg/GEO-ANDROID \
       --json isDraft,isPrerelease,publishedAt > "$nav_staging/RELEASE-STATUS.json"
     # A missing release fails instead of downloading a previous version.
-    gh release download "v$nav_version" --repo sarhang-sg/GEO-ANDROID \
+    gh release download "$nav_tag" --repo sarhang-sg/GEO-ANDROID \
       --pattern "NAV-KURD-$nav_version.apk" --pattern DOWNLOAD-RECEIPT.json --dir "$nav_staging"
     python3 - "$nav_staging" "$nav_version" "$nav_code" "$nav_root/ANDROID_APP_LINK_SHA256.txt" <<'RECEIPT'
 import hashlib,json,pathlib,sys
