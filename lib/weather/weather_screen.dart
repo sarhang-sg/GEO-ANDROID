@@ -368,8 +368,10 @@ class _WeatherScreenState extends State<_WeatherScreen>
         }
       }
     } on PlatformException {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
-          m.t('ڕێکخستنی ویجێت بەردەست نییە', 'تعذر ضبط الأداة', 'Widget settings unavailable'))));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+            m.t('ڕێکخستنی ویجێت بەردەست نییە', 'تعذر ضبط الأداة', 'Widget settings unavailable'))));
+      }
     }
   }
 
