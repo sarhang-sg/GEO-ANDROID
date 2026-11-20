@@ -1,0 +1,1 @@
+export{t as installWeatherDirectory}from"./weather-directory-DyznsGb4.js";

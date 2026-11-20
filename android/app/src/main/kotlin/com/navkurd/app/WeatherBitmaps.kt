@@ -154,24 +154,34 @@ internal object WeatherBitmaps {
         }
         return v
     }
-    private fun bitmapFile(c:Context, id:Int, extent:Extent, language:String) =
-        AtomicFile(File(c.cacheDir, "weather-widget-$id-$language-${extent.w.toInt()}x${extent.h.toInt()}.png"))
+    // The isolated renderer can finish after the owner has selected another city.
+    private fun revisionFile(c: Context) = AtomicFile(File(c.filesDir,"weather-widget-source"))
+    fun invalidateSource(c: Context) {
+        val file=revisionFile(c)
+        val out=file.startWrite()
+        try { out.write(java.util.UUID.randomUUID().toString().toByteArray());file.finishWrite(out) }
+        catch(e:Exception){file.failWrite(out);throw e}
+    }
+    private fun sourceRevision(c:Context) = runCatching { revisionFile(c).readFully().decodeToString() }.getOrDefault("")
+    private fun bitmapFile(c:Context, id:Int, extent:Extent, language:String, placeKey:String) =
+        AtomicFile(File(c.cacheDir,"weather-widget-$id-$language-$placeKey-${extent.w.toInt()}x${extent.h.toInt()}.png"))
 
     fun restore(c:Context, manager:AppWidgetManager, ids:IntArray) {
         val language=WeatherStore.prefs(c).getString("language","ku") ?: "ku"
+        val place=WeatherStore.place(c)
+        val key=place?.key ?: "pending"
+        val reading=place?.let { WeatherStore.cached(c,it,"widget") ?: JSONObject().put("place",it.json()) } ?: JSONObject()
+        reading.put("language",language)
         for (id in ids) {
             val extents = sizes(manager.getAppWidgetOptions(id))
-            val previous = c.cacheDir.listFiles { f -> f.name.startsWith("weather-widget-$id-$language-") && f.name.endsWith(".png") }
+            val previous = c.cacheDir.listFiles { f -> f.name.startsWith("weather-widget-$id-$language-$key-") && f.name.endsWith(".png") }
                 ?.maxByOrNull { it.lastModified() }
             runCatching {
                 val rendered = linkedMapOf<SizeF,RemoteViews>()
                 for (extent in extents) {
-                    val exact = bitmapFile(c,id,extent,language).baseFile
+                    val exact = bitmapFile(c,id,extent,language,key).baseFile
                     val saved = exact.takeIf { it.isFile } ?: previous
                     val bitmap = saved?.let { BitmapFactory.decodeFile(it.path) }
-                    val place = WeatherStore.place(c)
-                    val reading = place?.let { WeatherStore.cached(c,it,"widget") } ?: JSONObject()
-                    reading.put("language",WeatherStore.prefs(c).getString("language","ku"))
                     rendered[SizeF(extent.w,extent.h)] = views(c,extent,bitmap,reading)
                 }
                 if (rendered.isNotEmpty()) manager.updateAppWidget(id,forLauncher(rendered))
@@ -190,12 +200,13 @@ internal object WeatherBitmaps {
     suspend fun update(c:Context)=rendering.withLock {
         val m=AppWidgetManager.getInstance(c);val ids=m.getAppWidgetIds(ComponentName(c,NavKurdWidgetProvider::class.java))
         if(ids.isEmpty())return@withLock
+        val revision=sourceRevision(c)
         val place=WeatherStore.place(c)
         val data=place?.let { WeatherStore.cached(c,it,"widget") ?: WeatherStore.cached(c,it,"detail") ?: JSONObject().put("place",it.json()) } ?: JSONObject()
         if(WeatherStore.prefs(c).getBoolean("weather_offline",false))data.put("stale",true)
         val p = WeatherStore.prefs(c)
         try {
-            data.put("language",p.getString("language","ku"))
+            data.put("language",p.getString("language","ku")).put("widgetSourceRevision",revision)
             WeatherRenderService.publish(c, data)
             p.edit().putLong("last_render_at", System.currentTimeMillis()).remove("last_render_error").apply()
         } catch (e: CancellationException) {
@@ -213,6 +224,9 @@ internal object WeatherBitmaps {
         val m = AppWidgetManager.getInstance(c)
         val ids = m.getAppWidgetIds(ComponentName(c, NavKurdWidgetProvider::class.java))
         if (ids.isEmpty()) return@withLock
+        val revision=data.optString("widgetSourceRevision")
+        val key=WeatherPlace.from(data.optJSONObject("place"))?.key ?: "pending"
+        if (revision!=sourceRevision(c)) return@withLock
         val args = data.keys().asSequence().associateWith { bridge(data.opt(it)) }
         val d = c.resources.displayMetrics
         var renderer:Renderer?=null
@@ -226,14 +240,15 @@ internal object WeatherBitmaps {
                     val ratio=min(d.density.toDouble().coerceIn(1.0,3.0),sqrt(cap/area))
                     val bytes=active.png(extent,ratio,args)
                     val bitmap=BitmapFactory.decodeByteArray(bytes,0,bytes.size) ?: throw IllegalStateException("PNG decoding failed")
-                    val file = bitmapFile(c,id,extent,data.optString("language","ku"))
+                    val file = bitmapFile(c,id,extent,data.optString("language","ku"),key)
                     val stream = file.startWrite()
                     try { stream.write(bytes); file.finishWrite(stream) }
                     catch (e:Exception) { file.failWrite(stream); throw e }
                     rendered[SizeF(extent.w,extent.h)]=views(c,extent,bitmap,data)
                 }
+                if (revision!=sourceRevision(c)) return@withLock
                 m.updateAppWidget(id, forLauncher(rendered))
-                val retained = extents.map { bitmapFile(c,id,it,data.optString("language","ku")).baseFile.name }.toSet()
+                val retained = extents.map { bitmapFile(c,id,it,data.optString("language","ku"),key).baseFile.name }.toSet()
                 c.cacheDir.listFiles { f -> f.name.startsWith("weather-widget-$id-") && f.name.endsWith(".png") && f.name !in retained }?.forEach { it.delete() }
             }
         } finally {

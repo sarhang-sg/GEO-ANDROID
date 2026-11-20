@@ -145,11 +145,11 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                 "language" -> result.success(WeatherStore.prefs(this).getString("language", "ku"))
                 "settings" -> result.success(WeatherPrompts.settings(this))
                 "openWeatherDetails" -> {
-                    (call.arguments as? String)?.let { raw ->
-                        val selected=WeatherPlace.from(org.json.JSONObject(raw))
-                        if (selected!=null) { WeatherStore.select(this,selected); NavKurdWidgetProvider.refreshWeather(this,true) }
+                    val city = (call.arguments as? String)?.let { raw ->
+                        runCatching { WeatherPlace.from(org.json.JSONObject(raw)) }.getOrNull()
                     }
-                    startActivity(Intent(this,WeatherActivity::class.java).putExtra("weather_route","details"))
+                    startActivity(Intent(this,WeatherActivity::class.java).putExtra("weather_route","details")
+                        .putExtra("weather_destination",city?.json()?.toString()))
                     result.success(true)
                 }
                 "setWeatherJourney" -> {

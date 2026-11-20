@@ -77,6 +77,7 @@ android {
 
     defaultConfig {
         applicationId = "com.navkurd.app"
+        testInstrumentationRunner = "com.navkurd.app.WidgetLocationCheck"
         minSdk = 24
         targetSdk = 37
         versionCode = flutter.versionCode

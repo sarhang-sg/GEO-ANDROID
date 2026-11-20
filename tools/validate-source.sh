@@ -10,8 +10,8 @@ node tools/test-location-presentation.mjs
 fail() { printf 'SOURCE CHECK FAILED: %s\n' "$*" >&2; exit 1; }
 require_text() { grep -F -- "$2" "$1" >/dev/null || fail "$3"; }
 
-test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "11.0.0+110001" \
-  || fail "pubspec version is not 11.0.0+110001"
+test "$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)" = "11.0.0+110002" \
+  || fail "pubspec version is not 11.0.0+110002"
 require_text lib/src/app_config.dart "defaultValue: '11.0.0'" "Dart app version is not 11.0.0"
 require_text test/app_config_test.dart "expect(AppConfig.appVersion, '11.0.0');" \
   "Dart release regression test is not synchronized with version 11.0.0"
@@ -247,4 +247,4 @@ fi
 
 python3 tools/test-widget-layout.py
 
-printf '%s\n' 'NAV KURD 11.0.0 (110001) source checks passed.'
+printf '%s\n' 'NAV KURD 11.0.0 (110002) source checks passed.'

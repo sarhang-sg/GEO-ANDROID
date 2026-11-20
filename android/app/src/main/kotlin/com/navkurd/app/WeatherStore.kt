@@ -1,6 +1,7 @@
 package com.navkurd.app
 
 import android.content.Context
+import android.location.Location
 import android.net.Uri
 import android.util.AtomicFile
 import com.google.firebase.FirebaseApp
@@ -72,33 +73,45 @@ internal object WeatherStore {
         }
         return WeatherPlace(lat,lon,name)
     }
-    fun chooseGps(c:Context):Boolean {
-        val fix=NavKurdWidgetLocation.current(c,foregroundRequest=true) ?: return false
-        prefs(c).edit().putBoolean("weather_prefer_gps",true).putFloat("latitude",fix.latitude.toFloat())
-            .putFloat("longitude",fix.longitude.toFloat()).putLong("location_at",fix.time).apply()
+    // Older weather_selected_city values originated from ordinary browsing.
+    // Only an explicit widget preference may override the device position.
+    private const val WIDGET_CITY = "weather_widget_pinned_city"
+    fun widgetUsesGps(c: Context) = !prefs(c).contains(WIDGET_CITY)
+    fun widgetCity(c: Context): WeatherPlace? = prefs(c).getString(WIDGET_CITY,null)?.let {
+        runCatching { WeatherPlace.from(JSONObject(it))?.let { city -> localize(c,city) } }.getOrNull()
+    }
+    fun setWidgetCity(c: Context, city: WeatherPlace?) {
+        prefs(c).edit().putString(WIDGET_CITY,city?.json()?.toString()).apply()
+        WeatherBitmaps.invalidateSource(c)
+        WeatherWork.paint(c)
+        WeatherWork.once(c,"widget-location")
+    }
+    @Synchronized fun recordFix(c: Context, fix: Location): Boolean {
+        if (!NavKurdWidgetLocation.valid(fix) || System.currentTimeMillis()-fix.time !in 0..900_000L) return false
+        val p = prefs(c)
+        val last = p.getLong("location_at",0)
+        if (fix.time < last || (fix.time == last && fix.accuracy >= p.getFloat("accuracy",Float.MAX_VALUE))) return false
+        p.edit().putFloat("latitude",fix.latitude.toFloat()).putFloat("longitude",fix.longitude.toFloat())
+            .putFloat("accuracy",fix.accuracy).putLong("location_at",fix.time).apply()
         return true
     }
-    fun select(c: Context, place: WeatherPlace) {
-        prefs(c).edit().putString("weather_selected_city",place.json().toString()).putBoolean("weather_prefer_gps",false).apply()
+    private fun savedGps(c: Context): WeatherPlace? {
+        val p = prefs(c)
+        val lat=p.getFloat("latitude",Float.NaN).toDouble()
+        val lon=p.getFloat("longitude",Float.NaN).toDouble()
+        return if (lat in -90.0..90.0 && lon in -180.0..180.0) named(c,lat,lon) else null
+    }
+    fun gpsPlace(c:Context, requestFix:Boolean=false, foreground:Boolean=false): WeatherPlace? {
+        val fix=runCatching {
+            if (requestFix) NavKurdWidgetLocation.current(c,foreground) else NavKurdWidgetLocation.latest(c)
+        }.getOrNull()
+        if (fix != null) recordFix(c,fix)
+        return savedGps(c)
     }
     fun place(c: Context, requestFix: Boolean = false): WeatherPlace? {
+        widgetCity(c)?.let { return it }
+        gpsPlace(c,requestFix)?.let { return it }
         val p=prefs(c)
-        val selected = p.getString("weather_selected_city",null)?.let { runCatching { WeatherPlace.from(JSONObject(it)) }.getOrNull() }
-        if (requestFix || p.getBoolean("weather_prefer_gps",true)) {
-            val fix = runCatching { if (requestFix) NavKurdWidgetLocation.current(c) else NavKurdWidgetLocation.latest(c) }.getOrNull()
-            if (fix != null) {
-                val place=named(c,fix.latitude,fix.longitude)
-                p.edit().putFloat("latitude",fix.latitude.toFloat()).putFloat("longitude",fix.longitude.toFloat())
-                    .putLong("location_at",fix.time).putBoolean("weather_prefer_gps",true).apply()
-                return place
-            }
-            if (selected != null) return localize(c,selected)
-            if (p.contains("latitude") && p.contains("longitude")) {
-                val lat=p.getFloat("latitude",Float.NaN).toDouble(); val lon=p.getFloat("longitude",Float.NaN).toDouble()
-                if (lat in -90.0..90.0 && lon in -180.0..180.0) return named(c,lat,lon)
-            }
-        }
-        if (selected != null) return localize(c,selected)
         // A launcher can request weather before the first map launch or GPS consent.
         // Show a named atlas city without registering it as a device location.
         val directory = cities(c)
