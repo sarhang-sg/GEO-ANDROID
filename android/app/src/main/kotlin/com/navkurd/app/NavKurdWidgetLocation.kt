@@ -62,6 +62,7 @@ object NavKurdWidgetLocation {
     fun latest(context: Context): Location? {
         if (!foreground && !enabled(context)) return null
         val manager = context.getSystemService(LocationManager::class.java)
+        if (!LocationManagerCompat.isLocationEnabled(manager)) return null
         val now = System.currentTimeMillis()
         val candidates = manager.allProviders.mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }
             .filter { valid(it) && now - it.time in 0..MAX_AGE_MS }

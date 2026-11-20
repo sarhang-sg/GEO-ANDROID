@@ -167,7 +167,6 @@ adb exec-out screencap -p > "$evidence/map.png"
 phase='waiting for the launcher bitmap and live temperature'
 timeout 45 adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse "$reuse_widget"
 timeout 145 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F widget-bitmap-ready >/dev/null; do sleep 2; done'
-adb exec-out screencap -p > "$evidence/widget.png"
 for _ in $(seq 1 12); do
     if read_window && grep -q ':id/weather_forecast' "$work/window.xml"; then
         cp "$work/window.xml" "$evidence/widget.xml"
@@ -176,6 +175,7 @@ for _ in $(seq 1 12); do
     sleep 1
 done
 test -s "$evidence/widget.xml"
+adb exec-out screencap -p > "$evidence/widget.png"
 read -r tap_x tap_y < <(python3 - "$evidence/widget.xml" <<'PY'
 import re
 import sys
@@ -200,3 +200,13 @@ if adb logcat -b crash -d | grep -E "(Process|Cmdline): ${target//./\\.}(:weathe
     echo 'Application or weather renderer crashed during smoke test'; exit 1
 fi
 echo 'PASS launcher bitmap, real widget tap and Back to map'
+
+if [[ "$target" == com.navkurd.app.debug ]]; then
+    phase='checking GPS and pinned widget locations with device location off'
+    test_apk="$(dirname "$apk")/../apk/androidTest/debug/app-debug-androidTest.apk"
+    adb install -r "$test_apk" >/dev/null
+    adb shell cmd location set-location-enabled false
+    adb shell am instrument -w "$target.test/com.navkurd.app.WidgetLocationCheck" > "$evidence/widget-location.txt"
+    adb shell cmd location set-location-enabled true
+    grep -F 'PASS legacy browsing, GPS off, explicit pin, stale fix and automatic GPS' "$evidence/widget-location.txt"
+fi

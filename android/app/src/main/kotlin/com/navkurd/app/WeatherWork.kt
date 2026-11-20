@@ -27,7 +27,7 @@ class WeatherWork(context:Context,params:WorkerParameters):CoroutineWorker(conte
             if(mode=="journey") return@withContext checkJourney(c)
             if(mode=="paint"){WeatherBitmaps.update(c);return@withContext Result.success()}
             if(!NavKurdWidgetProvider.hasWidgets(c) && mode!="daily") return@withContext Result.success()
-            val place=WeatherStore.place(c,mode=="gps")
+            val place=WeatherStore.place(c,mode=="gps" || mode=="widget-location")
             if(place==null) {WeatherBitmaps.update(c);return@withContext Result.success()}
             val p=WeatherStore.prefs(c)
             val data=try { WeatherStore.fetch(c,place,"widget",mode=="manual" || mode=="gps" || mode=="daily") }
@@ -36,6 +36,7 @@ class WeatherWork(context:Context,params:WorkerParameters):CoroutineWorker(conte
             if(WeatherStore.place(c)?.key!=place.key){paint(c);return@withContext Result.success()}
             p.edit().putBoolean("weather_offline",data.optBoolean("stale")).putString("city",place.name)
                 .putLong("weather_at",current.getLong("time")*1000L).putFloat("temperature",current.getDouble("temperature_2m").toFloat())
+                .putFloat("weather_latitude",place.lat.toFloat()).putFloat("weather_longitude",place.lon.toFloat())
                 .putString("timezone",data.optString("timezone")).putInt("weather_code",current.getInt("weather_code"))
                 .putBoolean("is_day",current.optInt("is_day")==1).apply()
             if(mode=="daily" && !data.optBoolean("stale")) NavKurdNotifications.showDailyWeather(c)
@@ -95,7 +96,8 @@ class WeatherWork(context:Context,params:WorkerParameters):CoroutineWorker(conte
             val req=OneTimeWorkRequestBuilder<WeatherWork>().setInputData(workDataOf("mode" to mode)).setBackoffCriteria(BackoffPolicy.EXPONENTIAL,1,TimeUnit.MINUTES)
             // A user action can paint the cached state immediately while offline.
             if(mode=="daily" || mode=="journey")req.setConstraints(internet)
-            WorkManager.getInstance(c).enqueueUniqueWork("weather-now-$mode",ExistingWorkPolicy.KEEP,req.build())
+            val policy=if(mode=="widget-location") ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP
+            WorkManager.getInstance(c).enqueueUniqueWork("weather-now-$mode",policy,req.build())
         }
         fun paint(c:Context){
             val work=OneTimeWorkRequestBuilder<WeatherWork>().setInputData(workDataOf("mode" to "paint")).build()

@@ -144,7 +144,11 @@ class _WeatherScreenState extends State<_WeatherScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     weatherChannel.setMethodCallHandler((call) async {
-      if (call.method == 'route' && mounted) _show(call.arguments as String);
+      if (call.method == 'route' && mounted) {
+        _show(call.arguments as String);
+        await _load(false);
+        _scroll();
+      }
     });
     timer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
@@ -313,6 +317,64 @@ class _WeatherScreenState extends State<_WeatherScreen>
     },
   );
 
+  Future<void> _widgetLocation(WeatherModel m) async {
+    try {
+      final raw = await weatherChannel.invokeMethod<String>('widgetLocation');
+      if (!mounted) return;
+      final pinned = raw == null ? null : object(jsonDecode(raw));
+      final title = m.t('شوێنی ویجێت', 'موقع الأداة', 'Widget location');
+      final currentCity = m.place;
+      final canPin = currentCity['lat'] is num && currentCity['lon'] is num;
+      final choice = await showModalBottomSheet<bool>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheet) => SafeArea(
+          child: Directionality(
+            textDirection: lang == 'en' ? TextDirection.ltr : TextDirection.rtl,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(title, style: Theme.of(sheet).textTheme.titleLarge),
+              ListTile(
+                leading: const Icon(Icons.my_location),
+                title: Text(m.t('خۆکار بە GPS', 'تلقائي عبر GPS', 'Automatic GPS')),
+                subtitle: Text(m.t('کاتێک GPS کوژاوەتەوە، دوا شوێنت دەمێنێتەوە.', 'يبقى آخر موقع عند إيقاف GPS.', 'Keep the last location when GPS is off.')),
+                trailing: pinned == null ? const Icon(Icons.check) : null,
+                onTap: () => Navigator.pop(sheet, false),
+              ),
+              if (canPin) ListTile(
+                leading: const Icon(Icons.push_pin_outlined),
+                title: Text(m.t('ئەم شوێنە بۆ ویجێت دابنێ', 'تثبيت هذا الموقع للأداة', 'Pin this place to the widget')),
+                subtitle: Text(m.city),
+                trailing: pinned != null && pinned['lat'] == currentCity['lat'] && pinned['lon'] == currentCity['lon']
+                    ? const Icon(Icons.check) : null,
+                onTap: () => Navigator.pop(sheet, true),
+              ),
+              if (pinned != null) Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Text("${m.t('شوێنی دیاریکراو', 'الموقع المثبت', 'Pinned location')} · ${pinned['name'] ?? ''}"),
+              ),
+            ]),
+          ),
+        ),
+      );
+      if (choice == null || !mounted) return;
+      await weatherChannel.invokeMethod<void>('setWidgetLocation', choice ? jsonEncode(currentCity) : null);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(choice
+          ? "${m.t('شوێنی ویجێت', 'موقع الأداة', 'Widget location')} · ${m.city}"
+          : m.t('ویجێت بە GPS نوێ دەبێتەوە', 'تستخدم الأداة موقع GPS', 'Widget uses automatic GPS'))));
+      if (!choice && !(await Permission.locationWhenInUse.status).isGranted && mounted) {
+        if ((await Permission.locationWhenInUse.request()).isGranted && mounted) {
+          await weatherChannel.invokeMethod<void>('setWidgetLocation');
+        }
+      }
+    } on PlatformException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+            m.t('ڕێکخستنی ویجێت بەردەست نییە', 'تعذر ضبط الأداة', 'Widget settings unavailable'))));
+      }
+    }
+  }
+
   Widget _details(WeatherModel m) {
     final city = m.city.isEmpty
         ? m.t('شار هەڵبژێرە', 'اختر مدينة', 'Choose city')
@@ -354,6 +416,11 @@ class _WeatherScreenState extends State<_WeatherScreen>
             }),
           ],
         ),
+        Center(child: TextButton.icon(
+          icon: const Icon(Icons.widgets_outlined, size: 18),
+          label: Text(m.t('شوێنی ویجێت', 'موقع الأداة', 'Widget location')),
+          onPressed: () => unawaited(_widgetLocation(m)),
+        )),
         Align(
           alignment: Alignment.center,
           child: SizedBox(

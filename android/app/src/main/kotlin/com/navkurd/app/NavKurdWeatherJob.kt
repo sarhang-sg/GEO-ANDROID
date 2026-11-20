@@ -14,6 +14,6 @@ object NavKurdWeatherJob {
     }
     fun cancelWidget(context:Context){
         val work=WorkManager.getInstance(context)
-        for(name in listOf("weather-periodic","weather-paint","weather-now-initial","weather-now-manual","weather-now-gps","weather-now-refresh")) work.cancelUniqueWork(name)
+        for(name in listOf("weather-periodic","weather-paint","weather-now-initial","weather-now-manual","weather-now-gps","weather-now-refresh","weather-now-widget-location")) work.cancelUniqueWork(name)
     }
 }

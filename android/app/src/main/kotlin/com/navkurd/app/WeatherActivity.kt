@@ -15,6 +15,7 @@ import org.json.JSONObject
 class WeatherActivity : FlutterActivity() {
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
     private var channel: MethodChannel?=null
+    private var viewRevision=0
     private var forecastDrawn=false
     private fun target()=intent?.getStringExtra("weather_route")?.takeIf { it in listOf("cities","forecast") } ?: "details"
     override fun onResume(){super.onResume();NavKurdWidgetLocation.foreground=true}
@@ -40,21 +41,39 @@ class WeatherActivity : FlutterActivity() {
                 "settings"->{result.success(WeatherPrompts.settings(this))}
                 "prompts"->result.success(WeatherPrompts.take(this))
                 "language"-> result.success(WeatherStore.prefs(this).getString("language","ku"))
+                "widgetLocation" -> result.success(WeatherStore.widgetCity(this)?.json()?.toString())
+                "setWidgetLocation" -> {
+                    val raw=call.arguments as? String
+                    val city=raw?.let { runCatching { WeatherPlace.from(JSONObject(it)) }.getOrNull() }
+                    if (raw!=null && city==null) result.error("city","Invalid widget city",null)
+                    else {
+                        WeatherStore.setWidgetCity(this,city)
+                        result.success(null)
+                        if (city==null) scope.launch(Dispatchers.IO) {
+                            WeatherStore.gpsPlace(this@WeatherActivity,true,true)
+                            if (WeatherStore.widgetCity(this@WeatherActivity)==null) {
+                                WeatherWork.paint(this@WeatherActivity)
+                                WeatherWork.once(this@WeatherActivity,"widget-location")
+                            }
+                        }
+                    }
+                }
                 "snapshot","load","choose","gps"->scope.launch {
                     try {
+                        val selected=if(call.method=="choose") {
+                            val city=WeatherPlace.from(JSONObject(call.arguments as String)) ?: error("invalid city")
+                            intent.putExtra("weather_destination",city.json().toString())
+                            viewRevision++
+                            city
+                        } else WeatherPlace.from(intent.getStringExtra("weather_destination")?.let { JSONObject(it) })
+                        if(call.method=="gps") viewRevision++
+                        val revision=viewRevision
+                        val place=withContext(Dispatchers.IO) {
+                            if(call.method=="gps") WeatherStore.gpsPlace(this@WeatherActivity,true,true) ?: error("no device location")
+                            else selected ?: WeatherStore.place(this@WeatherActivity)
+                        }
+                        if(call.method=="gps" && revision==viewRevision) intent.putExtra("weather_destination",place?.json()?.toString())
                         val encoded=withContext(Dispatchers.IO) {
-                            if(call.method=="gps") {
-                                intent.removeExtra("weather_destination")
-                                if(!WeatherStore.chooseGps(this@WeatherActivity)) throw IllegalStateException("no recent location")
-                                WeatherWork.once(this@WeatherActivity,"gps")
-                            }
-                            if(call.method=="choose"){
-                                intent.removeExtra("weather_destination")
-                                val selection=WeatherPlace.from(JSONObject(call.arguments as String)) ?: error("invalid city")
-                                WeatherStore.select(this@WeatherActivity,selection)
-                                NavKurdWeatherJob.schedule(this@WeatherActivity,force=true)
-                            }
-                            val place=WeatherPlace.from(intent?.getStringExtra("weather_destination")?.let { JSONObject(it) })?.takeIf{call.method!="choose" && call.method!="gps"} ?: WeatherStore.place(this@WeatherActivity)
                             if(place==null) return@withContext JSONObject().toString()
                             val cached=WeatherStore.cached(this@WeatherActivity,place,"detail") ?: WeatherStore.cached(this@WeatherActivity,place,"widget")
                             if(call.method=="snapshot") return@withContext (cached ?: JSONObject().put("place",place.json())).toString()
@@ -69,7 +88,7 @@ class WeatherActivity : FlutterActivity() {
         }
     }
     private fun io.flutter.plugin.common.MethodCall.argumentOrForce()=method=="load" && arguments==true
-    override fun onNewIntent(intent:Intent){super.onNewIntent(intent);setIntent(intent);channel?.invokeMethod("route",target())}
+    override fun onNewIntent(intent:Intent){super.onNewIntent(intent);setIntent(intent);viewRevision++;forecastDrawn=false;channel?.invokeMethod("route",target())}
     private fun returnToMap(){
         startActivity(Intent(this,MainActivity::class.java).setAction(Intent.ACTION_VIEW)
             .setData(android.net.Uri.parse("navkurd://open?weatherReturn=1"))

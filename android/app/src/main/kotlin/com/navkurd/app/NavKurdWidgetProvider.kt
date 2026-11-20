@@ -44,11 +44,12 @@ class NavKurdWidgetProvider:AppWidgetProvider() {
         fun setLanguage(c:Context,rawLanguage:String){val lang=rawLanguage.substringBefore('-').lowercase().takeIf{it=="en" || it=="ar"}?:"ku";val p=WeatherStore.prefs(c);if (p.getString(KEY_LANGUAGE,"ku")!=lang) { p.edit().putString(KEY_LANGUAGE,lang).apply(); if(hasWidgets(c)) WeatherWork.paint(c) }}
         fun updateStatus(c:Context,status:String,detail:String){WeatherStore.prefs(c).edit().putString("status",status).putString("detail",detail.take(128)).apply()}
         fun refreshWeather(context:Context,force:Boolean){if(hasWidgets(context))NavKurdWeatherJob.schedule(context,force=force)}
-        fun storeLocationAndRefresh(context:Context,latitude:Double,longitude:Double,accuracy:Double){
-            if(latitude !in -90.0..90.0 || longitude !in -180.0..180.0 || !accuracy.isFinite())return
-            val p=WeatherStore.prefs(context);val moved=abs(latitude-p.getFloat(KEY_LATITUDE,1000f))>.008 || abs(longitude-p.getFloat(KEY_LONGITUDE,1000f))>.008
-            p.edit().putFloat(KEY_LATITUDE,latitude.toFloat()).putFloat(KEY_LONGITUDE,longitude.toFloat()).putFloat("accuracy",accuracy.toFloat()).putLong("location_at",System.currentTimeMillis()).apply()
-            if(moved && p.getBoolean("weather_prefer_gps",true))refreshWeather(context,true)
+        fun storeLocationAndRefresh(context:Context,location:android.location.Location){
+            if (!WeatherStore.recordFix(context,location)) return
+            val p=WeatherStore.prefs(context)
+            val moved=abs(location.latitude-p.getFloat("weather_latitude",1000f))>.008 ||
+                abs(location.longitude-p.getFloat("weather_longitude",1000f))>.008
+            if(moved && WeatherStore.widgetUsesGps(context)) refreshWeather(context,true)
         }
         fun dailyWeatherSummary(c:Context):Pair<String,String>?{
             val p=WeatherStore.prefs(c);if(System.currentTimeMillis()-p.getLong(KEY_WEATHER_AT,0L) !in 0..5_400_000L || p.getBoolean("weather_offline",false))return null

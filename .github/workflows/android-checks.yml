@@ -55,6 +55,7 @@ jobs:
         run: |
           bash tools/install-android-sdk.sh
           flutter build apk --debug --no-pub
+          (cd android && ./gradlew :app:assembleDebugAndroidTest)
 
       - name: Calculate offline routes using the packaged APK
         run: python3 tools/test-offline-routes.py build/app/outputs/flutter-apk/app-debug.apk

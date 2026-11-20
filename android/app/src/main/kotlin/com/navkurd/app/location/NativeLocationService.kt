@@ -134,7 +134,7 @@ class NativeLocationService(context: Context, messenger: BinaryMessenger) : Loca
         val moved = widgetFix?.let { hypot(location.latitude - it.latitude, (location.longitude - it.longitude) * cos(location.latitude * Math.PI / 180)) >= 0.008 } ?: true
         if (moved || now - widgetAt >= 30_000) {
             widgetFix = Location(location); widgetAt = now
-            NavKurdWidgetProvider.storeLocationAndRefresh(app, location.latitude, location.longitude, location.accuracy.toDouble())
+            NavKurdWidgetProvider.storeLocationAndRefresh(app, location)
         }
     }
     override fun onProviderDisabled(provider: String) { if (provider in selectedProviders && selectedProviders.none { manager.isProviderEnabled(it) }) emitError("location_disabled", "Device location is disabled.") }
