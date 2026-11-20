@@ -6,4 +6,11 @@
     <string name="weather_syncing">Connecting...</string>
     <string name="weather_gps">Update location</string>
     <string name="weather_refresh">Refresh weather</string>
+    <string name="route_weather_channel">Route weather alerts</string>
+    <string name="route_weather_heat">Extreme heat at your destination.</string>
+    <string name="route_weather_cold">Below-freezing temperatures at your destination.</string>
+    <string name="route_weather_storm">Heavy rain or thunderstorms at your destination.</string>
+    <string name="route_weather_air">Poor air quality at your destination.</string>
+    <string name="route_weather_ice">Snow or ice at your destination.</string>
+    <string name="route_weather_fog">Fog at your destination.</string>
 </resources>

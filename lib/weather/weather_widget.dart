@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:geo_android/src/kurdish_localizations.dart' show navKurdDelegates;
+import 'package:geo_android/src/kurdish_localizations.dart'
+    show navKurdDelegates;
 import 'package:geo_android/weather/weather_art.dart';
 import 'package:geo_android/weather/weather_model.dart';
 
@@ -27,7 +28,10 @@ Widget label(
   FontWeight weight = FontWeight.w500,
   TextAlign align = TextAlign.start,
 }) => Text(
-  text.replaceAllMapped(RegExp(r'-?\d+(?:[.,]\d+)?\s*(?:km/h|µg/m³|°C|°|%)'), (m) => '\u2066${m[0]}\u2069'),
+  text.replaceAllMapped(
+    RegExp(r'-?\d+(?:[.,]\d+)?\s*(?:km/h|µg/m³|°C|°|%)'),
+    (m) => '\u2066${m[0]}\u2069',
+  ),
   maxLines: 1,
   overflow: TextOverflow.ellipsis,
   textAlign: align,
@@ -57,206 +61,376 @@ Widget glyph(Sky sky, bool day, double size) => SizedBox.square(
 class WeatherWidgetArt extends StatelessWidget {
   const WeatherWidgetArt(this.weather, {super.key});
   final WeatherModel weather;
+
+  static const _credit = 'Open-Meteo · Developer: Sarhang Salah';
+
+  Widget _number(
+    String value,
+    double size, {
+    FontWeight weight = FontWeight.w600,
+  }) => Text(
+    value,
+    maxLines: 1,
+    textDirection: TextDirection.ltr,
+    overflow: TextOverflow.ellipsis,
+    style: ink(size, weight: weight).copyWith(
+      fontFamily: 'NAVKurdLatin',
+      fontFamilyFallback: const ['NAVKurdArabic'],
+      height: 1.19,
+      fontFeatures: const [ui.FontFeature.tabularFigures()],
+    ),
+  );
+
+  Widget _clock({required bool date}) => Directionality(
+    textDirection: TextDirection.ltr,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _number(weather.clock(weather.date), 15, weight: FontWeight.bold),
+        if (date) ...[
+          const SizedBox(width: 4),
+          _number('${weather.date.day}/${weather.date.month}', 9),
+        ],
+      ],
+    ),
+  );
+
+  Widget _current({
+    required bool stacked,
+    required bool description,
+    bool spacious = false,
+  }) {
+    final temp = _number(
+      weather.temp == null ? '—' : '${weather.temp!.round()}°',
+      spacious ? 48 : 32,
+      weight: FontWeight.bold,
+    );
+    final icon = glyph(weather.sky, weather.day, spacious ? 72 : 47);
+    final name = label(
+      skyName(weather.sky, weather.day, weather.lang),
+      spacious ? 18 : 13,
+    );
+    final reading = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        icon,
+        const SizedBox(width: 4),
+        temp,
+        if (description && !spacious) ...[const SizedBox(width: 5), name],
+      ],
+    );
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: stacked
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [icon, temp, if (description) name],
+            )
+          : spacious && description
+          ? Column(mainAxisSize: MainAxisSize.min, children: [reading, name])
+          : reading,
+    );
+  }
+
+  // Each forecast uses the available cross-axis: columns across a wide card,
+  // time/icon/reading rows down a tall card, and two lines down a single cell.
+  Widget _forecast(
+    int count, {
+    required bool vertical,
+    required bool slim,
+    bool fullRow = false,
+  }) {
+    final entries = weather.hours.take(count).map((hour) {
+      final time = _number(weather.hourLabel(hour.at), fullRow ? 13 : 10);
+      final sky = weatherSky(hour.code);
+      final icon = glyph(sky, hour.day, fullRow ? 27 : 19);
+      final temp = _number(
+        '${hour.temp.round()}°',
+        fullRow ? 16 : 12,
+        weight: FontWeight.bold,
+      );
+      final value = Row(mainAxisSize: MainAxisSize.min, children: [icon, temp]);
+      if (vertical && !slim) {
+        return Row(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: FittedBox(fit: BoxFit.scaleDown, child: time),
+              ),
+            ),
+            if (fullRow) ...[
+              icon,
+              const SizedBox(width: 7),
+              Expanded(
+                flex: 2,
+                child: label(skyName(sky, hour.day, weather.lang), 13),
+              ),
+              temp,
+            ] else
+              value,
+          ],
+        );
+      }
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            time,
+            if (slim) value else ...[icon, temp],
+          ],
+        ),
+      );
+    }).toList();
+    return Flex(
+      direction: vertical ? Axis.vertical : Axis.horizontal,
+      children: [for (final entry in entries) Expanded(child: entry)],
+    );
+  }
+
+  Widget _metrics(double width) {
+    final values = [
+      if (weather.wind != null) '${weather.wind!.round()} km/h',
+      if (weather.aqi != null) 'AQI ${weather.aqi!.round()}',
+      if (width >= 180 && weather.pm != null)
+        'PM2.5 ${weather.pm!.round()} µg/m³',
+    ];
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final value in values)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: GlassBadge(value, size: 10),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _attribution(double width) {
+    final text = width >= 118
+        ? _credit
+        : width >= 92
+        ? 'Open-Meteo\nDeveloper: Sarhang Salah'
+        : 'Open-Meteo\nDeveloper:\nSarhang Salah';
+    return Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+          style: ink(9).copyWith(fontFamily: 'NAVKurdLatin', height: 1.15),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
       final w = c.maxWidth, h = c.maxHeight;
-      final small = w < 200 || h < 58;
-      final large = !small && h >= 158 && w >= 215;
-      final head = small ? h * .29 : h * .24;
-      final hero = small
-          ? h * .54
-          : large
-          ? h * .30
-          : h * .46;
+      final slim = w < 92;
+      // The native hit targets use the same dimensions and action breakpoints.
+      final stackedActions = slim && h >= 245;
+      final actions =
+          stackedActions || (w >= 92 && (h >= 145 || (w >= 200 && h >= 64)));
+      final strip = w >= 200 && h < 110;
+      final sideCredit = actions && !stackedActions && (w >= 210 || strip);
+      final showCredit = h >= (slim ? 86 : 54);
+      final pad = math.min(12.0, w * .045);
+      final header = math.min(24.0, h);
+      final actionHeight = !actions
+          ? 0.0
+          : stackedActions
+          ? 80.0
+          : 40.0;
+      final creditWidth = math.max(1.0, w - pad * 2 - (sideCredit ? 88 : 0));
+      final creditHeight = !showCredit
+          ? 0.0
+          : creditWidth >= 118
+          ? 15.0
+          : creditWidth >= 92
+          ? 24.0
+          : 34.0;
+      final clockInHeader = w >= 195;
       final city = weather.city.isEmpty
           ? weather.t('شار هەڵبژێرە', 'اختر مدينة', 'Choose city')
           : weather.city;
-      final reading = weather.temp == null ? '—' : '${weather.temp!.round()}°';
-      final pad = math.min(w * .045, 14.0);
+      final showStatus = weather.stale || !weather.hasData;
+      final available = math.max(
+        0.0,
+        h - header - (sideCredit ? actionHeight : actionHeight + creditHeight),
+      );
+      final bodyClock = !clockInHeader && available >= 89;
+      final showMetrics = w >= 100 && available >= 115 && weather.hasData;
+      final statusLine = showStatus && available >= 115;
+      final bodyHeight = math.max(
+        0.0,
+        available -
+            (bodyClock ? 24 : 0) -
+            (showMetrics ? 19 : 0) -
+            (statusLine ? 17 : 0),
+      );
+      final vertical = slim || (h > w && bodyHeight >= 130);
+      final hours = weather.hours;
+      final slots = vertical
+          ? ((bodyHeight - (slim ? 77 : 52)) / (slim ? 32 : 23)).floor()
+          : (bodyHeight >= 71 ? ((w - 2 * pad) / 33).floor() : 0);
+      final count = math.min(hours.length, slots.clamp(0, 5));
+      final hourHeight = vertical
+          ? math.min(bodyHeight * .68, count * (slim ? 42.0 : 38.0))
+          : math.min(bodyHeight * .50, 60.0);
       return WeatherGlass(
         weather: weather,
-        radius: math.min(22.0, h * .17),
-        blur: false,
+        radius: math.min(20.0, math.min(w, h) * .18),
         child: Stack(
           children: [
             Positioned(
+              top: 0,
+              left: pad,
               right: pad,
-              left: small ? pad : w * .40,
-              top: 1,
-              height: head - 1,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: label(
-                  city,
-                  math.min(head * .56, 17.0),
-                  weight: FontWeight.w700,
-                ),
-              ),
-            ),
-            if (!small)
-              Positioned(
-                left: pad,
-                top: 1,
-                width: w * .34,
-                height: h * .30,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          label(
-                            weather.clock(weather.date),
-                            20,
-                            weight: FontWeight.bold,
-                          ),
-                          const SizedBox(width: 6),
-                          label(
-                            '${weather.date.day}/${weather.date.month}',
-                            10,
-                          ),
-                        ],
+              height: header,
+              child: Row(
+                textDirection: TextDirection.ltr,
+                children: [
+                  if (clockInHeader)
+                    FittedBox(fit: BoxFit.scaleDown, child: _clock(date: true)),
+                  Expanded(
+                    child: Align(
+                      alignment: clockInHeader
+                          ? Alignment.centerRight
+                          : Alignment.center,
+                      child: label(
+                        city,
+                        w < 80 ? 11 : 15,
+                        weight: FontWeight.w700,
                       ),
                     ),
                   ),
-                ),
-              ),
-            Positioned(
-              right: pad,
-              left: small ? pad : w * .17,
-              top: head,
-              height: hero,
-              child: Align(
-                alignment: small ? Alignment.center : Alignment.centerRight,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      glyph(
-                        weather.sky,
-                        weather.day,
-                        math.min(hero * .95, 65.0),
-                      ),
-                      label(
-                        reading,
-                        math.min(39.0, hero * .60),
-                        weight: FontWeight.w700,
-                      ),
-                      if (!small)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: label(
-                            skyName(weather.sky, weather.day, weather.lang),
-                            math.min(14.0, w * .038),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ),
-            if (small)
+            if (strip && actions)
               Positioned(
-                bottom: 1, left: pad, right: pad, height: h * .14,
-                child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown,
-                  child: label('Open-Meteo · Developer: Sarhang Salah', 8)),
-              ),
-            if (small && weather.stale)
-              Positioned(
-                left: 3,
-                top: 2,
-                child: Icon(
-                  Icons.history,
-                  size: math.min(11.0, h * .12),
-                  color: Colors.white,
-                ),
-              ),
-            if (large)
-              Positioned(
-                left: pad,
+                top: header,
+                bottom: sideCredit ? creditHeight : 2,
+                left: 89,
                 right: pad,
-                top: h * .54,
-                height: h * .28,
                 child: Row(
                   children: [
-                    for (final hour in weather.hours.take(5))
+                    Expanded(
+                      flex: 3,
+                      child: _current(stacked: false, description: w >= 245),
+                    ),
+                    if (w >= 270 && hours.length >= 2 && h >= 65)
                       Expanded(
+                        flex: 2,
+                        child: _forecast(2, vertical: false, slim: true),
+                      ),
+                  ],
+                ),
+              )
+            else
+              Positioned(
+                top: header,
+                left: pad,
+                right: pad,
+                height: available,
+                child: Column(
+                  children: [
+                    if (bodyClock)
+                      SizedBox(
+                        height: 24,
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              label(weather.hourLabel(hour.at), 9),
-                              glyph(weatherSky(hour.code), hour.day, 17),
-                              label('${hour.temp.round()}°', 11),
-                            ],
-                          ),
+                          child: _clock(date: w >= 95),
+                        ),
+                      ),
+                    Expanded(
+                      child: _current(
+                        stacked: slim && bodyHeight >= 58,
+                        spacious: w >= 180 && bodyHeight >= 140,
+                        description:
+                            (w >= 104 && bodyHeight >= 34) ||
+                            (slim && bodyHeight >= 100),
+                      ),
+                    ),
+                    if (count > 0)
+                      SizedBox(
+                        height: hourHeight,
+                        child: _forecast(
+                          count,
+                          vertical: vertical,
+                          slim: slim,
+                          fullRow: vertical && w >= 185,
+                        ),
+                      ),
+                    if (showMetrics) SizedBox(height: 19, child: _metrics(w)),
+                    if (statusLine)
+                      SizedBox(
+                        height: 17,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: label(weather.status, 10),
                         ),
                       ),
                   ],
                 ),
               ),
-            if (!small)
+            if (showCredit)
               Positioned(
-                left: 4,
-                bottom: 2,
-                width: 72,
-                height: math.min(35.0, h * .27),
-                child: const Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Icon(Icons.my_location, size: 17, color: Colors.white),
-                      Icon(Icons.refresh, size: 19, color: Colors.white),
-                    ],
+                left: (sideCredit ? 88 : 0) + pad,
+                right: pad,
+                bottom: sideCredit ? 1 : actionHeight,
+                height: math.min(
+                  creditHeight,
+                  math.max(
+                    0.0,
+                    h - header - actionHeight + (sideCredit ? actionHeight : 0),
                   ),
                 ),
+                child: _attribution(creditWidth),
               ),
-            if (!small)
+            if (showStatus && !statusLine && w >= 60 && !clockInHeader)
+              const Positioned(
+                left: 1,
+                top: 2,
+                child: Icon(Icons.history, size: 10, color: Colors.white),
+              ),
+            if (actions)
               Positioned(
-                left: 80,
-                right: pad,
-                bottom: 2,
-                height: large ? h * .18 : h * .28,
-                child: FittedBox(
-                  alignment: Alignment.centerRight,
-                  fit: BoxFit.scaleDown,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (large)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (weather.wind != null)
-                              GlassBadge(
-                                '${weather.wind!.round()} km/h',
-                                size: 9,
-                              ),
-                            if (weather.pm != null)
-                              GlassBadge(
-                                'PM2.5 ${weather.pm!.round()} µg/m³',
-                                size: 9,
-                              ),
-                            if (weather.aqi != null)
-                              GlassBadge(
-                                'AQI ${weather.aqi!.round()}',
-                                size: 9,
-                              ),
-                          ],
+                left: 0,
+                bottom: 0,
+                width: stackedActions ? w : 88,
+                height: actionHeight,
+                child: Flex(
+                  direction: stackedActions ? Axis.vertical : Axis.horizontal,
+                  textDirection: TextDirection.ltr,
+                  children: const [
+                    Expanded(
+                      child: Center(
+                        child: Icon(
+                          Icons.my_location,
+                          size: 18,
+                          color: Colors.white,
                         ),
-                      if (weather.stale || !weather.hasData)
-                        label(weather.status, 9),
-                      label('Open-Meteo · Developer: Sarhang Salah', 9),
-                    ],
-                  ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Icon(
+                          Icons.refresh,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -269,13 +443,13 @@ class WeatherWidgetArt extends StatelessWidget {
 Future<void>? _fontLoad;
 Future<void> weatherFonts() => _fontLoad ??= Future.wait([
   for (final entry in const {
-    'NAVKurdArabic': 'uniqaidar_money_heist_002',
-    'NAVKurdLatin': 'red_hat_display_variable',
+    'NAVKurdArabic':
+        'android/app/src/main/res/font/uniqaidar_money_heist_002.ttf',
+    'NAVKurdLatin':
+        'android/app/src/main/res/font/red_hat_display_variable.ttf',
+    'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
   }.entries)
-    (FontLoader(entry.key)..addFont(
-          rootBundle.load('android/app/src/main/res/font/${entry.value}.ttf'),
-        ))
-        .load(),
+    (FontLoader(entry.key)..addFont(rootBundle.load(entry.value))).load(),
 ]).then((_) {});
 Future<Uint8List> weatherBitmap(
   Size size,
@@ -306,11 +480,18 @@ Future<Uint8List> weatherBitmap(
       locale: model.lang == 'ku' ? const Locale('ckb') : Locale(model.lang),
       delegates: [
         // The bitmap tree has no display frame to wait for asynchronous Material delegates.
-        for (final delegate in navKurdDelegates.whereType<LocalizationsDelegate<WidgetsLocalizations>>())
-          if (delegate.isSupported(model.lang == 'ku' ? const Locale('ckb') : Locale(model.lang))) delegate,
+        for (final delegate
+            in navKurdDelegates
+                .whereType<LocalizationsDelegate<WidgetsLocalizations>>())
+          if (delegate.isSupported(
+            model.lang == 'ku' ? const Locale('ckb') : Locale(model.lang),
+          ))
+            delegate,
       ],
       child: Directionality(
-        textDirection: model.lang == 'en' ? TextDirection.ltr : TextDirection.rtl,
+        textDirection: model.lang == 'en'
+            ? TextDirection.ltr
+            : TextDirection.rtl,
         child: DefaultTextStyle(style: ink(13), child: WeatherWidgetArt(model)),
       ),
     ),
@@ -359,7 +540,11 @@ Future<void> startWeatherRenderer() async {
     final args = object(call.arguments);
     final snapshot = object(args['weather']);
     final lang = snapshot['language'];
-    final weather = WeatherModel(snapshot, lang == 'ar' || lang == 'en' ? lang as String : 'ku', DateTime.now());
+    final weather = WeatherModel(
+      snapshot,
+      lang == 'ar' || lang == 'en' ? lang as String : 'ku',
+      DateTime.now(),
+    );
     return weatherBitmap(
       Size(
         (args['width'] as num).toDouble(),

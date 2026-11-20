@@ -328,10 +328,11 @@ class _WeatherScreenState extends State<_WeatherScreen>
       final choice = await showModalBottomSheet<bool>(
         context: context,
         showDragHandle: true,
+        isScrollControlled: true,
         builder: (sheet) => SafeArea(
           child: Directionality(
             textDirection: lang == 'en' ? TextDirection.ltr : TextDirection.rtl,
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
+            child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
               Text(title, style: Theme.of(sheet).textTheme.titleLarge),
               ListTile(
                 leading: const Icon(Icons.my_location),
@@ -352,7 +353,7 @@ class _WeatherScreenState extends State<_WeatherScreen>
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: Text("${m.t('شوێنی دیاریکراو', 'الموقع المثبت', 'Pinned location')} · ${pinned['name'] ?? ''}"),
               ),
-            ]),
+            ])),
           ),
         ),
       );

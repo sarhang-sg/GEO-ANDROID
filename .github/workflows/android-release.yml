@@ -31,7 +31,7 @@ concurrency:
 
 env:
   NAV_KURD_VERSION: 11.0.0
-  NAV_KURD_VERSION_CODE: 110002
+  NAV_KURD_VERSION_CODE: 110003
 
 jobs:
 

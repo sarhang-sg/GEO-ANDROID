@@ -22,7 +22,7 @@ class NavKurdWidgetProvider:AppWidgetProvider() {
 
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) {
         WeatherBitmaps.restore(context, manager, intArrayOf(id))
-        WeatherWork.paint(context)
+        WeatherWork.paint(context, resizing = true)
     }
     override fun onDeleted(context:Context, ids:IntArray) { WeatherBitmaps.discard(context,ids) }
     override fun onEnabled(context:Context){scheduleRefresh(context);NavKurdWeatherJob.schedule(context)}

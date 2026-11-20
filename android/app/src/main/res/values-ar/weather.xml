@@ -6,4 +6,11 @@
     <string name="weather_syncing">جارٍ الاتصال...</string>
     <string name="weather_gps">تحديث الموقع</string>
     <string name="weather_refresh">تحديث الطقس</string>
+    <string name="route_weather_channel">تنبيهات طقس الطريق</string>
+    <string name="route_weather_heat">حرارة شديدة عند الوجهة.</string>
+    <string name="route_weather_cold">درجات حرارة دون الصفر عند الوجهة.</string>
+    <string name="route_weather_storm">احتمال أمطار غزيرة أو عواصف رعدية عند الوجهة.</string>
+    <string name="route_weather_air">جودة الهواء سيئة عند الوجهة.</string>
+    <string name="route_weather_ice">احتمال تساقط الثلوج أو تشكل الجليد عند الوجهة.</string>
+    <string name="route_weather_fog">احتمال تشكل الضباب عند الوجهة.</string>
 </resources>

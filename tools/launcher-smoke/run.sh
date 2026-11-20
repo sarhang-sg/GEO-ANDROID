@@ -167,6 +167,16 @@ adb exec-out screencap -p > "$evidence/map.png"
 phase='waiting for the launcher bitmap and live temperature'
 timeout 45 adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse "$reuse_widget"
 timeout 145 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F widget-bitmap-ready >/dev/null; do sleep 2; done'
+phase='resizing one bound widget through the launcher'
+for shape in '52 442 true' '136 258 false' '136 73 true' '300 73 false' '300 442 true' '300 160 true'; do
+    read -r width height exact <<< "$shape"
+    marker="resize-${width}x${height}-ready"
+    adb shell am start -W -n com.navkurd.smoke/.WidgetHost --es target "$target" --ez reuse true \
+        --ei width "$width" --ei height "$height" --ez exact "$exact" --ez burst true --es marker "$marker" >/dev/null
+    timeout 75 bash -c 'until adb logcat -d -s NavKurdSmoke:I | grep -F "$1" >/dev/null; do sleep 1; done' _ "$marker"
+    adb exec-out screencap -p > "$evidence/widget-${width}x${height}.png"
+    echo "PASS launcher resized same widget to ${width}x${height}, preserved bitmap proportions and action targets"
+done
 for _ in $(seq 1 12); do
     if read_window && grep -q ':id/weather_forecast' "$work/window.xml"; then
         cp "$work/window.xml" "$evidence/widget.xml"

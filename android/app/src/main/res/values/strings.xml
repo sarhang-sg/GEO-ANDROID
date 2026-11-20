@@ -40,4 +40,11 @@
     <string name="weather_syncing">لە هەوڵی پەیوەندیکردندایە...</string>
     <string name="weather_gps">نوێکردنەوەی شوێن</string>
     <string name="weather_refresh">نوێکردنەوەی کەشوهەوا</string>
+    <string name="route_weather_channel">ئاگاداریی کەشوهەوای ڕێگا</string>
+    <string name="route_weather_heat">ئاگاداری: شەپۆلی گەرمای تاقەتپڕووکێن</string>
+    <string name="route_weather_cold">ئاگاداری: شەختە و بەستەڵەک</string>
+    <string name="route_weather_storm">ئەگەری بارانی بەخوڕ یان هەورەبروسکە لە شوێنی مەبەست هەیە.</string>
+    <string name="route_weather_air">کوالیتی هەوا لە شوێنی مەبەست خراپە.</string>
+    <string name="route_weather_ice">ئەگەری بەفر یان بەستن لە شوێنی مەبەست هەیە.</string>
+    <string name="route_weather_fog">ئاگاداری: لە خاڵی مەبەست ئەگەری تەمومژ/مەترسی هەیە</string>
 </resources>

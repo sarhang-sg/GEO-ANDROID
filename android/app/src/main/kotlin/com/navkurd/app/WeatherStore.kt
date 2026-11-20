@@ -202,6 +202,11 @@ internal object WeatherStore {
         } finally { conn.disconnect() }
     }
     private fun JSONObject.optJSONArrayOrHours() = optJSONObject("hourly")?.optJSONArray("time")
+    fun localizedContext(c: Context, language: String): Context {
+        val config = android.content.res.Configuration(c.resources.configuration)
+        config.setLocale(Locale.forLanguageTag(if (language == "ku") "ckb" else language))
+        return c.createConfigurationContext(config)
+    }
     fun hazard(data: JSONObject): String? {
         if (data.optBoolean("stale")) return null
         val cur=data.optJSONObject("current") ?: return null

@@ -6,6 +6,6 @@
         <package android:name="com.navkurd.app.debug" />
     </queries>
     <application android:label="NAV KURD widget test host" android:theme="@android:style/Theme.Material.Light.NoActionBar">
-        <activity android:name=".WidgetHost" android:exported="true" />
+        <activity android:name=".WidgetHost" android:exported="true" android:launchMode="singleTop" />
     </application>
 </manifest>
