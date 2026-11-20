@@ -5,7 +5,7 @@
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./ANDROID_APP_LINK_SHA256.txt
 982d5fdd0acecff482546418aa173816b1cb0e193691d0beeb702d169160b445  ./LICENSE
-db1c3d823f7f0c9fc303124626e178809809ac9fff5bcb1ae72eca1d6218a5d6  ./README.md
+4e81f8b65695a2dd87341e77c01dbba6b19f2a6789574f166aeae51c1e61a5d1  ./README.md
 47ebcf27861b35d76fbe45cc12d9dd321eab1c5b1581d5e560f7209cff189705  ./SECURITY.md
 026bd389d97c3ee4a6bca7b21ef46afa4895ebd383fa2e4fc4afa08c77cfb367  ./TERMUX.sh
 fb936c475d36fa551a08113887463c5eabe3a4006e26554530c1730cd3cfc700  ./analysis_options.yaml
@@ -694,16 +694,16 @@ a20f24f90135424da7219c45d070b95812d67e5373eef3b7df42eef5a0b5ea76  ./android/key.
 8d7ee134f03c242c5fb21284346348a11619386f50beda4958bb09b462b26192  ./assets/application-release.json
 bbf847a9a280b385dd7f1c64172413977471dbeeeefc598e30e567a500906870  ./assets/images/nav-kurd-logo.png
 453a53c704fbaa239881406bab7472eecba7f9746003dd39c1e36c38ee388565  ./assets/r16/assets/app-url-CKyBgAKA.js
-b85829af928fd65d284dcc632e6f9e4252859335347b4ef05b4f3cd92ffa3d44  ./assets/r16/assets/cities-D6jkR5id.js
+850557cb9a0b1fea299516e2fdc2896544ad72bec6cb8f504716349b2ae2b1b9  ./assets/r16/assets/cities-BXVG3JgM.js
 00b9f11cfe18038b6395f7b1c47e480e81f86307579f77f74e21d17ba3062770  ./assets/r16/assets/clipboard-mu55EQoE.js
 f3d8bce7853d3599987e16bddca9f8a64b814d1c4020d410224e2a52fa0a199a  ./assets/r16/assets/dialog-close-icon-BOOke_OB.js
 a594db22c941a17c79e18922e6b6d3ec6bfa399457554e75481ae9b71ec815bf  ./assets/r16/assets/dom-CCMEPdhX.js
 10f063f2003ac3b0b28bba83d895975f365be5f074a6984652f862600aa6a2f6  ./assets/r16/assets/feedback-studio-GyqBzBLd.js
 6658edb38fc278aeacacaf82478315a0ced3fed6f63458b57ee8421b30d4d5b3  ./assets/r16/assets/geo-format-8OEz8TGd.js
-55b1311bc6adfca1389e2aec17486d84f78e8417cc2064395d18c18572b19132  ./assets/r16/assets/index-Cu6w-bhz.js
+2130bfe35fa6fe039a7e068cd0aaf59224009a72fe55bd2d845a78516c2df948  ./assets/r16/assets/index-qQsFSbx9.js
 9429ce6530c5b49f3b351eb9eafb48c82f470690a4ae7978fc85cfb2a74b10b8  ./assets/r16/assets/loading-view-BSN0U7ES.js
 5fc1b1c6f247acb93e47f9a120b09a73698750b1fa4a5a18ac16f0caa1e275f5  ./assets/r16/assets/local-provider-CFsuKCna.js
-7daad7a49606d15f91bb58dd5473f6eda6c77875291c84c439ec37bdcb81ba06  ./assets/r16/assets/main-AakgFQCD.js
+a862e44f2eaa43aae913a81eba2f35db1ea1b9b424602b32f32bcf4c35e03e2e  ./assets/r16/assets/main-5nRK3IG7.js
 ae43bb414286ae9c1f672cd8b7333c6bd67415e3ba47fc53906caf5e3ed0e2e0  ./assets/r16/assets/map-language-Cion04od.js
 a44e9c8519685a73587bcb465401eade1c3491d382c22243373c1c42b766f186  ./assets/r16/assets/maplibre-CKRTiAqP.css
 be017736673e650182057143181703cef1c3af9fe6a6dc271e374a8c164abde4  ./assets/r16/assets/maplibre-D6qQPCjC.js
@@ -714,7 +714,7 @@ cd75ac9d6e23fa157485673e83913d0434b283e07cfcda1669f682ae7b3a65c9  ./assets/r16/a
 b789c5675271b44486cbaa390cf87e0f9ac90dea3e01ed4cd72549138c8d2445  ./assets/r16/assets/owner-studio-copy-p7CFK-jR.js
 1fb3c9105154d61efbf86b6ec82ef6221b685335d4549923156b591ce32a9c15  ./assets/r16/assets/place-weather-Cp7cl0EW.js
 7bd8a3aa32fe9d07d68b7cee2383f62fbf77b8ec3bd929a0cc96852add2ea542  ./assets/r16/assets/place-weather-Drm7Lg3T.js
-0f74e43681c5a1be1abdbe7cf60841012aa8023d69c03e73e1743ca513665d4b  ./assets/r16/assets/preload-helper-DIbNLB2R.js
+2e1d1e9bcd7290a9016fec5624cdcd740787b36561d84e1a953466da6256b0c6  ./assets/r16/assets/preload-helper-CoDP6HwL.js
 5165b9976eea9858c4476d7e1bf9a87764a5481a6ed4db8c7f433c51908fe9a2  ./assets/r16/assets/qrcodegen-8xuz48BQ.js
 4e898f5a35e47d5023b11968350910703e47514300cd9c095626eb973a7f9360  ./assets/r16/assets/release-BL_hN0LT.js
 90406120e1791e35af1ed2ffa5f28e553e963ba9b3e0e95bbd4d1f1e15a5f869  ./assets/r16/assets/runtime-diagnostics-VDcgG8F-.js
@@ -744,7 +744,7 @@ e8f6a216da5abebb85ed217ec19b910264107336b4d86ef40fe3748007bcfb58  ./assets/r16/a
 4893663ecbb19de5b27f81c1e69fcde1cbc5bd8be8374f3ab51465bad0508a96  ./assets/r16/fonts/DroidLogo-Bold.ttf
 7355b16c9f0cc29f3b90be45723c0b0ec4506ee581753b9a8187d1b45b2fd9e2  ./assets/r16/fonts/RedHatDisplay-Variable.woff2
 8eb44ac578038db018c17f06807a5049fadbe9e4ad1abde21c4840b7232c9766  ./assets/r16/fonts/UniQAIDAR-Money-Heist-002.ttf
-24512096810012f93e39cdf920d3fb803e59cf6a361c1f47902c549d4d1c919e  ./assets/r16/index.html
+556989b66a553326de987765b003077664cef0633d3bfa86d1a7dba5f677dd2e  ./assets/r16/index.html
 8d0a7755445c691035dde93660a46e9b17997c2d059ad6a70e2c066bcaed80b2  ./assets/r16/legal/account-deletion.html
 cd01b1089f849f1054e23c7c7c08906fb683c64adfc4fd610e93fc04b41c0418  ./assets/r16/legal/contribution-guidelines.html
 31bdbd87a75dfe9ef348efc5b8e12d7b42c7642ecd8532fc4bbcbbc31b54ee23  ./assets/r16/legal/legal-i18n.js
@@ -752,9 +752,9 @@ ec399e301545efcb2479ae6ea744c5f72ac3d7c5db44284d52c3145752130fcb  ./assets/r16/l
 882729c57351af07d741e49095bd8dd28ec6c7f4545b6f696e026f8078a3b6f1  ./assets/r16/legal/privacy.html
 41fc5c0089ebbb1a434c8f94f7d172fc6a9daca4443df502f5f068c6645ef171  ./assets/r16/legal/security.html
 f73ce362f5aa2b6fd1e357e6372e32afb08a41dac661a1895505c022c9075cbb  ./assets/r16/legal/terms.html
-ad037f8f62c2605af9e2665aa45b8ca32fa36be1e2cc821896a56b75973d02ac  ./assets/r16/manifest.json
+9cd455d5fdeea6364328c146670020ae664ca4ac8670f3da405c1586896bddb8  ./assets/r16/manifest.json
 310e56035be90c354717e174f69d1d6cdc245e247cf05b96e3b7b879bb67b5e0  ./assets/r16/manifest.webmanifest
-7e6107b2fddf92267d252659e5eebfce666f0bdf128aaac6729df31a93a285c4  ./assets/r16/weather-cities.html
+9535ac4407c671beb8b27d26355c70e5246bbfa4d38761b32c91946136acb0fa  ./assets/r16/weather-cities.html
 f029536d9dc5237cbe90f61fc2f25a3e340a058dad0ed77d74e9f060dc9a2502  ./assets/weather/cities.json
 0057181ebb7cd9c26d1737bcc8dcad3029bd47fad3f9efdf5920c706cf84a11c  ./assets/weather/mist.json
 e594535008e290246e376fc95c5ba2d57843d8a4d08638a89f7d3dbd0d29d125  ./assets/weather/rain.json
@@ -765,7 +765,7 @@ c1926947cde3480d3bfca7c09044e5eb14d7033273c5727e63fc063845ed4d8c  ./assets/widge
 ced8454b4fcf41238028cfda721668de0de26261fac90ff6c4f9d17260600512  ./assets/widget-scenes/winter.svg
 0af9a8d87877a864c83c1f2c1351dc94d9c9caa4a6d4ac459fc3a4bf19f6de08  ./contracts/offline-routing.json
 44ae795b727fe717b4eff68da00aca1ff6a26fe9915c1e89debe732413cece3b  ./docs/APKPURE.md
-fd73d0f42d035a8f8cbbc8c323b6809f3e3c1b42efb4d8bd6cdde978deb1b4eb  ./docs/RELEASE.md
+d62fe514e6f585f315eb5b74f7d642da88a3b9a33daea53bdd989766584d1c53  ./docs/RELEASE.md
 4b812aff257abd1d3aa9a5083a08a5e4ee99920cfb268c95929336bc044bd904  ./docs/images/nav-kurd-cover.jpg
 68a630638a0c3f89387a058bca6f346a154ab5040dd27b0a27732eb68db95c74  ./docs/images/nav-kurd-screen-1.jpg
 d3dbe049ad6a1fa39eb19d38853b378ae034f4f0be058bfdbd685096a2ec16be  ./docs/images/nav-kurd-screen-2.jpg

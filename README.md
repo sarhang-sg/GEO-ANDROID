@@ -8,7 +8,7 @@ Sarhang Salah’s Kurdish-first GIS and weather app for Android. Release 11.0.0 
 
 ## Map and weather
 
-The place card fits between the map controls. It shows the same weather gradients and location QR code as the web app. The QR opens the named coordinates on another device. The 3D GPS arrow follows the camera at a fixed screen size. Open **Weather → Widget location** to pin the displayed city or return to automatic GPS. Automatic mode retains the last device position when GPS is off. Weather browsing and favorites have their own state.
+The place card fits between the map controls. It shows the same weather gradients and location QR code as the web app. The QR opens the named coordinates on another device. The 3D GPS arrow follows the camera at a fixed screen size, adjustable in **Appearance & controls**. Open **Weather → Widget location** to pin the displayed city or return to automatic GPS. Automatic mode retains the last device position when GPS is off. Weather browsing and favorites have their own state.
 
 <p align="center">
   <img src="docs/images/nav-kurd-screen-1.jpg" width="30%" alt="NAV KURD navigation" />
