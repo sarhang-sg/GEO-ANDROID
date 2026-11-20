@@ -1,0 +1,18 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <ImageView android:id="@+id/weather_bitmap"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="fitCenter" android:importantForAccessibility="no"
+        android:contentDescription="Open-Meteo · Developer: Sarhang Salah" />
+    <TextView android:id="@+id/weather_pending"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="center"
+        android:gravity="center" android:paddingStart="4dp" android:paddingEnd="4dp"
+        android:maxLines="1" android:ellipsize="end" android:text="@string/weather_syncing"
+        android:textColor="#F4F7FF" android:fontFamily="@font/uniqaidar_money_heist_002" android:textSize="12sp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+        <TextView android:id="@+id/weather_city" android:layout_width="match_parent" android:layout_height="24dp"
+            android:contentDescription="@string/weather_pick_city" android:focusable="true" />
+        <TextView android:id="@+id/weather_forecast" android:layout_width="match_parent" android:layout_height="0dp"
+            android:layout_weight="1" android:contentDescription="@string/weather_open_forecast" android:focusable="true" />
+    </LinearLayout>
+</FrameLayout>

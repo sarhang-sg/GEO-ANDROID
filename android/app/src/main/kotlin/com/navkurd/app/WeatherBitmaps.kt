@@ -32,19 +32,24 @@ import kotlin.math.*
 
 internal object WeatherBitmaps {
     private val rendering=Mutex()
-    private data class Extent(val w:Float,val h:Float)
+    private data class Extent(val w:Float,val h:Float) {
+        val stackedActions get() = w < 92 && h >= 245
+        val hasActions get() = stackedActions || (w >= 92 && (h >= 145 || (w >= 200 && h >= 64)))
+    }
+    private data class HostSizes(val values: List<Extent>, val exact: Boolean)
     @Suppress("DEPRECATION")
-    private fun sizes(b:Bundle):List<Extent>{
+    private fun sizes(b:Bundle):HostSizes{
         if(Build.VERSION.SDK_INT>=31){
             val list=b.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES).orEmpty()
                 .filter { it.width.isFinite() && it.height.isFinite() && it.width>=16 && it.height>=16 }
                 .map { Extent(it.width,it.height) }.distinct().sortedBy{ it.w*it.h }
-            if(list.isNotEmpty())return if(list.size<=4)list else listOf(list.first(),list[list.size/3],list[list.size*2/3],list.last()).distinct()
+            // Android accepts up to 16 exact layouts in a size map.
+            if (list.size in 1..16) return HostSizes(list, true)
         }
         fun dim(key:String,default:Int)=b.getInt(key,default).takeIf { it>0 }?.toFloat()?:default.toFloat()
         val minW=dim(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,260);val maxW=dim(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,minW.toInt())
         val minH=dim(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,110);val maxH=dim(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,minH.toInt())
-        return listOf(Extent(minW,maxH),Extent(maxW,minH)).distinct()
+        return HostSizes(listOf(Extent(minW,maxH),Extent(maxW,minH)).distinct(), false)
     }
     private class Renderer(val engine: FlutterEngine, val channel: MethodChannel, val surface: ImageReader) {
         fun close() {
@@ -111,11 +116,11 @@ internal object WeatherBitmaps {
     private fun action(c:Context,name:String)=PendingIntent.getBroadcast(c,name.hashCode(),Intent(c,WeatherWidgetAction::class.java).setAction("com.navkurd.app.weather.$name"),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     private fun views(context:Context,s:Extent,bitmap:Bitmap?,data:JSONObject):RemoteViews{
         val language = data.optString("language", "ku")
-        val configuration = android.content.res.Configuration(context.resources.configuration)
-        configuration.setLocale(java.util.Locale.forLanguageTag(if(language=="ku") "ckb" else language))
-        val c = context.createConfigurationContext(configuration)
-        val small=s.w<200 || s.h<58
-        val v=RemoteViews(c.packageName,if(small)R.layout.weather_small else R.layout.weather_dashboard)
+        val c = WeatherStore.localizedContext(context,language)
+        val compact = !s.hasActions
+        val layout = if (compact || s.stackedActions) R.layout.weather_small else R.layout.weather_dashboard
+        val v = RemoteViews(c.packageName,layout)
+        v.setViewVisibility(R.id.weather_actions, if (compact) android.view.View.GONE else android.view.View.VISIBLE)
         val name = data.optJSONObject("place")?.optString("name").orEmpty()
         val current = data.optJSONObject("current")
         val temp = current?.optDouble("temperature_2m")?.takeIf { it.isFinite() }?.roundToInt()
@@ -126,21 +131,26 @@ internal object WeatherBitmaps {
             clock.timeZone = java.util.TimeZone.getTimeZone(data.getString("timezone"))
         val last = if (stamp > 0L && temp != null) c.getString(R.string.weather_last_reading, clock.format(java.util.Date(stamp * 1000L))) else ""
         val forecast = if (temp == null) c.getString(R.string.weather_open_forecast)
-            else listOf("${temp}°C", last).filter { it.isNotEmpty() }.joinToString(if (small) " · " else "\n")
+            else listOf("${temp}°C", last).filter { it.isNotEmpty() }.joinToString(if (compact) " · " else "\n")
         v.setImageViewBitmap(R.id.weather_bitmap, bitmap)
         val waiting = when (language) {
             "ar" -> "جارٍ الاتصال..."
             "en" -> "Connecting..."
             else -> c.getString(R.string.weather_syncing)
         }
-        v.setTextViewText(R.id.weather_pending, waiting)
+        val placeholder = when {
+            temp == null -> waiting
+            s.w < 92 -> "${temp}°C"
+            else -> "$city · ${temp}°C"
+        }
+        v.setTextViewText(R.id.weather_pending, placeholder)
         v.setViewVisibility(R.id.weather_pending, if (bitmap == null) android.view.View.VISIBLE else android.view.View.GONE)
         // RemoteViews supplies accessible hit targets. All visible forecast content comes from Flutter.
         v.setTextViewText(R.id.weather_city, "")
         v.setTextViewText(R.id.weather_forecast, "")
         v.setContentDescription(R.id.weather_city, city)
         v.setContentDescription(R.id.weather_forecast, forecast)
-        if (!small) {
+        if (!compact) {
             v.setTextViewText(R.id.weather_gps, "")
             v.setTextViewText(R.id.weather_refresh, "")
             v.setContentDescription(R.id.weather_gps, c.getString(R.string.weather_gps))
@@ -149,7 +159,7 @@ internal object WeatherBitmaps {
         v.setContentDescription(R.id.weather_bitmap, listOf(city, forecast, "Open-Meteo · Developer: Sarhang Salah").joinToString(" · "))
         v.setOnClickPendingIntent(R.id.weather_root,WeatherActivity.pending(c,"details"));v.setOnClickPendingIntent(R.id.weather_bitmap,WeatherActivity.pending(c,"details"))
         v.setOnClickPendingIntent(R.id.weather_city,WeatherActivity.pending(c,"cities"));v.setOnClickPendingIntent(R.id.weather_forecast,WeatherActivity.pending(c,"forecast"))
-        if(!small){
+        if (!compact){
             v.setOnClickPendingIntent(R.id.weather_gps,action(c,"gps"));v.setOnClickPendingIntent(R.id.weather_refresh,action(c,"manual"))
         }
         return v
@@ -164,7 +174,7 @@ internal object WeatherBitmaps {
     }
     private fun sourceRevision(c:Context) = runCatching { revisionFile(c).readFully().decodeToString() }.getOrDefault("")
     private fun bitmapFile(c:Context, id:Int, extent:Extent, language:String, placeKey:String) =
-        AtomicFile(File(c.cacheDir,"weather-widget-$id-$language-$placeKey-${extent.w.toInt()}x${extent.h.toInt()}.png"))
+        AtomicFile(File(c.cacheDir,"weather-widget-$id-v2-$language-$placeKey-${extent.w}x${extent.h}.png"))
 
     fun restore(c:Context, manager:AppWidgetManager, ids:IntArray) {
         val language=WeatherStore.prefs(c).getString("language","ku") ?: "ku"
@@ -174,17 +184,17 @@ internal object WeatherBitmaps {
         reading.put("language",language)
         for (id in ids) {
             val extents = sizes(manager.getAppWidgetOptions(id))
-            val previous = c.cacheDir.listFiles { f -> f.name.startsWith("weather-widget-$id-$language-$key-") && f.name.endsWith(".png") }
-                ?.maxByOrNull { it.lastModified() }
+
             runCatching {
                 val rendered = linkedMapOf<SizeF,RemoteViews>()
-                for (extent in extents) {
-                    val exact = bitmapFile(c,id,extent,language,key).baseFile
-                    val saved = exact.takeIf { it.isFile } ?: previous
-                    val bitmap = saved?.let { BitmapFactory.decodeFile(it.path) }
+                for (extent in extents.values) {
+                    val file = bitmapFile(c,id,extent,language,key)
+                    val bitmap = if (file.baseFile.isFile) runCatching {
+                        file.openRead().use { BitmapFactory.decodeStream(it) }
+                    }.getOrNull() else null
                     rendered[SizeF(extent.w,extent.h)] = views(c,extent,bitmap,reading)
                 }
-                if (rendered.isNotEmpty()) manager.updateAppWidget(id,forLauncher(rendered))
+                if (rendered.isNotEmpty()) manager.updateAppWidget(id,forLauncher(rendered, extents))
             }.onFailure { WeatherStore.report(c,"restoreBitmap",it) }
         }
     }
@@ -192,9 +202,9 @@ internal object WeatherBitmaps {
         ids.forEach { id -> c.cacheDir.listFiles { f -> f.name.startsWith("weather-widget-$id-") }?.forEach { it.delete() } }
     }
 
-    private fun forLauncher(rendered: LinkedHashMap<SizeF, RemoteViews>): RemoteViews =
+    private fun forLauncher(rendered: LinkedHashMap<SizeF, RemoteViews>, sizes: HostSizes): RemoteViews =
         if (rendered.size == 1) rendered.values.first()
-        else if (Build.VERSION.SDK_INT >= 31) RemoteViews(rendered)
+        else if (Build.VERSION.SDK_INT >= 31 && sizes.exact) RemoteViews(rendered)
         else RemoteViews(rendered.values.last(), rendered.values.first())
 
     suspend fun update(c:Context)=rendering.withLock {
@@ -234,9 +244,9 @@ internal object WeatherBitmaps {
             val active=start(c);renderer=active
             for(id in ids){
                 val extents=sizes(m.getAppWidgetOptions(id));val rendered=linkedMapOf<SizeF,RemoteViews>()
-                for(extent in extents){
+                for(extent in extents.values){
                     val area=extent.w.toDouble()*extent.h
-                    val cap=min(420000.0,max(16384.0,d.widthPixels.toDouble()*d.heightPixels*.95/extents.size))
+                    val cap=min(420000.0,max(16384.0,d.widthPixels.toDouble()*d.heightPixels*.95/extents.values.size))
                     val ratio=min(d.density.toDouble().coerceIn(1.0,3.0),sqrt(cap/area))
                     val bytes=active.png(extent,ratio,args)
                     val bitmap=BitmapFactory.decodeByteArray(bytes,0,bytes.size) ?: throw IllegalStateException("PNG decoding failed")
@@ -247,8 +257,10 @@ internal object WeatherBitmaps {
                     rendered[SizeF(extent.w,extent.h)]=views(c,extent,bitmap,data)
                 }
                 if (revision!=sourceRevision(c)) return@withLock
-                m.updateAppWidget(id, forLauncher(rendered))
-                val retained = extents.map { bitmapFile(c,id,it,data.optString("language","ku"),key).baseFile.name }.toSet()
+                // A drag, rotation, or deletion can finish while Flutter is rasterizing.
+                if (m.getAppWidgetInfo(id) == null || sizes(m.getAppWidgetOptions(id)) != extents) continue
+                m.updateAppWidget(id, forLauncher(rendered, extents))
+                val retained = extents.values.map { bitmapFile(c,id,it,data.optString("language","ku"),key).baseFile.name }.toSet()
                 c.cacheDir.listFiles { f -> f.name.startsWith("weather-widget-$id-") && f.name.endsWith(".png") && f.name !in retained }?.forEach { it.delete() }
             }
         } finally {

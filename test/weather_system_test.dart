@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 import 'dart:ui';
+
+import 'package:flutter/material.dart'
+    show Align, Alignment, Directionality, Icons, SizedBox;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geo_android/weather/weather_model.dart';
 import 'package:geo_android/weather/weather_widget.dart';
@@ -61,28 +64,93 @@ void main() {
       expect(m.status, 'دوایین نوێکردنەوە لە 10:05');
     },
   );
-  testWidgets('headless renderer emits six distinct valid launcher sizes', (
-    tester,
-  ) async {
-    await tester.runAsync(() async {
-      for (final size in [
-        const Size(48, 48),
-        const Size(110, 49),
-        const Size(250, 60),
-        const Size(270, 108),
-        const Size(300, 175),
-        const Size(340, 275),
-      ]) {
-        final bytes = await weatherBitmap(
-          size,
-          1.5,
-          WeatherModel(reading(21), 'ku', now),
-        );
-        expect(bytes.take(8), [137, 80, 78, 71, 13, 10, 26, 10]);
-        final header = ByteData.sublistView(bytes);
-        expect(header.getUint32(16), closeTo(size.width * 1.5, 1));
-        expect(header.getUint32(20), closeTo(size.height * 1.5, 1));
+  testWidgets(
+    'a launcher resize reflows one weather reading and its forecast',
+    (tester) async {
+      for (final language in ['ku', 'ar', 'en']) {
+        final model = WeatherModel(reading(-4), language, now);
+        for (final (width, height, minHours, actions) in [
+          (52.0, 442.0, 5, true),
+          (136.0, 258.0, 3, true),
+          (136.0, 165.0, 2, true),
+          (136.0, 73.0, 0, false),
+          (220.0, 73.0, 0, true),
+          (304.0, 73.0, 2, true),
+          (304.0, 442.0, 5, true),
+          (48.0, 48.0, 0, false),
+        ]) {
+          await tester.pumpWidget(
+            Directionality(
+              textDirection: language == 'en'
+                  ? TextDirection.ltr
+                  : TextDirection.rtl,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: width,
+                  height: height,
+                  child: WeatherWidgetArt(model),
+                ),
+              ),
+            ),
+          );
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: '$language ${width}x$height',
+          );
+          expect(find.text(model.city), findsOneWidget);
+          final shown = model.hours
+              .where(
+                (h) => find.text(model.hourLabel(h.at)).evaluate().isNotEmpty,
+              )
+              .length;
+          expect(
+            shown,
+            greaterThanOrEqualTo(minHours),
+            reason: '$language ${width}x$height',
+          );
+          final gps = find.byIcon(Icons.my_location);
+          final refresh = find.byIcon(Icons.refresh);
+          expect(gps, actions ? findsOneWidget : findsNothing);
+          expect(refresh, actions ? findsOneWidget : findsNothing);
+          if (actions) {
+            final a = tester.getCenter(gps), b = tester.getCenter(refresh);
+            expect(
+              width < 92 ? b.dy - a.dy : b.dx - a.dx,
+              greaterThanOrEqualTo(39),
+            );
+          }
+        }
       }
-    });
-  });
+    },
+  );
+  testWidgets(
+    'headless renderer keeps native aspect ratios at launcher sizes',
+    (tester) async {
+      await tester.runAsync(() async {
+        for (final size in [
+          const Size(52, 442),
+          const Size(136, 258),
+          const Size(304, 73),
+          const Size(48, 48),
+          const Size(110, 49),
+          const Size(250, 60),
+          const Size(270, 108),
+          const Size(300, 175),
+          const Size(340, 275),
+        ]) {
+          final bytes = await weatherBitmap(
+            size,
+            1.5,
+            WeatherModel(reading(21), 'ku', now),
+          );
+          expect(bytes.take(8), [137, 80, 78, 71, 13, 10, 26, 10]);
+          final header = ByteData.sublistView(bytes);
+          expect(header.getUint32(16), closeTo(size.width * 1.5, 1));
+          expect(header.getUint32(20), closeTo(size.height * 1.5, 1));
+        }
+      });
+    },
+  );
 }

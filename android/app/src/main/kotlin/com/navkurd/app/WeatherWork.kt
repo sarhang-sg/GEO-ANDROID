@@ -63,12 +63,22 @@ class WeatherWork(context:Context,params:WorkerParameters):CoroutineWorker(conte
         if(id==p.getString("weather_last_warning","") && now-p.getLong("weather_warning_at",0L)<3*3600000L) return Result.success()
         val manager=c.getSystemService(NotificationManager::class.java)
         if(!manager.areNotificationsEnabled() || (Build.VERSION.SDK_INT>=33 && ContextCompat.checkSelfPermission(c,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)) return Result.success()
+        val localized = WeatherStore.localizedContext(c, p.getString("language","ku") ?: "ku")
+        val messageId = when (hazard) {
+            "heat" -> R.string.route_weather_heat
+            "cold" -> R.string.route_weather_cold
+            "storm" -> R.string.route_weather_storm
+            "dust" -> R.string.route_weather_air
+            "ice" -> R.string.route_weather_ice
+            "fog" -> R.string.route_weather_fog
+            else -> return Result.success()
+        }
         val channel="nav_kurd_route_weather"
         if(Build.VERSION.SDK_INT>=26) {
-            manager.createNotificationChannel(NotificationChannel(channel,"ئاگاداریی کەشوهەوای ڕێگا",NotificationManager.IMPORTANCE_HIGH).apply { enableVibration(false) })
+            manager.createNotificationChannel(NotificationChannel(channel,localized.getString(R.string.route_weather_channel),NotificationManager.IMPORTANCE_HIGH).apply { enableVibration(false) })
             if(manager.getNotificationChannel(channel).importance==NotificationManager.IMPORTANCE_NONE)return Result.success()
         }
-        val msg="ئاگاداری: لە خاڵی مەبەست ئەگەری تەمومژ/مەترسی هەیە"
+        val msg=localized.getString(messageId)
         manager.notify(901080,NotificationCompat.Builder(c,channel).setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(destination.name).setContentText(msg).setStyle(NotificationCompat.BigTextStyle().bigText(msg))
             .setPriority(NotificationCompat.PRIORITY_HIGH).setCategory(NotificationCompat.CATEGORY_STATUS)
@@ -99,10 +109,11 @@ class WeatherWork(context:Context,params:WorkerParameters):CoroutineWorker(conte
             val policy=if(mode=="widget-location") ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP
             WorkManager.getInstance(c).enqueueUniqueWork("weather-now-$mode",policy,req.build())
         }
-        fun paint(c:Context){
-            val work=OneTimeWorkRequestBuilder<WeatherWork>().setInputData(workDataOf("mode" to "paint")).build()
+        fun paint(c:Context, resizing:Boolean = false){
+            val request=OneTimeWorkRequestBuilder<WeatherWork>().setInputData(workDataOf("mode" to "paint"))
+            if (resizing) request.setInitialDelay(200,TimeUnit.MILLISECONDS)
             // A final resize is delivered even when an earlier size is being rendered.
-            WorkManager.getInstance(c).enqueueUniqueWork("weather-paint",ExistingWorkPolicy.REPLACE,work)
+            WorkManager.getInstance(c).enqueueUniqueWork("weather-paint",ExistingWorkPolicy.REPLACE,request.build())
         }
         @Synchronized fun manual(c:Context,mode:String){
             val now=System.currentTimeMillis();val p=WeatherStore.prefs(c)

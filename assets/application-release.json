@@ -1,12 +1,12 @@
 {
   "appVersion": "11.0.0",
-  "androidVersionCode": 110002,
-  "releaseId": "2026-11-20-nav-kurd-v11.0.0-build.110002",
+  "androidVersionCode": 110003,
+  "releaseId": "2026-11-20-nav-kurd-v11.0.0-build.110003",
   "releaseDate": "2026-11-20",
   "serviceWorkerRelease": "11.0.0",
   "releaseLabel": "NAV KURD 11.0.0",
   "hardeningDate": "2026-11-20",
   "hardeningRelease": "11.0.0",
   "presentationVersion": "11.0.0",
-  "androidReleaseTag": "v11.0.0-build.110002"
+  "androidReleaseTag": "v11.0.0-build.110003"
 }
