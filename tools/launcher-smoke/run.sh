@@ -194,6 +194,8 @@ for _ in $(seq 1 15); do if top_is WeatherActivity; then break; fi; sleep 1; don
 top_is WeatherActivity
 wait_screen weather
 adb exec-out screencap -p > "$evidence/weather.png"
+phase="exercising signed widget settings"
+python3 "$here/widget-location-ui.py" "$evidence"
 for _ in $(seq 1 3); do adb shell input keyevent 4; sleep 2; if top_is MainActivity; then break; fi; done
 top_is MainActivity
 if adb logcat -b crash -d | grep -E "(Process|Cmdline): ${target//./\\.}(:weather_render)?(,|[[:space:]]|$)" >/dev/null; then

@@ -1,0 +1,41 @@
+name: Published APK widget location settings
+on:
+  push:
+    branches: [fix/widget-location-map-controls]
+    paths:
+      - '.github/workflows/signed-widget-ui.yml'
+      - 'tools/launcher-smoke/widget-location-ui.py'
+      - 'tools/launcher-smoke/run.sh'
+permissions:
+  contents: read
+jobs:
+  settings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Download and verify the public signed build
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/nav-kurd.apk" https://github.com/sarhang-sg/GEO-ANDROID/releases/download/v11.0.0-build.110002/NAV-KURD-11.0.0.apk
+          echo "0804b58c0593ca20bb3a6f4f4bd7ceff4134271bb781749edd2e2a0225fc0410  $RUNNER_TEMP/nav-kurd.apk" | sha256sum -c -
+      - name: Prepare emulator
+        run: |
+          bash tools/install-android-sdk.sh
+          bash tools/launcher-smoke/prepare-emulator.sh
+      - name: Open the published widget and change its city
+        env:
+          NAV_KURD_LAUNCHER_PREPARED: 'true'
+        run: bash tools/launcher-smoke/run.sh "$RUNNER_TEMP/nav-kurd.apk" com.navkurd.app
+      - name: Retain screenshots and Android results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: published-widget-settings
+          path: ${{ runner.temp }}/nav-kurd-launcher-check/
+          retention-days: 7
