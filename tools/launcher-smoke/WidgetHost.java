@@ -7,6 +7,7 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -27,6 +28,7 @@ public final class WidgetHost extends Activity {
     private final Handler main = new Handler(Looper.getMainLooper());
     private AppWidgetHost host;
     private AppWidgetHostView view;
+    private int widgetId;
     private int imageId;
     private int forecastId;
     private long deadline;
@@ -60,13 +62,8 @@ public final class WidgetHost extends Activity {
         SharedPreferences records = getSharedPreferences("widgets", MODE_PRIVATE);
         boolean reuse = getIntent().getBooleanExtra("reuse", false);
         int id = reuse ? records.getInt(target, -1) : host.allocateAppWidgetId();
-        width = getIntent().getIntExtra("width", 300);
-        height = getIntent().getIntExtra("height", 160);
-        marker = getIntent().getStringExtra("marker");
-        if (marker == null) marker = "widget-bitmap-ready";
-        boolean exact = getIntent().getBooleanExtra("exact", false);
-        Bundle options = options(width, height, exact);
-        if (!reuse && !manager.bindAppWidgetIdIfAllowed(id, component, options)) {
+        widgetId = id;
+        if (!reuse && !manager.bindAppWidgetIdIfAllowed(id, component, optionsFor(getIntent()))) {
             throw new IllegalStateException("Launcher did not bind the target widget");
         }
         AppWidgetProviderInfo info = manager.getAppWidgetInfo(id);
@@ -92,15 +89,39 @@ public final class WidgetHost extends Activity {
         if (imageId == 0 || forecastId == 0) throw new IllegalStateException("Missing release widget views");
         view = host.createView(this, id, info);
         view.setPadding(0, 0, 0, 0);
-        float density = getResources().getDisplayMetrics().density;
         FrameLayout launcher = new FrameLayout(this);
-        launcher.addView(view, new FrameLayout.LayoutParams(Math.round(width*density), Math.round(height*density)));
+        launcher.addView(view);
         setContentView(launcher);
-        if (getIntent().getBooleanExtra("burst", false)) {
-            manager.updateAppWidgetOptions(id, options(136, 258, true));
-            manager.updateAppWidgetOptions(id, options(52, 442, true));
+        resize(getIntent());
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (view == null || !getIntent().getStringExtra("target").equals(intent.getStringExtra("target")))
+            throw new IllegalStateException("Cannot resize a different widget");
+        setIntent(intent);
+        resize(intent);
+    }
+
+    private static Bundle optionsFor(Intent intent) {
+        return options(intent.getIntExtra("width", 300), intent.getIntExtra("height", 160),
+                intent.getBooleanExtra("exact", false));
+    }
+
+    private void resize(Intent intent) {
+        main.removeCallbacksAndMessages(null);
+        width = intent.getIntExtra("width", 300);
+        height = intent.getIntExtra("height", 160);
+        marker = intent.getStringExtra("marker");
+        if (marker == null) marker = "widget-bitmap-ready";
+        float density = getResources().getDisplayMetrics().density;
+        view.setLayoutParams(new FrameLayout.LayoutParams(Math.round(width*density), Math.round(height*density)));
+        AppWidgetManager manager = AppWidgetManager.getInstance(this);
+        if (intent.getBooleanExtra("burst", false)) {
+            manager.updateAppWidgetOptions(widgetId, options(136, 258, true));
+            manager.updateAppWidgetOptions(widgetId, options(52, 442, true));
         }
-        manager.updateAppWidgetOptions(id, options);
+        manager.updateAppWidgetOptions(widgetId, optionsFor(intent));
         deadline = SystemClock.uptimeMillis() + 120_000;
         main.postDelayed(this::check, 500);
     }
