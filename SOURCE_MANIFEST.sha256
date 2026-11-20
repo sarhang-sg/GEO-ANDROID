@@ -628,7 +628,7 @@ ad216c6a18480b6bf52f7e719e775a4678ee5ceb2cfe364b234f5c0f47375d09  ./android/app/
 99d060569ce447805ca6aa02d198bba45998f50330adbb06ed29a8553710afc4  ./android/app/src/main/kotlin/com/navkurd/app/NavKurdWidgetProvider.kt
 9c0d57677e700378f37057c77fb78a2c349e523a56abd2696c36b62a5000b30c  ./android/app/src/main/kotlin/com/navkurd/app/OfflineRouting.kt
 76ffdb88ce628e3a8973981d5042fd793166c52c371bfbe1641ae8d843706093  ./android/app/src/main/kotlin/com/navkurd/app/WeatherActivity.kt
-aeb0885ce4c7bad43f65637ceaed38c6d7026b1773f67ac6652ce2779fba50b5  ./android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt
+65040b4325426d3023732f9e051db8c54ac15aa5cb52a42e3dc2c822c4ad73ac  ./android/app/src/main/kotlin/com/navkurd/app/WeatherBitmaps.kt
 503f86aa11d838ce7913bc8781301c367e21488f038c92f65c87dbbe536e6e3e  ./android/app/src/main/kotlin/com/navkurd/app/WeatherRenderService.kt
 11709c7e9efe35f2c117cb976a2bc2661359f9689e43d6bcb2014b1dac863262  ./android/app/src/main/kotlin/com/navkurd/app/WeatherStore.kt
 bf516e6e97721d18b4a2bd45e3c85ffcf42ea7d7115f81bfbdb7914cbb589a8d  ./android/app/src/main/kotlin/com/navkurd/app/WeatherWork.kt
@@ -766,7 +766,7 @@ c1926947cde3480d3bfca7c09044e5eb14d7033273c5727e63fc063845ed4d8c  ./assets/widge
 ced8454b4fcf41238028cfda721668de0de26261fac90ff6c4f9d17260600512  ./assets/widget-scenes/winter.svg
 0af9a8d87877a864c83c1f2c1351dc94d9c9caa4a6d4ac459fc3a4bf19f6de08  ./contracts/offline-routing.json
 f21c428141a78cd0697636a78672db94a321ad067af4aada75be076706800e23  ./docs/APKPURE.md
-0f68ddea5460636314fd91c451975f12d71afcd45f906c35d122649865577666  ./docs/RELEASE.md
+93f0be302e5afb47d2ffa5eede80a1200eb662b53ae0154474440961c535beac  ./docs/RELEASE.md
 4b812aff257abd1d3aa9a5083a08a5e4ee99920cfb268c95929336bc044bd904  ./docs/images/nav-kurd-cover.jpg
 68a630638a0c3f89387a058bca6f346a154ab5040dd27b0a27732eb68db95c74  ./docs/images/nav-kurd-screen-1.jpg
 d3dbe049ad6a1fa39eb19d38853b378ae034f4f0be058bfdbd685096a2ec16be  ./docs/images/nav-kurd-screen-2.jpg
@@ -789,7 +789,7 @@ bcae15e965731addc9b549140264bc76b7f6e475ae425a5245dcde3802fea363  ./lib/src/perm
 da9c57afc88362851512c8da296e8ff67b15e12f5ecb655e14af6c48a518ca3d  ./lib/weather/weather_city_picker.dart
 42d08509355f75f26a98d67c0face03d308c6304acfb4d1dcc3cfea6b9d9605b  ./lib/weather/weather_model.dart
 365e8c3db40c813fdee4a4e44a75f0bf3ae719124083d58493a144bea132718d  ./lib/weather/weather_screen.dart
-c8f7cb1cfc6df300909211db7b66e16e9c5bc5e265919fed65a6611ec8629d27  ./lib/weather/weather_widget.dart
+86652a2b41052004572857faf708c969ec9b00f1e3cbb8f52ca0eacc042b0bfb  ./lib/weather/weather_widget.dart
 23d164b37c82a2c2e1061bbc367c609f718951ddb70de7e0ac5fe9058c91844a  ./packages/flutter_inappwebview_android/LICENSE
 c4facebf0b203b17b35002aef7314f7f6b999fb9cc75a0f13e37e2fdfb4cf3eb  ./packages/flutter_inappwebview_android/NAV_KURD_INTEGRATION.md
 7860d5756779da61d5e61d83560d85daa4ab03afd473247131bf31fa43c993ca  ./packages/flutter_inappwebview_android/android/build.gradle
@@ -1033,7 +1033,7 @@ a3ab21c82013f6333e375f1104a8b6329c99d2916f44b8fb9cf920bf0299f9f5  ./tools/develo
 78710cbcc298869d00d9a4d7297a9059f48858e5071a438ab07cb2bcb03d25ca  ./tools/generate-launcher-icons.sh
 f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/install-android-sdk.sh
 8f3919006af93d38a36242f16941d0efae7f827375d9a35fa47f8830d6144de7  ./tools/launcher-smoke/AndroidManifest.xml
-2676a17a55bdffa6a2cb1d7fa25c16ecd890c879ece903c47add234ffe0cfcbc  ./tools/launcher-smoke/WidgetHost.java
+20dbe2082b2591224ec60e48c2bec90b03f7719626edd63eae8a05a1c62af96f  ./tools/launcher-smoke/WidgetHost.java
 e962de202bb80dbc84a33c31db7a7bbd127cb2081553dfc63c0f3e7cc68aba81  ./tools/launcher-smoke/map-window.py
 af8d470824b0b841bc5810cd7c91b3e8a09e54be9c32cd3fa4aa75ede2685a94  ./tools/launcher-smoke/prepare-emulator.sh
 ea2f5eee587e9314e5c748532e098347c975212d171b112e8279cf97ca54576e  ./tools/launcher-smoke/run.sh

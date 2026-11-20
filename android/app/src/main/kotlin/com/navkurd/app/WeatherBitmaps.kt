@@ -149,7 +149,7 @@ internal object WeatherBitmaps {
         v.setTextViewText(R.id.weather_city, "")
         v.setTextViewText(R.id.weather_forecast, "")
         v.setContentDescription(R.id.weather_city, city)
-        v.setContentDescription(R.id.weather_forecast, forecast)
+        v.setContentDescription(R.id.weather_forecast, "$forecast · Open-Meteo · Developer: Sarhang Salah")
         if (!compact) {
             v.setTextViewText(R.id.weather_gps, "")
             v.setTextViewText(R.id.weather_refresh, "")

@@ -64,28 +64,61 @@ class WeatherWidgetArt extends StatelessWidget {
 
   static const _credit = 'Open-Meteo · Developer: Sarhang Salah';
 
+  Widget _number(
+    String value,
+    double size, {
+    FontWeight weight = FontWeight.w600,
+  }) => Text(
+    value,
+    maxLines: 1,
+    textDirection: TextDirection.ltr,
+    overflow: TextOverflow.ellipsis,
+    style: ink(size, weight: weight).copyWith(
+      fontFamily: 'NAVKurdLatin',
+      fontFamilyFallback: const ['NAVKurdArabic'],
+      height: 1.19,
+      fontFeatures: const [ui.FontFeature.tabularFigures()],
+    ),
+  );
+
   Widget _clock({required bool date}) => Directionality(
     textDirection: TextDirection.ltr,
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        label(weather.clock(weather.date), 15, weight: FontWeight.bold),
+        _number(weather.clock(weather.date), 15, weight: FontWeight.bold),
         if (date) ...[
           const SizedBox(width: 4),
-          label('${weather.date.day}/${weather.date.month}', 10),
+          _number('${weather.date.day}/${weather.date.month}', 9),
         ],
       ],
     ),
   );
 
-  Widget _current({required bool stacked, required bool description}) {
-    final temp = label(
+  Widget _current({
+    required bool stacked,
+    required bool description,
+    bool spacious = false,
+  }) {
+    final temp = _number(
       weather.temp == null ? '—' : '${weather.temp!.round()}°',
-      34,
+      spacious ? 48 : 32,
       weight: FontWeight.bold,
     );
-    final icon = glyph(weather.sky, weather.day, 47);
-    final name = label(skyName(weather.sky, weather.day, weather.lang), 13);
+    final icon = glyph(weather.sky, weather.day, spacious ? 72 : 47);
+    final name = label(
+      skyName(weather.sky, weather.day, weather.lang),
+      spacious ? 18 : 13,
+    );
+    final reading = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        icon,
+        const SizedBox(width: 4),
+        temp,
+        if (description && !spacious) ...[const SizedBox(width: 5), name],
+      ],
+    );
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: stacked
@@ -93,25 +126,29 @@ class WeatherWidgetArt extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [icon, temp, if (description) name],
             )
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                icon,
-                const SizedBox(width: 3),
-                temp,
-                if (description) ...[const SizedBox(width: 5), name],
-              ],
-            ),
+          : spacious && description
+          ? Column(mainAxisSize: MainAxisSize.min, children: [reading, name])
+          : reading,
     );
   }
 
   // Each forecast uses the available cross-axis: columns across a wide card,
   // time/icon/reading rows down a tall card, and two lines down a single cell.
-  Widget _forecast(int count, {required bool vertical, required bool slim}) {
+  Widget _forecast(
+    int count, {
+    required bool vertical,
+    required bool slim,
+    bool fullRow = false,
+  }) {
     final entries = weather.hours.take(count).map((hour) {
-      final time = label(weather.hourLabel(hour.at), 10);
-      final icon = glyph(weatherSky(hour.code), hour.day, 19);
-      final temp = label('${hour.temp.round()}°', 12, weight: FontWeight.bold);
+      final time = _number(weather.hourLabel(hour.at), fullRow ? 13 : 10);
+      final sky = weatherSky(hour.code);
+      final icon = glyph(sky, hour.day, fullRow ? 27 : 19);
+      final temp = _number(
+        '${hour.temp.round()}°',
+        fullRow ? 16 : 12,
+        weight: FontWeight.bold,
+      );
       final value = Row(mainAxisSize: MainAxisSize.min, children: [icon, temp]);
       if (vertical && !slim) {
         return Row(
@@ -122,7 +159,16 @@ class WeatherWidgetArt extends StatelessWidget {
                 child: FittedBox(fit: BoxFit.scaleDown, child: time),
               ),
             ),
-            value,
+            if (fullRow) ...[
+              icon,
+              const SizedBox(width: 7),
+              Expanded(
+                flex: 2,
+                child: label(skyName(sky, hour.day, weather.lang), 13),
+              ),
+              temp,
+            ] else
+              value,
           ],
         );
       }
@@ -166,7 +212,7 @@ class WeatherWidgetArt extends StatelessWidget {
   }
 
   Widget _attribution(double width) {
-    final text = width >= 155
+    final text = width >= 118
         ? _credit
         : width >= 92
         ? 'Open-Meteo\nDeveloper: Sarhang Salah'
@@ -206,7 +252,7 @@ class WeatherWidgetArt extends StatelessWidget {
       final creditWidth = math.max(1.0, w - pad * 2 - (sideCredit ? 88 : 0));
       final creditHeight = !showCredit
           ? 0.0
-          : creditWidth >= 155
+          : creditWidth >= 118
           ? 15.0
           : creditWidth >= 92
           ? 24.0
@@ -308,6 +354,7 @@ class WeatherWidgetArt extends StatelessWidget {
                     Expanded(
                       child: _current(
                         stacked: slim && bodyHeight >= 58,
+                        spacious: w >= 180 && bodyHeight >= 140,
                         description:
                             (w >= 104 && bodyHeight >= 34) ||
                             (slim && bodyHeight >= 100),
@@ -316,7 +363,12 @@ class WeatherWidgetArt extends StatelessWidget {
                     if (count > 0)
                       SizedBox(
                         height: hourHeight,
-                        child: _forecast(count, vertical: vertical, slim: slim),
+                        child: _forecast(
+                          count,
+                          vertical: vertical,
+                          slim: slim,
+                          fullRow: vertical && w >= 185,
+                        ),
                       ),
                     if (showMetrics) SizedBox(height: 19, child: _metrics(w)),
                     if (statusLine)
@@ -391,13 +443,13 @@ class WeatherWidgetArt extends StatelessWidget {
 Future<void>? _fontLoad;
 Future<void> weatherFonts() => _fontLoad ??= Future.wait([
   for (final entry in const {
-    'NAVKurdArabic': 'uniqaidar_money_heist_002',
-    'NAVKurdLatin': 'red_hat_display_variable',
+    'NAVKurdArabic':
+        'android/app/src/main/res/font/uniqaidar_money_heist_002.ttf',
+    'NAVKurdLatin':
+        'android/app/src/main/res/font/red_hat_display_variable.ttf',
+    'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
   }.entries)
-    (FontLoader(entry.key)..addFont(
-          rootBundle.load('android/app/src/main/res/font/${entry.value}.ttf'),
-        ))
-        .load(),
+    (FontLoader(entry.key)..addFont(rootBundle.load(entry.value))).load(),
 ]).then((_) {});
 Future<Uint8List> weatherBitmap(
   Size size,
@@ -467,8 +519,9 @@ Future<Uint8List> weatherBitmap(
     // A headless Android engine can be paused without a display vsync.
     await settled.timeout(const Duration(milliseconds: 250), onTimeout: () {});
 
-    RenderObjectToWidgetAdapter<RenderBox>(container: root)
-        .attachToRenderTree(builds, tree);
+    RenderObjectToWidgetAdapter<RenderBox>(
+      container: root,
+    ).attachToRenderTree(builds, tree);
     builds.buildScope(tree);
     builds.finalizeTree();
     pipeline.rootNode = null;

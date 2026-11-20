@@ -2,7 +2,7 @@
 
 Version name 11.0.0 and version code 110003 identify the application. The map presentation, Android launcher widgets and native weather activity support Kurdish, Arabic and English.
 
-This release keeps the split Loading animation on map launch. Widget city and temperature taps open weather directly. The widget renderer handles all launcher sizes and preserves the latest bitmap across a resize. The web and Android map views share the same search, contrast tokens, 3D location marker and city directory.
+This release keeps the split Loading animation on map launch. Widget city and temperature taps open weather directly. The widget renderer reuses matching artwork or shows the saved temperature while a new size renders. The web and Android map views share the same search, contrast tokens, 3D location marker and city directory.
 
 Build 110003 reflows the launcher widget for single-cell columns, short strips and expanded forecasts. During a resize, the launcher preserves the proportions of text and icons. Weather alerts identify the condition in the selected language. The download tag is `v11.0.0-build.110003`.
 

@@ -36,8 +36,8 @@ public final class WidgetHost extends Activity {
     private static Bundle options(int w, int h, boolean exact) {
         Bundle options = new Bundle();
         options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, w);
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, w);
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, h);
+        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, exact ? w : w + 48);
+        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, exact ? h : Math.max(32, h - 30));
         options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, h);
         ArrayList<SizeF> sizes = new ArrayList<>();
         if (exact) {
