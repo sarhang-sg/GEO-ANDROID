@@ -31,7 +31,7 @@ public final class WidgetHost extends Activity {
     private AppWidgetHost host;
     private AppWidgetHostView view;
     private int widgetId;
-    private int imageId, skyId;
+    private int imageId, skyId, cardId;
     private int forecastId;
     private long deadline;
     private int width, height, gpsId, refreshId;
@@ -82,6 +82,7 @@ public final class WidgetHost extends Activity {
             Context remote = createPackageContext(target, 0);
             Resources resources = remote.getResources();
             imageId = resources.getIdentifier("weather_bitmap", "id", target);
+            cardId = resources.getIdentifier("weather_root", "id", target);
             skyId = resources.getIdentifier("weather_sky", "id", target);
             forecastId = resources.getIdentifier("weather_forecast", "id", target);
             gpsId = resources.getIdentifier("weather_gps", "id", target);
@@ -177,7 +178,14 @@ public final class WidgetHost extends Activity {
     }
 
     private void checkSky(ImageView sky, ImageView forecast) {
+        // The launcher can inset the app-owned card within AppWidgetHostView.
+        View frame = view.findViewById(cardId);
+        int[] cardOrigin = new int[2], skyOrigin = new int[2];
+        frame.getLocationInWindow(cardOrigin);
+        sky.getLocationInWindow(skyOrigin);
         if (sky.getScaleType() != ImageView.ScaleType.CENTER_CROP ||
+                sky.getWidth() != frame.getWidth() || sky.getHeight() != frame.getHeight() ||
+                skyOrigin[0] != cardOrigin[0] || skyOrigin[1] != cardOrigin[1] ||
                 sky.getWidth() != forecast.getWidth() || sky.getHeight() != forecast.getHeight())
             throw new IllegalStateException("Missing full-size launcher sky " + marker);
         int w = sky.getWidth(), h = sky.getHeight();
@@ -185,14 +193,16 @@ public final class WidgetHost extends Activity {
         Bitmap backdrop = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         try {
             sky.draw(new Canvas(backdrop));
-            view.draw(new Canvas(card));
+            frame.draw(new Canvas(card));
             for (int[] p : new int[][]{{2,h/2},{w-3,h/2},{w/2,2},{w/2,h-3}}) {
                 int actual = card.getPixel(p[0],p[1]), expected = backdrop.getPixel(p[0],p[1]);
                 if (Color.alpha(actual) < 250 || Color.alpha(expected) < 250 ||
                         Math.abs(Color.red(actual) - Color.red(expected)) > 5 ||
                         Math.abs(Color.green(actual) - Color.green(expected)) > 5 ||
                         Math.abs(Color.blue(actual) - Color.blue(expected)) > 5)
-                    throw new IllegalStateException("Exposed launcher border at " + p[0] + "," + p[1] + " " + marker);
+                    throw new IllegalStateException("Exposed launcher border at " + p[0] + "," + p[1] +
+                            " card=" + w + "x" + h + " host=" + view.getWidth() + "x" + view.getHeight() +
+                            " actual=" + Integer.toHexString(actual) + " sky=" + Integer.toHexString(expected) + " " + marker);
             }
         } finally {
             card.recycle();

@@ -1033,7 +1033,7 @@ a3ab21c82013f6333e375f1104a8b6329c99d2916f44b8fb9cf920bf0299f9f5  ./tools/develo
 78710cbcc298869d00d9a4d7297a9059f48858e5071a438ab07cb2bcb03d25ca  ./tools/generate-launcher-icons.sh
 f05e852887e8cb0cb91327f392941f0f5acb1bdfe263de2e92a152512a657e50  ./tools/install-android-sdk.sh
 3a039f3358cc3867ea6f4144203c870737e83b0dab2b08ea37e980ff6fb3a30f  ./tools/launcher-smoke/AndroidManifest.xml
-65efb2bfa0dddf13847b4e56ef1707269a045e1e044f09ac051ff99d1c0ec616  ./tools/launcher-smoke/WidgetHost.java
+0a7e42c7a453ea332d9557e61e745f1db0533b320258f7aceaa63f67aca96bdf  ./tools/launcher-smoke/WidgetHost.java
 e962de202bb80dbc84a33c31db7a7bbd127cb2081553dfc63c0f3e7cc68aba81  ./tools/launcher-smoke/map-window.py
 af8d470824b0b841bc5810cd7c91b3e8a09e54be9c32cd3fa4aa75ede2685a94  ./tools/launcher-smoke/prepare-emulator.sh
 3112f3a15e48fd2adf78bf85cc2e41c73cfaa96f84d31ca785d1e0ce85e20583  ./tools/launcher-smoke/run.sh
