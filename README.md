@@ -2,7 +2,7 @@
 
 # NAV KURD 11.0.0 for Android
 
-Sarhang Salah’s Kurdish-first GIS and weather app for Android. Release 11.0.0 uses Android version code `110003` and application ID `com.navkurd.app`. Kurdish, Arabic and English are supported.
+Sarhang Salah’s Kurdish-first GIS and weather app for Android. Release 11.0.0 uses Android version code `110004` and application ID `com.navkurd.app`. Kurdish, Arabic and English are supported.
 
 [Web application](https://geo-map-kappa.vercel.app/) · [Web source](https://github.com/sarhang-sg/GEO-MAP)
 

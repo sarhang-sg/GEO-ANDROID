@@ -34,5 +34,19 @@ class LauncherContract(unittest.TestCase):
                 self.assertEqual(ids["weather_pending"].get(A + "text"), "@string/weather_syncing")
 
 
+    def test_weather_sky_fills_the_host_independently_of_forecast_aspect(self):
+        surface = ET.parse(RES / "layout/weather_surface.xml").getroot()
+        image_ids = [child.get(A + "id") for child in surface.findall("ImageView")]
+        self.assertEqual(image_ids, ["@+id/weather_sky", "@+id/weather_bitmap"])
+        for layout in ("weather_small", "weather_dashboard"):
+            with self.subTest(layout=layout):
+                nodes = views(layout)
+                sky = nodes["weather_sky"]
+                self.assertEqual(sky.get(A + "scaleType"), "centerCrop")
+                self.assertEqual(sky.get(A + "layout_width"), "match_parent")
+                self.assertEqual(sky.get(A + "layout_height"), "match_parent")
+                self.assertEqual(nodes["weather_root"].get(A + "clipToOutline"), "true")
+
+
 if __name__ == "__main__":
     unittest.main()

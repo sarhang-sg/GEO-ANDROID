@@ -11,6 +11,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -29,7 +31,7 @@ public final class WidgetHost extends Activity {
     private AppWidgetHost host;
     private AppWidgetHostView view;
     private int widgetId;
-    private int imageId;
+    private int imageId, skyId, cardId;
     private int forecastId;
     private long deadline;
     private int width, height, gpsId, refreshId;
@@ -80,6 +82,8 @@ public final class WidgetHost extends Activity {
             Context remote = createPackageContext(target, 0);
             Resources resources = remote.getResources();
             imageId = resources.getIdentifier("weather_bitmap", "id", target);
+            cardId = resources.getIdentifier("weather_root", "id", target);
+            skyId = resources.getIdentifier("weather_sky", "id", target);
             forecastId = resources.getIdentifier("weather_forecast", "id", target);
             gpsId = resources.getIdentifier("weather_gps", "id", target);
             refreshId = resources.getIdentifier("weather_refresh", "id", target);
@@ -115,7 +119,10 @@ public final class WidgetHost extends Activity {
         marker = intent.getStringExtra("marker");
         if (marker == null) marker = "widget-bitmap-ready";
         float density = getResources().getDisplayMetrics().density;
-        view.setLayoutParams(new FrameLayout.LayoutParams(Math.round(width*density), Math.round(height*density)));
+        // Some launchers report grid dimensions before applying their padding.
+        int hostWidth = intent.getIntExtra("hostWidth", width);
+        int hostHeight = intent.getIntExtra("hostHeight", height);
+        view.setLayoutParams(new FrameLayout.LayoutParams(Math.round(hostWidth*density), Math.round(hostHeight*density)));
         AppWidgetManager manager = AppWidgetManager.getInstance(this);
         if (intent.getBooleanExtra("burst", false)) {
             manager.updateAppWidgetOptions(widgetId, options(136, 258, true));
@@ -132,7 +139,9 @@ public final class WidgetHost extends Activity {
 
     private void check() {
         ImageView image = view.findViewById(imageId);
-        if (image != null && image.getDrawable() instanceof BitmapDrawable) {
+        ImageView sky = view.findViewById(skyId);
+        if (image != null && image.getDrawable() instanceof BitmapDrawable &&
+                sky != null && sky.getDrawable() instanceof BitmapDrawable) {
             Bitmap b = ((BitmapDrawable) image.getDrawable()).getBitmap();
             if (b != null && Math.abs(b.getWidth() - b.getHeight() * (double) width / height)
                     <= 1.1 + (double) width / height && image.getWidth() > 0) {
@@ -141,6 +150,7 @@ public final class WidgetHost extends Activity {
                 if (image.getScaleType() != ImageView.ScaleType.FIT_CENTER ||
                         Math.abs(matrix[Matrix.MSCALE_X] - matrix[Matrix.MSCALE_Y]) > .001f)
                     throw new IllegalStateException("Distorted launcher bitmap " + marker);
+                checkSky(sky, image);
                 boolean stacked = width < 92 && height >= 245;
                 boolean actions = stacked || (width >= 92 && (height >= 145 || (width >= 200 && height >= 64)));
                 View gps = view.findViewById(gpsId), refresh = view.findViewById(refreshId);
@@ -165,5 +175,38 @@ public final class WidgetHost extends Activity {
         }
         if (SystemClock.uptimeMillis() < deadline) main.postDelayed(this::check, 500);
         else Log.e("NavKurdSmoke", "widget-bitmap-timeout");
+    }
+
+    private void checkSky(ImageView sky, ImageView forecast) {
+        // The launcher can inset the app-owned card within AppWidgetHostView.
+        View frame = view.findViewById(cardId);
+        int[] cardOrigin = new int[2], skyOrigin = new int[2];
+        frame.getLocationInWindow(cardOrigin);
+        sky.getLocationInWindow(skyOrigin);
+        if (sky.getScaleType() != ImageView.ScaleType.CENTER_CROP ||
+                sky.getWidth() != frame.getWidth() || sky.getHeight() != frame.getHeight() ||
+                skyOrigin[0] != cardOrigin[0] || skyOrigin[1] != cardOrigin[1] ||
+                sky.getWidth() != forecast.getWidth() || sky.getHeight() != forecast.getHeight())
+            throw new IllegalStateException("Missing full-size launcher sky " + marker);
+        int w = sky.getWidth(), h = sky.getHeight();
+        Bitmap card = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Bitmap backdrop = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        try {
+            sky.draw(new Canvas(backdrop));
+            frame.draw(new Canvas(card));
+            for (int[] p : new int[][]{{2,h/2},{w-3,h/2},{w/2,2},{w/2,h-3}}) {
+                int actual = card.getPixel(p[0],p[1]), expected = backdrop.getPixel(p[0],p[1]);
+                if (Color.alpha(actual) < 250 || Color.alpha(expected) < 250 ||
+                        Math.abs(Color.red(actual) - Color.red(expected)) > 5 ||
+                        Math.abs(Color.green(actual) - Color.green(expected)) > 5 ||
+                        Math.abs(Color.blue(actual) - Color.blue(expected)) > 5)
+                    throw new IllegalStateException("Exposed launcher border at " + p[0] + "," + p[1] +
+                            " card=" + w + "x" + h + " host=" + view.getWidth() + "x" + view.getHeight() +
+                            " actual=" + Integer.toHexString(actual) + " sky=" + Integer.toHexString(expected) + " " + marker);
+            }
+        } finally {
+            card.recycle();
+            backdrop.recycle();
+        }
     }
 }

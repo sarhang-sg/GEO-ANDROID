@@ -153,4 +153,30 @@ void main() {
       });
     },
   );
+  testWidgets('launcher sky is opaque and forecast corners are transparent', (tester) async {
+    await tester.runAsync(() async {
+      final model = WeatherModel(reading(19), 'ku', now);
+      for (final skyOnly in [true, false]) {
+        final png = await weatherBitmap(const Size(136, 73), 1, model, skyOnly: skyOnly);
+        final codec = await instantiateImageCodec(png);
+        final image = (await codec.getNextFrame()).image;
+        try {
+          final rgba = (await image.toByteData(format: ImageByteFormat.rawRgba))!;
+          for (final (x, y) in [(0, 0), (135, 0), (0, 72), (135, 72)]) {
+            expect(rgba.getUint8((y * image.width + x) * 4 + 3), skyOnly ? 255 : 0);
+          }
+          if (!skyOnly) {
+            expect(
+              [for (var offset = 3; offset < rgba.lengthInBytes; offset += 4) rgba.getUint8(offset)],
+              contains(255),
+              reason: 'The transparent forecast still contains visible text and symbols',
+            );
+          }
+        } finally {
+          image.dispose();
+          codec.dispose();
+        }
+      }
+    });
+  });
 }
