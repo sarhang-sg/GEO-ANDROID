@@ -1,7 +1,7 @@
 # APKPure submission draft — NAV KURD 11.0.0
 
 
-Package: `com.navkurd.app`. Version: `11.0.0` / `110003`. Minimum Android: API 24.
+Package: `com.navkurd.app`. Version: `11.0.0` / `110004`. Minimum Android: API 24.
 
 Use the APK produced by the existing signed workflow after CI passes. This source kit has not been submitted to APKPure.
 

@@ -243,13 +243,14 @@ class WeatherWidgetArt extends StatelessWidget {
       final sideCredit = actions && !stackedActions && (w >= 210 || strip);
       final showCredit = h >= (slim ? 86 : 54);
       final pad = math.min(12.0, w * .045);
+      final edgePad = math.max(pad, math.min(16.0, math.min(w, h) * .14));
       final header = math.min(24.0, h);
       final actionHeight = !actions
           ? 0.0
           : stackedActions
           ? 80.0
           : 40.0;
-      final creditWidth = math.max(1.0, w - pad * 2 - (sideCredit ? 88 : 0));
+      final creditWidth = math.max(1.0, w - edgePad * 2 - (sideCredit ? 88 : 0));
       final creditHeight = !showCredit
           ? 0.0
           : creditWidth >= 118
@@ -285,15 +286,13 @@ class WeatherWidgetArt extends StatelessWidget {
       final hourHeight = vertical
           ? math.min(bodyHeight * .68, count * (slim ? 42.0 : 38.0))
           : math.min(bodyHeight * .50, 60.0);
-      return WeatherGlass(
-        weather: weather,
-        radius: math.min(20.0, math.min(w, h) * .18),
+      return SizedBox.expand(
         child: Stack(
           children: [
             Positioned(
               top: 0,
-              left: pad,
-              right: pad,
+              left: edgePad,
+              right: edgePad,
               height: header,
               child: Row(
                 textDirection: TextDirection.ltr,
@@ -384,9 +383,9 @@ class WeatherWidgetArt extends StatelessWidget {
               ),
             if (showCredit)
               Positioned(
-                left: (sideCredit ? 88 : 0) + pad,
-                right: pad,
-                bottom: sideCredit ? 1 : actionHeight,
+                left: (sideCredit ? 88 : 0) + edgePad,
+                right: edgePad,
+                bottom: sideCredit || !actions ? 2 : actionHeight,
                 height: math.min(
                   creditHeight,
                   math.max(
@@ -454,8 +453,9 @@ Future<void> weatherFonts() => _fontLoad ??= Future.wait([
 Future<Uint8List> weatherBitmap(
   Size size,
   double ratio,
-  WeatherModel model,
-) async {
+  WeatherModel model, {
+  bool skyOnly = false,
+}) async {
   if (size.isEmpty || !size.isFinite || ratio <= 0 || !ratio.isFinite) {
     throw ArgumentError('Invalid launcher dimensions');
   }
@@ -492,7 +492,9 @@ Future<Uint8List> weatherBitmap(
         textDirection: model.lang == 'en'
             ? TextDirection.ltr
             : TextDirection.rtl,
-        child: DefaultTextStyle(style: ink(13), child: WeatherWidgetArt(model)),
+        child: skyOnly
+            ? WeatherGlass(weather: model, radius: 0, child: const SizedBox.expand())
+            : DefaultTextStyle(style: ink(13), child: WeatherWidgetArt(model)),
       ),
     ),
   );
@@ -552,6 +554,7 @@ Future<void> startWeatherRenderer() async {
       ),
       (args['ratio'] as num).toDouble(),
       weather,
+      skyOnly: args['skyOnly'] == true,
     );
   });
   await bitmapChannel.invokeMethod<void>('ready');

@@ -61,10 +61,10 @@ internal object WeatherBitmaps {
                 try { engine.destroy() } finally { surface.close() }
             }
         }
-        suspend fun png(size:Extent,scale:Double,data:Map<String,Any?>):ByteArray {
+        suspend fun png(size:Extent,scale:Double,data:Map<String,Any?>,skyOnly:Boolean=false):ByteArray {
             val outcome=CompletableDeferred<ByteArray>()
             return withContext(Dispatchers.Main.immediate){
-                channel.invokeMethod("render",mapOf("width" to size.w.toDouble(),"height" to size.h.toDouble(),"ratio" to scale,"weather" to data),object:MethodChannel.Result{
+                channel.invokeMethod("render",mapOf("width" to size.w.toDouble(),"height" to size.h.toDouble(),"ratio" to scale,"weather" to data,"skyOnly" to skyOnly),object:MethodChannel.Result{
                     override fun success(result:Any?) {if(result is ByteArray)outcome.complete(result) else outcome.completeExceptionally(IllegalStateException("invalid bitmap"))}
                     override fun error(code:String,message:String?,details:Any?){outcome.completeExceptionally(IllegalStateException("bitmap: $code ${message.orEmpty().take(160)}"))}
                     override fun notImplemented(){outcome.completeExceptionally(IllegalStateException("missing bitmap renderer"))}
@@ -114,7 +114,7 @@ internal object WeatherBitmaps {
         else->value
     }
     private fun action(c:Context,name:String)=PendingIntent.getBroadcast(c,name.hashCode(),Intent(c,WeatherWidgetAction::class.java).setAction("com.navkurd.app.weather.$name"),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    private fun views(context:Context,s:Extent,bitmap:Bitmap?,data:JSONObject):RemoteViews{
+    private fun views(context:Context,s:Extent,bitmap:Bitmap?,sky:Bitmap?,data:JSONObject):RemoteViews{
         val language = data.optString("language", "ku")
         val c = WeatherStore.localizedContext(context,language)
         val compact = !s.hasActions
@@ -132,6 +132,7 @@ internal object WeatherBitmaps {
         val last = if (stamp > 0L && temp != null) c.getString(R.string.weather_last_reading, clock.format(java.util.Date(stamp * 1000L))) else ""
         val forecast = if (temp == null) c.getString(R.string.weather_open_forecast)
             else listOf("${temp}°C", last).filter { it.isNotEmpty() }.joinToString(if (compact) " · " else "\n")
+        v.setImageViewBitmap(R.id.weather_sky, sky)
         v.setImageViewBitmap(R.id.weather_bitmap, bitmap)
         val waiting = when (language) {
             "ar" -> "جارٍ الاتصال..."
@@ -174,7 +175,19 @@ internal object WeatherBitmaps {
     }
     private fun sourceRevision(c:Context) = runCatching { revisionFile(c).readFully().decodeToString() }.getOrDefault("")
     private fun bitmapFile(c:Context, id:Int, extent:Extent, language:String, placeKey:String) =
-        AtomicFile(File(c.cacheDir,"weather-widget-$id-v2-$language-$placeKey-${extent.w}x${extent.h}.png"))
+        AtomicFile(File(c.cacheDir,"weather-widget-$id-v3-$language-$placeKey-${extent.w}x${extent.h}.png"))
+
+    private fun skyFile(c:Context, id:Int, placeKey:String) =
+        AtomicFile(File(c.cacheDir,"weather-widget-$id-v3-$placeKey-sky.png"))
+
+    private fun readBitmap(file:AtomicFile):Bitmap? =
+        runCatching { file.openRead().use { BitmapFactory.decodeStream(it) } }.getOrNull()
+
+    private fun cachePng(file:AtomicFile, bytes:ByteArray) {
+        val stream = file.startWrite()
+        try { stream.write(bytes); file.finishWrite(stream) }
+        catch (e:Exception) { file.failWrite(stream); throw e }
+    }
 
     fun restore(c:Context, manager:AppWidgetManager, ids:IntArray) {
         val language=WeatherStore.prefs(c).getString("language","ku") ?: "ku"
@@ -186,13 +199,11 @@ internal object WeatherBitmaps {
             val extents = sizes(manager.getAppWidgetOptions(id))
 
             runCatching {
+                val sky = readBitmap(skyFile(c,id,key))
                 val rendered = linkedMapOf<SizeF,RemoteViews>()
                 for (extent in extents.values) {
-                    val file = bitmapFile(c,id,extent,language,key)
-                    val bitmap = if (file.baseFile.isFile) runCatching {
-                        file.openRead().use { BitmapFactory.decodeStream(it) }
-                    }.getOrNull() else null
-                    rendered[SizeF(extent.w,extent.h)] = views(c,extent,bitmap,reading)
+                    val bitmap = readBitmap(bitmapFile(c,id,extent,language,key))
+                    rendered[SizeF(extent.w,extent.h)] = views(c,extent,bitmap,sky,reading)
                 }
                 if (rendered.isNotEmpty()) manager.updateAppWidget(id,forLauncher(rendered, extents))
             }.onFailure { WeatherStore.report(c,"restoreBitmap",it) }
@@ -242,25 +253,28 @@ internal object WeatherBitmaps {
         var renderer:Renderer?=null
         try{
             val active=start(c);renderer=active
+            // The host crops only sky. The transparent forecast keeps its proportions.
+            val skyBytes = active.png(Extent(160f,160f),1.0,args,skyOnly=true)
+            val sky = BitmapFactory.decodeByteArray(skyBytes,0,skyBytes.size) ?: throw IllegalStateException("Sky PNG decoding failed")
             for(id in ids){
                 val extents=sizes(m.getAppWidgetOptions(id));val rendered=linkedMapOf<SizeF,RemoteViews>()
                 for(extent in extents.values){
                     val area=extent.w.toDouble()*extent.h
-                    val cap=min(420000.0,max(16384.0,d.widthPixels.toDouble()*d.heightPixels*.95/extents.values.size))
+                    val cap=min(420000.0,max(16384.0,(d.widthPixels.toDouble()*d.heightPixels*.95 - sky.width * sky.height)/extents.values.size))
                     val ratio=min(d.density.toDouble().coerceIn(1.0,3.0),sqrt(cap/area))
                     val bytes=active.png(extent,ratio,args)
                     val bitmap=BitmapFactory.decodeByteArray(bytes,0,bytes.size) ?: throw IllegalStateException("PNG decoding failed")
                     val file = bitmapFile(c,id,extent,data.optString("language","ku"),key)
-                    val stream = file.startWrite()
-                    try { stream.write(bytes); file.finishWrite(stream) }
-                    catch (e:Exception) { file.failWrite(stream); throw e }
-                    rendered[SizeF(extent.w,extent.h)]=views(c,extent,bitmap,data)
+                    cachePng(file,bytes)
+                    rendered[SizeF(extent.w,extent.h)]=views(c,extent,bitmap,sky,data)
                 }
                 if (revision!=sourceRevision(c)) return@withLock
                 // A drag, rotation, or deletion can finish while Flutter is rasterizing.
                 if (m.getAppWidgetInfo(id) == null || sizes(m.getAppWidgetOptions(id)) != extents) continue
+                val background = skyFile(c,id,key)
+                cachePng(background,skyBytes)
                 m.updateAppWidget(id, forLauncher(rendered, extents))
-                val retained = extents.values.map { bitmapFile(c,id,it,data.optString("language","ku"),key).baseFile.name }.toSet()
+                val retained = extents.values.map { bitmapFile(c,id,it,data.optString("language","ku"),key).baseFile.name }.toSet() + background.baseFile.name
                 c.cacheDir.listFiles { f -> f.name.startsWith("weather-widget-$id-") && f.name.endsWith(".png") && f.name !in retained }?.forEach { it.delete() }
             }
         } finally {
