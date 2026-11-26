@@ -1,0 +1,44 @@
+name: Prepare Android widget release sources
+on:
+  push:
+    branches: [build/prepare-widget-110004]
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the widget patch and native data
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: d9f3a53274186e85c6932d53ff8e7183ca484923
+          lfs: true
+          path: android-source
+      - name: Check out the matching navigation interface
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: sarhang-sg/GEO-MAP
+          ref: 1f877c2b100ad17c391d1ef996f8c8d9d889fcec
+          persist-credentials: false
+          path: web-source
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+      - name: Install the pinned web dependencies
+        working-directory: web-source
+        run: |
+          npm install --global npm@12.2.0
+          npm ci
+      - name: Generate and verify the native presentation and source manifest
+        working-directory: android-source
+        run: |
+          python3 tools/sync-web-presentation.py --web ../web-source
+          python3 tools/update-source-manifest.py
+          python3 tools/update-source-manifest.py --check
+          bash tools/validate-source.sh
+          git add -- assets/r16 SOURCE_MANIFEST.sha256
+          git diff --exit-code
+          git diff --cached --check
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Bundle the verified interface and refresh the build 110004 inventory"
+          git push origin HEAD:refs/heads/fix/widget-card-edges
