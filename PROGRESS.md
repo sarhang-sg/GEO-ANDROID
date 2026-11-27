@@ -1,0 +1,8 @@
+# NAV KURD Android engineering checkpoint
+
+Development and CI use `codex/nav-kurd-stability`. [Android draft PR #23](https://github.com/sarhang-sg/GEO-ANDROID/pull/23) and [web draft PR #33](https://github.com/sarhang-sg/GEO-MAP/pull/33) are paired. Production approval is outstanding.
+
+- Phase 0 (IMPLEMENTED AND VERIFIED). The native baseline is `2507671` and the pushed Android presentation is `7c17f444968b88e51de25ff26deebc80629ad5d0`. All 61 shared resources matched a clean presentation build. The local ARM64 debug APK passed signature verification and real car, walking and cycling offline routes. Flutter and Dart analysis passed alongside 24 app and six core tests.
+- [Android checks 45952818475](https://github.com/sarhang-sg/GEO-ANDROID/actions/runs/45952818475) passed on the stability PR. GitHub built the multi-ABI debug APK, checked packaged routing data and ran the Android 15 launcher and widget emulator check. The debug candidate and launcher screenshots are stored with this run. Physical-device GPS, speech, OEM background behavior and driving tests remain open.
+- The existing published version is 11.0.0+110004. The release signing configuration, application ID, Termux scripts and production workflows are preserved. An APK from a pull request uses debug signing.
+- Next: port the phase 1 verified navigation fix through the shared presentation, then integrate canonical weather, profile-specific native routing, voice and widget behavior. The phase list and CI history are maintained in the paired web checkpoint. Finish with a synchronized candidate, fresh Android checks and an explicit release decision.

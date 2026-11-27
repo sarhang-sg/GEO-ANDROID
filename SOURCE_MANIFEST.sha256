@@ -5,6 +5,7 @@
 079fe94391621f5021f1605fce2230b9e4bf9f2e9afd249ead8d3f09744490e0  ./.metadata
 0fcf32feeba70de83f721c962e03b1b8578de80d895f7481a6432ddd721ec92d  ./ANDROID_APP_LINK_SHA256.txt
 982d5fdd0acecff482546418aa173816b1cb0e193691d0beeb702d169160b445  ./LICENSE
+6e7a9638e1700c753efe6aaf729c3c1c2bb6148e2e2b940a006c7643c5b7f14c  ./PROGRESS.md
 143b2310ec62ad139276387447e179a691c03ac0f2cec7ffa0b2526283bf48a9  ./README.md
 47ebcf27861b35d76fbe45cc12d9dd321eab1c5b1581d5e560f7209cff189705  ./SECURITY.md
 026bd389d97c3ee4a6bca7b21ef46afa4895ebd383fa2e4fc4afa08c77cfb367  ./TERMUX.sh
@@ -701,10 +702,10 @@ f3d8bce7853d3599987e16bddca9f8a64b814d1c4020d410224e2a52fa0a199a  ./assets/r16/a
 a594db22c941a17c79e18922e6b6d3ec6bfa399457554e75481ae9b71ec815bf  ./assets/r16/assets/dom-CCMEPdhX.js
 b5d7850b7cd200ad6feea7d4f2df8a7d4fdfc69cc1a5533e5de5a2c3b9467dd8  ./assets/r16/assets/feedback-studio-Ckvgl6VX.js
 6658edb38fc278aeacacaf82478315a0ced3fed6f63458b57ee8421b30d4d5b3  ./assets/r16/assets/geo-format-8OEz8TGd.js
-7917d5581ca878bf536e8dbc9519eb1e73d41257df778a7841a94c143794a97f  ./assets/r16/assets/index-DxlAqjaV.js
+38f53c58f0f5ac9569b60caab01c38401af0b5f3e604d127d4cc248df5ada99d  ./assets/r16/assets/index-hwnDEnhI.js
 fff675857d0bafb52438c269e5ac465738102e6015d8b49b03ae62b37de0a4a3  ./assets/r16/assets/loading-view-DoJ9rIt9.js
 5fc1b1c6f247acb93e47f9a120b09a73698750b1fa4a5a18ac16f0caa1e275f5  ./assets/r16/assets/local-provider-CFsuKCna.js
-83d0077e90c79c8e3a8dc8b7398534f2e1e7e6b9630a4834130a4426a9b39e1c  ./assets/r16/assets/main-BsQ3VWsG.js
+d604eb409c020d55c4a6decb926382110c5e14451bfff26ece6f5ec643ffe42c  ./assets/r16/assets/main-D1p4odQu.js
 ae43bb414286ae9c1f672cd8b7333c6bd67415e3ba47fc53906caf5e3ed0e2e0  ./assets/r16/assets/map-language-Cion04od.js
 a44e9c8519685a73587bcb465401eade1c3491d382c22243373c1c42b766f186  ./assets/r16/assets/maplibre-CKRTiAqP.css
 919cc13ba1d94f8918bfc70a1852896b6db0e50c1c4f8c814f9d356bd75deff3  ./assets/r16/assets/maplibre-DRPEdFwC.js
@@ -745,7 +746,7 @@ e8f6a216da5abebb85ed217ec19b910264107336b4d86ef40fe3748007bcfb58  ./assets/r16/a
 4893663ecbb19de5b27f81c1e69fcde1cbc5bd8be8374f3ab51465bad0508a96  ./assets/r16/fonts/DroidLogo-Bold.ttf
 7355b16c9f0cc29f3b90be45723c0b0ec4506ee581753b9a8187d1b45b2fd9e2  ./assets/r16/fonts/RedHatDisplay-Variable.woff2
 8eb44ac578038db018c17f06807a5049fadbe9e4ad1abde21c4840b7232c9766  ./assets/r16/fonts/UniQAIDAR-Money-Heist-002.ttf
-cb55708393220aebb97279b74343fdb7debd4ebfa435786e24fd414416895c74  ./assets/r16/index.html
+80a0b880ed8e7eff7fdc1ff66703865e9fefb4e6f8c249a436598445195f9066  ./assets/r16/index.html
 8d0a7755445c691035dde93660a46e9b17997c2d059ad6a70e2c066bcaed80b2  ./assets/r16/legal/account-deletion.html
 cd01b1089f849f1054e23c7c7c08906fb683c64adfc4fd610e93fc04b41c0418  ./assets/r16/legal/contribution-guidelines.html
 31bdbd87a75dfe9ef348efc5b8e12d7b42c7642ecd8532fc4bbcbbc31b54ee23  ./assets/r16/legal/legal-i18n.js
@@ -753,7 +754,7 @@ ec399e301545efcb2479ae6ea744c5f72ac3d7c5db44284d52c3145752130fcb  ./assets/r16/l
 882729c57351af07d741e49095bd8dd28ec6c7f4545b6f696e026f8078a3b6f1  ./assets/r16/legal/privacy.html
 41fc5c0089ebbb1a434c8f94f7d172fc6a9daca4443df502f5f068c6645ef171  ./assets/r16/legal/security.html
 f73ce362f5aa2b6fd1e357e6372e32afb08a41dac661a1895505c022c9075cbb  ./assets/r16/legal/terms.html
-89c635709a1fafb3776f3ba2fd9338d9341ec91e5f18635928ade096d2b3a262  ./assets/r16/manifest.json
+4449590c2e06c884087afe7abffbc4cca0b46f67298f1b98148bda5f3d650a15  ./assets/r16/manifest.json
 310e56035be90c354717e174f69d1d6cdc245e247cf05b96e3b7b879bb67b5e0  ./assets/r16/manifest.webmanifest
 5460ce01c9ccf71cf308f91dad198069bb4b12f94108f6136abdc348baaef4b5  ./assets/r16/weather-cities.html
 f029536d9dc5237cbe90f61fc2f25a3e340a058dad0ed77d74e9f060dc9a2502  ./assets/weather/cities.json
